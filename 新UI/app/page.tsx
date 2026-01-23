@@ -619,6 +619,9 @@ export default function GroupBuyPage() {
   const collectingVotersMap = Object.fromEntries(collectingProducts.map(p => [p.name, p.voters || []]));
 
 
+  // [Phase 14 Refinement] Sort StoriesBar products by popularity (total registered qty)
+  const storiesProducts = [...collectingProducts].sort((a, b) => (b.currentQty || 0) - (a.currentQty || 0));
+
   return (
     <Suspense fallback={<Loading />}>
       {isLoading && <GolfBallLoader />}
@@ -637,7 +640,7 @@ export default function GroupBuyPage() {
           <StoriesBar
             leaderAvatar={userProfile?.pictureUrl || undefined}
             leaderName={leaderName}
-            products={collectingProducts}
+            products={storiesProducts}
             onProductClick={(name: string) => {
               // 1. 若商品在現有 Tab，直接捲動
               const element = document.getElementById(name);
