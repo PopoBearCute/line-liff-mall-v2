@@ -35,7 +35,7 @@ interface IGProductFeedProps {
     currentUserId?: string;
     onSingleSubmit?: (productName: string) => void;
     submittingProduct?: string | null;
-    onEnableProduct?: (productName: string) => void;
+    onEnableProduct?: (productName: string, isEnabled?: boolean) => void;
     onShare?: (product: Product) => void;
 }
 
@@ -97,7 +97,7 @@ export function IGProductFeed({
                         onRemove={() => onQuantityChange(product.name, -1)}
                         onSubmit={onSingleSubmit ? () => onSingleSubmit(product.name) : undefined}
                         isSubmitting={submittingProduct === product.name}
-                        onEnableProduct={onEnableProduct ? () => onEnableProduct(product.name) : undefined}
+                        onEnableProduct={onEnableProduct ? () => onEnableProduct(product.name, product.isEnabled) : undefined}
                         onShare={onShare}
                     />
                 );

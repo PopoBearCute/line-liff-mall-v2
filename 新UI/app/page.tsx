@@ -231,9 +231,13 @@ export default function GroupBuyPage() {
     }));
   };
 
-  const handleEnableProduct = async (productName: string) => {
+  const handleEnableProduct = async (productName: string, currentIsEnabled?: boolean) => {
     if (!leaderId || !isLeader) return;
     setIsEnabling(true);
+
+    // Determine the new state (toggle)
+    const newEnabledState = !currentIsEnabled;
+
     try {
       const wave = activeWaves.find((w: ActiveWave) => w.products.some((p: Product) => p.name === productName))?.wave;
       if (!wave) throw new Error("Wave not found");
@@ -244,17 +248,18 @@ export default function GroupBuyPage() {
           action: 'enable_product',
           wave: wave,
           leaderId: leaderId,
-          leaderName: userProfile?.displayName || '團購主', // 新增：傳送團主名稱
-          prodName: productName
+          leaderName: userProfile?.displayName || '團購主',
+          prodName: productName,
+          isEnabled: newEnabledState // Pass the new desired state
         })
       });
       const data = await response.json();
       if (data.success) {
-        toast.success(`已啟用 ${productName} 的商城連結！`);
+        toast.success(newEnabledState ? `已開放 ${productName}！` : `已關閉 ${productName}`);
         await loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
       }
     } catch (error) {
-      toast.error("啟用失敗");
+      toast.error("操作失敗");
     } finally {
       setIsEnabling(false);
     }
