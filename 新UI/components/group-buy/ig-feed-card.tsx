@@ -289,8 +289,8 @@ export function IGFeedCard({
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {/* 1. Confirm Capsule (Only when qty changed) */}
-                        {cartQty !== 0 && (
+                        {/* 1. Confirm Capsule (Only when qty changed AND not active mode) */}
+                        {cartQty !== 0 && mode !== 'active' && (
                             <button
                                 onClick={onSubmit}
                                 disabled={isSubmitting}
@@ -308,7 +308,7 @@ export function IGFeedCard({
                         {/* 2. Main Action Button (Initial) */}
                         {(!showStepper && mode !== 'preparing') && (
                             <button
-                                onClick={onAdd}
+                                onClick={mode === 'active' && config.action ? config.action : onAdd}
                                 className={`${config.btnColor} text-white text-xs font-bold px-6 py-2.5 rounded-full transition-colors shadow-sm whitespace-nowrap active:scale-95`}
                             >
                                 {config.btnText}

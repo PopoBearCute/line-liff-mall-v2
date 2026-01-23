@@ -17,8 +17,8 @@ interface StoriesBarProps {
 
 export function StoriesBar({ leaderAvatar, leaderName, products = [], onProductClick }: StoriesBarProps) {
     return (
-        <div className="w-full max-w-md mx-auto pt-2 pb-2">
-            <div className="flex gap-4 overflow-x-auto px-4 pb-2 scrollbar-none snap-x">
+        <div className="w-full max-w-md mx-auto pt-3 pb-3">
+            <div className="flex gap-4 overflow-x-auto px-4 scrollbar-none snap-x">
                 {/* 1. Leader Story (Fixed) */}
                 <div className="flex flex-col items-center gap-1 min-w-[72px] snap-center cursor-pointer group">
                     <div className="relative p-[3px] rounded-full group-hover:scale-105 transition-transform duration-300">
