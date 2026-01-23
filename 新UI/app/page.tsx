@@ -14,7 +14,7 @@ import { GolfBallLoader } from "@/components/ui/golf-loader";
 
 // HARDCODED: GitHub Pages 不會讀取 .env.local，所以直接寫死
 // 優先讀取環境變數，若無則使用原本的預設值 (避免完全斷線)
-const GAS_URL = process.env.NEXT_PUBLIC_GAS_URL || "https://script.google.com/macros/s/AKfycbwAsEz0uJtecaZ-tOMID_53UcT2gaIVpISdBYUeeX_lAyHnrXKUOKPLXV3556puHuzO5g/exec";
+const GAS_URL = process.env.NEXT_PUBLIC_GAS_URL || "https://script.google.com/macros/s/AKfycbxh4g31ArzWTrF7GAbN_ccXpAuE4TWgzG-J3Uv9Ekb5CCOrF1IR8jA3z36igooSvNSBJw/exec";
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2008798234-yXHoEXCb";
 
 // Type definitions

@@ -314,18 +314,34 @@ function doPost(e) {
     // --- Action: Auto Register Leader (團主自動註冊) ---
     if (data.action === 'auto_register_leader') {
         const { wave, leaderId, leaderName } = data;
+        
+        // [DEBUG] Start
+        logAction('DEBUG_START', { msg: 'Check LeaderBinding', sheetName: SHEET_BINDING });
+
         const bindingSheet = ss.getSheetByName(SHEET_BINDING);
+        if (!bindingSheet) {
+            logAction('DEBUG_ERROR', { msg: 'Sheet not found!', sheet: SHEET_BINDING });
+            return createJsonResponse({ success: false, error: 'Sheet LeaderBinding missing' });
+        }
+
         const bindingKey = String(leaderId).trim() + '_' + String(wave).trim();
         
         // 檢查是否已存在
         const finder = bindingSheet.getRange("A:A").createTextFinder(bindingKey).matchEntireCell(true);
         const found = finder.findNext();
         
+        logAction('DEBUG_FIND', { key: bindingKey, found: !!found });
+
         if (!found && leaderId) {
             // 不存在則新增
-            bindingSheet.appendRow([
-                bindingKey, wave, leaderId, leaderId, leaderName || '團購主', new Date(), ""
-            ]);
+            try {
+                bindingSheet.appendRow([
+                    bindingKey, wave, leaderId, leaderId, leaderName || '團購主', new Date(), ""
+                ]);
+                logAction('DEBUG_WRITE', { msg: 'Append success' });
+            } catch (writeErr) {
+                logAction('DEBUG_FAIL', { msg: 'Append failed', err: writeErr.toString() });
+            }
         }
         
         return createJsonResponse({ success: true });
