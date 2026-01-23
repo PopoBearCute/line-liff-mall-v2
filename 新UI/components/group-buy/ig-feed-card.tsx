@@ -151,7 +151,7 @@ export function IGFeedCard({
                     </div>
                 </div>
                 <div>
-                    {isLeader && onEnableProduct ? (
+                    {isLeader && onEnableProduct && mode !== 'active' ? (
                         <div className="flex items-center gap-2">
                             {isToggling && <Loader2 className="w-4 h-4 animate-spin text-gray-500" />}
                             <Switch
@@ -167,7 +167,7 @@ export function IGFeedCard({
                                 e.stopPropagation();
                                 onShare?.(product);
                             }}
-                            className="text-gray-400 hover:text-primary-blue transition-colors active:scale-90"
+                            className="text-gray-400 hover:text-primary-blue transition-colors active:scale-90 -ml-1.5"
                         >
                             <Send className="w-5 h-5 -rotate-12 translate-y-[-1px]" />
                         </button>

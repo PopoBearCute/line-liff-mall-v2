@@ -351,6 +351,13 @@ export default function GroupBuyPage() {
     if (!p) return;
 
     try {
+      // Check LIFF availability
+      if (!window.liff || !window.liff.isApiAvailable('shareTargetPicker')) {
+        toast.error("分享功能不可用");
+        console.error("LIFF shareTargetPicker not available");
+        return;
+      }
+
       // 处理图片网址 (如果是 Google Drive 则转换)
       let displayImg = p.img || "https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=600&auto=format&fit=crop";
       if (displayImg.includes('drive.google.com')) {
@@ -398,20 +405,23 @@ export default function GroupBuyPage() {
         }
       };
 
-      if (window.liff && window.liff.isApiAvailable('shareTargetPicker')) {
-        await window.liff.shareTargetPicker({
-          type: "flex",
-          altText: `分享商品：${cleanName}`,
-          contents: {
-            "type": "carousel",
-            "contents": [bubble]
-          }
-        });
-        toast.success("分享成功！");
-      }
-    } catch (error) {
+      await window.liff.shareTargetPicker({
+        type: "flex",
+        altText: `分享商品：${cleanName}`,
+        contents: {
+          "type": "carousel",
+          "contents": [bubble]
+        }
+      });
+      toast.success("分享成功！");
+    } catch (error: any) {
       console.error("Share failed:", error);
-      toast.error("分享取消或失敗");
+      // Check if user cancelled
+      if (error?.message?.includes('cancel') || error?.toString()?.includes('cancel')) {
+        toast.info("已取消分享");
+      } else {
+        toast.error("分享失敗，請稍後再試");
+      }
     }
   };
 
