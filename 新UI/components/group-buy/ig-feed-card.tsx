@@ -28,16 +28,10 @@ interface IGFeedCardProps {
     currentUserId?: string; // 新增：供檢查個人登記上限使用
 }
 
-export function IGFeedCard({
-    product,
-    mode,
-    voters = [],
-    cartQty = 0,
-    onJoin,
-    onAdd,
-    onRemove,
+onRemove,
     isLeader,
-    leaderName
+    leaderName,
+    currentUserId
 }: IGFeedCardProps) {
     const [isLiked, setIsLiked] = useState(false);
     const totalVotes = voters.reduce((acc, v) => acc + v.qty, 0);
@@ -79,7 +73,7 @@ export function IGFeedCard({
     }[mode];
 
     // Find the current user's existing quantity in the voters list
-    const myExistingQty = voters.find(v => v.userId === undefined || v.userId === "" ? false : true /* This logic needs profile access */)?.qty || 0;
+    const myExistingQty = voters.find(v => v.userId === currentUserId)?.qty || 0;
     // Actually, it's better to pass currentUserId to IGFeedCard or just look for the voter that matches a specific flag.
     // For now, let's assume we pass the profile down or use a safer approach in page.tsx.
 
@@ -194,7 +188,7 @@ export function IGFeedCard({
                                 onClick={onAdd} // Explicitly trigger onAdd to enter stepper mode
                                 className={`${config.btnColor} text-white text-xs font-bold px-6 py-2.5 rounded-full transition-colors shadow-sm whitespace-nowrap active:scale-95`}
                             >
-                                {myExistingQty > 0 ? "修正登記" : config.btnText}
+                                {config.btnText}
                             </button>
                         )}
 
