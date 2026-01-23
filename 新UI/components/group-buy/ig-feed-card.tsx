@@ -38,8 +38,10 @@ export function IGFeedCard({
     onRemove,
     isLeader,
     leaderName,
-    currentUserId
-}: IGFeedCardProps) {
+    currentUserId,
+    onSubmit,
+    isSubmitting = false
+}: IGFeedCardProps & { onSubmit?: () => void; isSubmitting?: boolean }) {
     const [isLiked, setIsLiked] = useState(false);
     const totalVotes = voters.reduce((acc, v) => acc + v.qty, 0);
     const achievedPercent = Math.min(Math.round((totalVotes / product.moq) * 100), 100);
@@ -81,8 +83,6 @@ export function IGFeedCard({
 
     // Find the current user's existing quantity in the voters list
     const myExistingQty = voters.find(v => v.userId === currentUserId)?.qty || 0;
-    // Actually, it's better to pass currentUserId to IGFeedCard or just look for the voter that matches a specific flag.
-    // For now, let's assume we pass the profile down or use a safer approach in page.tsx.
 
     // Updated: showStepper should be visible if:
     // 1. There is ANY cart activity (positive or negative)
@@ -96,7 +96,6 @@ export function IGFeedCard({
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-full p-[1.5px] bg-gradient-to-tr from-yellow-400 to-pink-600">
                         <div className="w-full h-full rounded-full bg-white dark:bg-black p-[1.5px] overflow-hidden">
-                            {/* Placeholder Avatar - replace with Leader Avatar if available */}
                             <div className="w-full h-full bg-gray-200 flex items-center justify-center text-[10px]">L</div>
                         </div>
                     </div>
@@ -118,14 +117,14 @@ export function IGFeedCard({
                 </button>
             </div>
 
-            {/* 2. Media (Image) - Shorter Aspect Ratio */}
+            {/* 2. Media (Image) */}
             <div className="relative w-full aspect-[2/1] bg-gray-50 dark:bg-gray-900 overflow-hidden">
                 <Image
                     src={product.img}
                     alt={product.name}
                     fill
                     className={`object-contain ${mode === 'preparing' ? 'opacity-80 grayscale-[0.2]' : ''}`}
-                    priority={false} // Lazy load for feed
+                    priority={false}
                 />
                 {mode === 'preparing' && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[1px]">
@@ -136,19 +135,8 @@ export function IGFeedCard({
                 )}
             </div>
 
-            {/* 3. Action Bar (Social) - Optional, similar to IG */}
-            {/* <div className="flex items-center justify-between px-3 pt-3">
-        <div className="flex items-center gap-4">
-            <Heart className="w-6 h-6 hover:text-gray-500 cursor-pointer" />
-            <MessageCircle className="w-6 h-6 hover:text-gray-500 cursor-pointer" />
-            <Send className="w-6 h-6 hover:text-gray-500 cursor-pointer" />
-        </div>
-        <div className="w-6"></div> 
-      </div> */}
-
             {/* 4. Content Area */}
             <div className="px-3 mt-3">
-                {/* Progress Section */}
                 {mode !== 'preparing' && (
                     <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-2.5 border border-gray-100 dark:border-gray-800 mb-3 space-y-2">
                         <div className="flex justify-between items-baseline mb-1">
@@ -171,7 +159,6 @@ export function IGFeedCard({
                     </div>
                 )}
 
-                {/* Title & Description */}
                 <div className="text-[14px] text-gray-900 dark:text-white leading-relaxed mb-1">
                     <span className="font-semibold mr-1">商品詳情</span>
                     {product.name}
@@ -179,36 +166,68 @@ export function IGFeedCard({
                 <p className="text-xs text-gray-500 line-clamp-2">{product.description}</p>
             </div>
 
-            {/* 5. Sticky/Fixed Action Row (or inline) */}
+            {/* 5. Sticky/Fixed Action Row */}
             <div className="px-3 mt-4 mb-2">
-                <div className="flex items-center justify-between bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl p-3 shadow-sm">
-                    <div className="flex flex-col">
-                        {product.origPrice && <span className="text-[10px] text-gray-400 line-through">市價 ${product.origPrice}</span>}
-                        <div className="flex items-baseline gap-1">
-                            <span className={`text-lg font-bold ${config.priceColor}`}>${product.price}</span>
-                            <span className="text-[10px] font-medium text-red-500 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded">團購價</span>
-                        </div>
+                <div className={`flex items-center justify-between border rounded-xl p-3 shadow-sm transition-all duration-300 ${cartQty !== 0 ? 'bg-emerald-50/50 dark:bg-emerald-950/10 border-emerald-200 dark:border-emerald-900/50' : 'bg-white dark:bg-black border-gray-200 dark:border-gray-800'}`}>
+                    <div className="flex flex-col min-w-[120px]">
+                        {cartQty !== 0 ? (
+                            <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+                                <span className={`text-[10px] font-bold uppercase tracking-wider ${cartQty > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                    {cartQty > 0 ? '本次追加' : '減少登記'}
+                                </span>
+                                <div className="flex items-baseline gap-1">
+                                    <span className={`text-lg font-black ${cartQty > 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
+                                        {cartQty > 0 ? `+${cartQty}` : cartQty}
+                                    </span>
+                                    <span className="text-xs font-medium text-gray-500">件</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                {product.origPrice && <span className="text-[10px] text-gray-400 line-through">市價 ${product.origPrice}</span>}
+                                <div className="flex items-baseline gap-1">
+                                    <span className={`text-lg font-bold ${config.priceColor}`}>${product.price}</span>
+                                    <span className="text-[10px] font-medium text-red-500 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded">團購價</span>
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {/* Main Action Button */}
+                        {/* 1. Confirm Capsule (Only when qty changed) */}
+                        {cartQty !== 0 && (
+                            <button
+                                onClick={onSubmit}
+                                disabled={isSubmitting}
+                                className="h-[36px] px-6 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-black shadow-lg shadow-emerald-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale flex items-center gap-2 animate-in zoom-in-95"
+                            >
+                                {isSubmitting ? (
+                                    <Clock className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                    <BadgeCheck className="w-3.5 h-3.5" />
+                                )}
+                                確認
+                            </button>
+                        )}
+
+                        {/* 2. Main Action Button (Initial) */}
                         {(!showStepper && mode !== 'preparing') && (
                             <button
-                                onClick={onAdd} // Explicitly trigger onAdd to enter stepper mode
+                                onClick={onAdd}
                                 className={`${config.btnColor} text-white text-xs font-bold px-6 py-2.5 rounded-full transition-colors shadow-sm whitespace-nowrap active:scale-95`}
                             >
                                 {config.btnText}
                             </button>
                         )}
 
-                        {/* Preparing State */}
+                        {/* 3. Preparing State */}
                         {mode === 'preparing' && (
                             <button className={`${config.btnColor} text-white text-xs font-bold px-6 py-2.5 rounded-full whitespace-nowrap`}>
                                 {config.btnText}
                             </button>
                         )}
 
-                        {/* Quantity Stepper (Only for active/collecting when engaged) */}
+                        {/* 4. Quantity Stepper */}
                         {showStepper && (
                             <div className="flex items-center bg-gray-50 dark:bg-gray-900 rounded-lg p-0.5 border border-gray-200 dark:border-gray-700 h-[36px]">
                                 <button

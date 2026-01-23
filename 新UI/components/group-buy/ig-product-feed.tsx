@@ -31,7 +31,9 @@ interface IGProductFeedProps {
     onRemoveVoter?: (productName: string, voterName: string, userId?: string) => void;
     onJoin?: (productName: string) => void;
     leaderName?: string;
-    currentUserId?: string; // 新增
+    currentUserId?: string;
+    onSingleSubmit?: (productName: string) => void;
+    submittingProduct?: string | null;
 }
 
 export function IGProductFeed({
@@ -46,6 +48,8 @@ export function IGProductFeed({
     onJoin,
     leaderName,
     currentUserId,
+    onSingleSubmit,
+    submittingProduct
 }: IGProductFeedProps) {
 
     if (isLoading) {
@@ -86,6 +90,8 @@ export function IGProductFeed({
                         onJoin={() => onQuantityChange(product.name, 1)}
                         onAdd={() => onQuantityChange(product.name, 1)}
                         onRemove={() => onQuantityChange(product.name, -1)}
+                        onSubmit={onSingleSubmit ? () => onSingleSubmit(product.name) : undefined}
+                        isSubmitting={submittingProduct === product.name}
                     />
                 );
             })}

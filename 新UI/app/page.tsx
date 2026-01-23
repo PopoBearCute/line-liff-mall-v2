@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/group-buy/header";
 import { IGProductFeed } from "@/components/group-buy/ig-product-feed";
-import { Footer } from "@/components/group-buy/footer";
 import { StickyTabs } from "@/components/group-buy/sticky-tabs";
 
 import { SeedMode } from "@/components/group-buy/seed-mode";
@@ -71,6 +70,7 @@ export default function GroupBuyPage() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(!!leaderIdFromUrl);
   const [isEnabling, setIsEnabling] = useState(false);
+  const [submittingProduct, setSubmittingProduct] = useState<string | null>(null);
 
   // IG-Style Tabs State
   const [activeTab, setActiveTab] = useState(0);
@@ -256,19 +256,26 @@ export default function GroupBuyPage() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (specificProductName?: string) => {
     if (!userProfile || !leaderId) return;
 
-    const itemsToSubmit = Object.entries(cart)
-      .filter(([, qty]) => qty !== 0)
-      .map(([name, qty]) => ({ prodName: name, qty }));
+    let itemsToSubmit;
+    if (specificProductName) {
+      const qty = cart[specificProductName];
+      if (!qty || qty === 0) return;
+      itemsToSubmit = [{ prodName: specificProductName, qty }];
+      setSubmittingProduct(specificProductName);
+    } else {
+      itemsToSubmit = Object.entries(cart)
+        .filter(([, qty]) => qty !== 0)
+        .map(([name, qty]) => ({ prodName: name, qty }));
 
-    if (itemsToSubmit.length === 0) {
-      toast.warning("請先調整商品數量");
-      return;
+      if (itemsToSubmit.length === 0) {
+        toast.warning("請先調整商品數量");
+        return;
+      }
+      setIsSubmitting(true);
     }
-
-    setIsSubmitting(true);
 
     try {
       const mainWave = activeWaves[0]?.wave || "Unknown";
@@ -280,9 +287,9 @@ export default function GroupBuyPage() {
           action: 'submit_batch_intent',
           wave: mainWave,
           leaderId: leaderId,
-          leaderName: userProfile.displayName, // 新增：傳送團主名稱 (供 Binding 使用)
+          leaderName: userProfile.displayName,
           userId: userProfile.userId,
-          userName: userProfile.displayName,    // (供 IntentDB 使用)
+          userName: userProfile.displayName,
           items: itemsToSubmit
         })
       });
@@ -290,17 +297,23 @@ export default function GroupBuyPage() {
       const resData = await response.json();
 
       if (resData.success) {
-        toast.success("登記成功！", { description: "背景更新資料中..." });
+        toast.success("登記成功！", { description: "已更新您的登記紀錄" });
         await loadData(leaderId, userProfile.userId, userProfile.displayName, false);
-        setCart({});
+
+        if (specificProductName) {
+          setCart(prev => ({ ...prev, [specificProductName]: 0 }));
+        } else {
+          setCart({});
+        }
       } else {
         throw new Error(resData.error);
       }
     } catch (error) {
       console.error('Submit failed:', error);
-      toast.error("送出失敗，請再試一次");
+      toast.error("提交失敗");
     } finally {
       setIsSubmitting(false);
+      setSubmittingProduct(null);
     }
   };
 
@@ -508,6 +521,8 @@ export default function GroupBuyPage() {
         <Header
           roleTag={isLeader ? "您是本團負責人" : "你是團員"}
           isLeader={isLeader}
+          onShare={handleShare}
+          wave={activeWaves[0]?.wave || ""}
         />
 
 
@@ -526,6 +541,8 @@ export default function GroupBuyPage() {
                 leaderName={leaderName || undefined}
                 currentUserId={userProfile?.userId}
                 onRemoveVoter={handleRemoveVoter}
+                onSingleSubmit={handleSubmit}
+                submittingProduct={submittingProduct}
               />
             </div>
           )}
@@ -543,6 +560,8 @@ export default function GroupBuyPage() {
                 leaderName={leaderName || undefined}
                 currentUserId={userProfile?.userId}
                 onRemoveVoter={handleRemoveVoter}
+                onSingleSubmit={handleSubmit}
+                submittingProduct={submittingProduct}
               />
             </div>
           )}
@@ -560,21 +579,14 @@ export default function GroupBuyPage() {
                 leaderName={leaderName || undefined}
                 currentUserId={userProfile?.userId}
                 onRemoveVoter={handleRemoveVoter}
+                onSingleSubmit={handleSubmit}
+                submittingProduct={submittingProduct}
               />
             </div>
           )}
         </div>
       </div>
       <StickyTabs activeTab={activeTab} onTabChange={setActiveTab} />
-
-      {/* 5. Sticky Footer (Cart & Actions) */}
-      <Footer
-        isLeader={isLeader}
-        isSubmitting={isSubmitting}
-        onSubmit={handleSubmit}
-        onShare={handleShare}
-        cart={cart}
-      />
     </Suspense>
   );
 }
