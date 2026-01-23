@@ -208,7 +208,7 @@ export function IGFeedCard({
                         {/* Top Layer: Percent | Deadline */}
                         <div className="flex justify-between items-baseline">
                             <span className="text-sm font-bold text-gray-900 dark:text-white tracking-tight">
-                                達成率 <span className={`ml-1 ${isTargetMet ? 'text-emerald-500' : 'text-sky-500'}`}>
+                                {isTargetMet ? '可開團' : '達成率'} <span className={`ml-1 ${isTargetMet ? 'text-emerald-500' : 'text-sky-500'}`}>
                                     {achievedPercent}%
                                 </span>
                             </span>
@@ -321,18 +321,7 @@ export function IGFeedCard({
                             </button>
                         )}
 
-                        {/* 2. Main Action Button (Initial) */}
-                        {(!showStepper && mode !== 'preparing') && (
-                            <button
-                                onClick={mode === 'active' && config.action ? config.action : onAdd}
-                                disabled={isLeader && mode === 'active' && !isEnabled}
-                                className={`${isLeader && mode === 'active' && !isEnabled ? 'bg-gray-400 cursor-not-allowed' : config.btnColor} text-white text-xs font-bold px-6 py-2.5 rounded-full transition-colors shadow-sm whitespace-nowrap active:scale-95 disabled:active:scale-100`}
-                            >
-                                {config.btnText}
-                            </button>
-                        )}
-
-                        {/* Leader Toggle: 開放購買 / 關閉購買 */}
+                        {/* Leader Toggle: 開放購買 / 關閉購買 (團購主專用，放在前面) */}
                         {isLeader && mode === 'active' && onEnableProduct && (
                             <button
                                 onClick={handleToggle}
@@ -344,6 +333,17 @@ export function IGFeedCard({
                             >
                                 {isToggling && <Loader2 className="w-3 h-3 animate-spin" />}
                                 {isEnabled ? '關閉購買' : '開放購買'}
+                            </button>
+                        )}
+
+                        {/* Main Action Button (Initial) */}
+                        {(!showStepper && mode !== 'preparing') && (
+                            <button
+                                onClick={mode === 'active' && config.action ? config.action : onAdd}
+                                disabled={isLeader && mode === 'active' && !isEnabled}
+                                className={`${isLeader && mode === 'active' && !isEnabled ? 'bg-gray-400 cursor-not-allowed' : config.btnColor} text-white text-xs font-bold px-6 py-2.5 rounded-full transition-colors shadow-sm whitespace-nowrap active:scale-95 disabled:active:scale-100`}
+                            >
+                                {config.btnText}
                             </button>
                         )}
 
