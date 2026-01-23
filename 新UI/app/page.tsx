@@ -350,14 +350,22 @@ export default function GroupBuyPage() {
   const handleShareProduct = async (p: Product) => {
     if (!p) return;
 
-    try {
-      // Check LIFF availability
-      if (!window.liff || !window.liff.isApiAvailable('shareTargetPicker')) {
-        toast.error("分享功能不可用");
-        console.error("LIFF shareTargetPicker not available");
-        return;
-      }
+    console.log("[Share] Starting share for product:", p.name);
 
+    // Check LIFF availability
+    if (!window.liff) {
+      toast.error("LIFF 尚未初始化");
+      console.error("[Share] LIFF not initialized");
+      return;
+    }
+
+    if (!window.liff.isApiAvailable('shareTargetPicker')) {
+      toast.error("此環境不支援分享功能");
+      console.error("[Share] shareTargetPicker not available");
+      return;
+    }
+
+    try {
       // 处理图片网址 (如果是 Google Drive 则转换)
       let displayImg = p.img || "https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=600&auto=format&fit=crop";
       if (displayImg.includes('drive.google.com')) {
@@ -367,6 +375,8 @@ export default function GroupBuyPage() {
 
       const cleanName = (p.name || "熱門商品").replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, 30);
       const shareUrl = `${window.location.origin}${window.location.pathname}?leaderId=${leaderId || ""}`;
+
+      console.log("[Share] Prepared data:", { cleanName, displayImg, shareUrl });
 
       const bubble = {
         "type": "bubble",
@@ -405,22 +415,30 @@ export default function GroupBuyPage() {
         }
       };
 
-      await window.liff.shareTargetPicker({
+      const result = await window.liff.shareTargetPicker([{
         type: "flex",
         altText: `分享商品：${cleanName}`,
-        contents: {
-          "type": "carousel",
-          "contents": [bubble]
-        }
-      });
-      toast.success("分享成功！");
+        contents: bubble
+      }]);
+
+      console.log("[Share] Result:", result);
+
+      // shareTargetPicker returns undefined on success in some LINE versions
+      // It may also return { status: 'success' } in newer versions
+      if (result) {
+        toast.success("已選擇分享對象！");
+      } else {
+        // User closed the picker without sharing, or sharing succeeded (older behavior)
+        toast.info("分享完成");
+      }
     } catch (error: any) {
-      console.error("Share failed:", error);
-      // Check if user cancelled
-      if (error?.message?.includes('cancel') || error?.toString()?.includes('cancel')) {
+      console.error("[Share] Error:", error);
+      // Only show error if it's truly an error, not cancellation
+      const errorStr = error?.message || error?.toString() || "";
+      if (errorStr.toLowerCase().includes('cancel')) {
         toast.info("已取消分享");
       } else {
-        toast.error("分享失敗，請稍後再試");
+        toast.error("分享過程發生問題");
       }
     }
   };
