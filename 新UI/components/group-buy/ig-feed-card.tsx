@@ -120,7 +120,7 @@ export function IGFeedCard({
     const showStepper = mode === 'collecting' && (cartQty !== 0 || myExistingQty > 0);
 
     return (
-        <article className="bg-white dark:bg-black pb-4 border-b border-gray-100 dark:border-gray-800 mb-2">
+        <article id={product.name} className="bg-white dark:bg-black pb-4 border-b border-gray-100 dark:border-gray-800 mb-2 scroll-mt-20">
             {/* 1. Header (User Info) */}
             <div className="flex items-center justify-between px-3 py-3">
                 <div className="flex items-center gap-2.5">
@@ -247,7 +247,15 @@ export function IGFeedCard({
                             onClick={() => setIsExpanded(true)}
                             className="text-gray-500 ml-1 hover:text-gray-700 text-[13px]"
                         >
-                            ... more
+                            ... 更多
+                        </button>
+                    )}
+                    {isExpanded && (
+                        <button
+                            onClick={() => setIsExpanded(false)}
+                            className="text-gray-500 ml-1 hover:text-gray-700 text-[13px] block mt-1"
+                        >
+                            顯示較少
                         </button>
                     )}
                 </div>

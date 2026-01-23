@@ -537,8 +537,17 @@ export default function GroupBuyPage() {
             leaderName={leaderName}
             products={collectingProducts}
             onProductClick={(name: string) => {
-              // Simple anchor scrolling or toast for now
-              console.log("Clicked story:", name);
+              // 1. 若商品在現有 Tab，直接捲動
+              const element = document.getElementById(name);
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                // 2. 若找不到，切換到許願 Tab 再捲動 (因為限動顯示的是登記中商品)
+                setActiveTab(1);
+                setTimeout(() => {
+                  document.getElementById(name)?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }
             }}
           />
         </div>
