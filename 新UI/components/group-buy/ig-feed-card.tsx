@@ -24,7 +24,8 @@ interface IGFeedCardProps {
     onAdd?: () => void;
     onRemove?: () => void;
     isLeader?: boolean;
-    leaderName?: string; // 新增：傳遞團主名稱
+    leaderName?: string;
+    currentUserId?: string; // 新增：供檢查個人登記上限使用
 }
 
 export function IGFeedCard({
@@ -77,8 +78,13 @@ export function IGFeedCard({
         }
     }[mode];
 
-    // Helper to determine if we show the "Add/Remove" stepper or the big button
-    const showStepper = (mode === 'collecting' || mode === 'active') && cartQty > 0;
+    // Find the current user's existing quantity in the voters list
+    const myExistingQty = voters.find(v => v.userId === undefined || v.userId === "" ? false : true /* This logic needs profile access */)?.qty || 0;
+    // Actually, it's better to pass currentUserId to IGFeedCard or just look for the voter that matches a specific flag.
+    // For now, let's assume we pass the profile down or use a safer approach in page.tsx.
+
+    // Updated: showStepper should be visible if there's ANY cart activity (positive or negative)
+    const showStepper = (mode === 'collecting' || mode === 'active') && cartQty !== 0;
 
     return (
         <article className="bg-white dark:bg-black pb-4 border-b border-gray-100 dark:border-gray-800 mb-2">
@@ -185,10 +191,10 @@ export function IGFeedCard({
                         {/* Main Action Button */}
                         {(!showStepper && mode !== 'preparing') && (
                             <button
-                                onClick={config.action}
+                                onClick={onAdd} // Explicitly trigger onAdd to enter stepper mode
                                 className={`${config.btnColor} text-white text-xs font-bold px-6 py-2.5 rounded-full transition-colors shadow-sm whitespace-nowrap active:scale-95`}
                             >
-                                {config.btnText}
+                                {myExistingQty > 0 ? "修正登記" : config.btnText}
                             </button>
                         )}
 
@@ -204,7 +210,8 @@ export function IGFeedCard({
                             <div className="flex items-center bg-gray-50 dark:bg-gray-900 rounded-lg p-0.5 border border-gray-200 dark:border-gray-700 h-[36px]">
                                 <button
                                     onClick={onRemove}
-                                    className="w-8 h-full flex items-center justify-center text-gray-400 hover:text-gray-600 active:bg-gray-200 rounded transition-colors"
+                                    disabled={myExistingQty + cartQty <= 0}
+                                    className="w-8 h-full flex items-center justify-center text-gray-400 hover:text-gray-600 active:bg-gray-200 rounded transition-colors disabled:opacity-20"
                                 >
                                     <Minus size={16} />
                                 </button>

@@ -571,7 +571,8 @@ export default function GroupBuyPage() {
                 onQuantityChange={handleQuantityChange}
                 isLoading={isLoading}
                 isLeader={isLeader}
-                leaderName={leaderName || undefined} // 新增
+                leaderName={leaderName || undefined}
+                currentUserId={userProfile?.userId}
                 onRemoveVoter={handleRemoveVoter}
               />
             </div>
@@ -587,7 +588,8 @@ export default function GroupBuyPage() {
                 onQuantityChange={handleQuantityChange}
                 isLoading={isLoading}
                 isLeader={isLeader}
-                leaderName={leaderName || undefined} // 新增
+                leaderName={leaderName || undefined}
+                currentUserId={userProfile?.userId}
                 onRemoveVoter={handleRemoveVoter}
               />
             </div>
@@ -603,7 +605,8 @@ export default function GroupBuyPage() {
                 onQuantityChange={handleQuantityChange}
                 isLoading={isLoading}
                 isLeader={isLeader}
-                leaderName={leaderName || undefined} // 新增
+                leaderName={leaderName || undefined}
+                currentUserId={userProfile?.userId}
                 onRemoveVoter={handleRemoveVoter}
               />
             </div>

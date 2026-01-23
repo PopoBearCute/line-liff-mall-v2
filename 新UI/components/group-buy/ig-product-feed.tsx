@@ -30,7 +30,8 @@ interface IGProductFeedProps {
     isLeader?: boolean;
     onRemoveVoter?: (productName: string, voterName: string, userId?: string) => void;
     onJoin?: (productName: string) => void;
-    leaderName?: string; // 新增：接收團主名稱
+    leaderName?: string;
+    currentUserId?: string; // 新增
 }
 
 export function IGProductFeed({
@@ -44,6 +45,7 @@ export function IGProductFeed({
     onRemoveVoter,
     onJoin,
     leaderName,
+    currentUserId,
 }: IGProductFeedProps) {
 
     if (isLoading) {
@@ -80,6 +82,7 @@ export function IGProductFeed({
                         cartQty={currentQty}
                         isLeader={isLeader}
                         leaderName={leaderName}
+                        currentUserId={currentUserId}
                         onJoin={() => onQuantityChange(product.name, 1)}
                         onAdd={() => onQuantityChange(product.name, 1)}
                         onRemove={() => onQuantityChange(product.name, -1)}
