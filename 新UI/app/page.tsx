@@ -90,6 +90,7 @@ export default function GroupBuyPage() {
       setUserProfile({
         userId: mockUserId,
         displayName: 'Dev Tester',
+        pictureUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dev', // Mock avatar
       });
 
       const urlParams = new URLSearchParams(window.location.search);
@@ -291,7 +292,7 @@ export default function GroupBuyPage() {
           leaderName: userProfile.displayName,
           userId: userProfile.userId,
           userName: userProfile.displayName,
-          userAvatar: userProfile.pictureUrl, // Send avatar
+          userAvatar: userProfile.pictureUrl || "", // Force empty string if undefined
           items: itemsToSubmit
         })
       });
