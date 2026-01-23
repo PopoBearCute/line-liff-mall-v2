@@ -159,7 +159,7 @@ export default function GroupBuyPage() {
   ) => {
     if (showLoader) setIsLoading(true);
     try {
-      const response = await fetch(`${GAS_URL}?leaderId=${targetLeaderId}&userId=${userId}`);
+      const response = await fetch(`${GAS_URL}?leaderId=${targetLeaderId}&userId=${userId}&t=${Date.now()}`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
       const data = await response.json();
@@ -235,9 +235,17 @@ export default function GroupBuyPage() {
     if (!leaderId || !isLeader) return;
     setIsEnabling(true);
 
-    // Normalize and toggle
+    // Normalize
     const currentIsEnabled = isValue === true || String(isValue).toLowerCase() === 'true' || Number(isValue) === 1;
     const newEnabledState = !currentIsEnabled;
+
+    // 1. Optimistic Update (Immediate Feedback)
+    setActiveWaves(prev => prev.map(wave => ({
+      ...wave,
+      products: wave.products.map(p =>
+        p.name === productName ? { ...p, isEnabled: newEnabledState } : p
+      )
+    })));
 
     try {
       const wave = activeWaves.find((w: ActiveWave) => w.products.some((p: Product) => p.name === productName))?.wave;
@@ -255,13 +263,24 @@ export default function GroupBuyPage() {
           isEnabled: newEnabledState
         })
       });
+
       const data = await response.json();
       if (data.success) {
         toast.success(newEnabledState ? `已開放 ${productName}！` : `已關閉 ${productName}`);
-        await loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
+        // 2. Sync in background with cache-busting
+        loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
+      } else {
+        throw new Error(data.error);
       }
     } catch (error) {
-      toast.error("操作失敗");
+      // 3. Rollback on failure
+      setActiveWaves(prev => prev.map(wave => ({
+        ...wave,
+        products: wave.products.map(p =>
+          p.name === productName ? { ...p, isEnabled: currentIsEnabled } : p
+        )
+      })));
+      toast.error("操作失敗，請稍後再試");
     } finally {
       setIsEnabling(false);
     }
