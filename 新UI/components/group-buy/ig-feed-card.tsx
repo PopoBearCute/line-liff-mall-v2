@@ -237,23 +237,23 @@ export function IGFeedCard({
                     </div>
                 )}
 
-                <div className="text-[14px] text-gray-900 dark:text-white leading-relaxed mb-1 px-3">
-                    <div className={isExpanded ? "" : "line-clamp-2"}>
-                        <span className="font-bold mr-2">{product.name}</span>
-                        <span className="whitespace-pre-wrap">{product.description}</span>
-                        {!isExpanded && typeof product.description === 'string' && product.description.length > 30 && (
-                            <button
-                                onClick={() => setIsExpanded(true)}
-                                className="text-gray-500 hover:text-gray-700 text-[13px] ml-1 inline"
-                            >
-                                ... 更多
-                            </button>
-                        )}
-                    </div>
+                <div className="text-[14px] text-gray-900 dark:text-white leading-relaxed mb-1">
+                    <span className="font-bold mr-2">{product.name}</span>
+                    <span className={isExpanded ? "" : "line-clamp-2"}>
+                        {product.description}
+                    </span>
+                    {!isExpanded && typeof product.description === 'string' && product.description.length > 30 && (
+                        <button
+                            onClick={() => setIsExpanded(true)}
+                            className="text-gray-500 ml-1 hover:text-gray-700 text-[13px]"
+                        >
+                            ... 更多
+                        </button>
+                    )}
                     {isExpanded && (
                         <button
                             onClick={() => setIsExpanded(false)}
-                            className="text-gray-500 hover:text-gray-700 text-[13px] block mt-1"
+                            className="text-gray-500 ml-1 hover:text-gray-700 text-[13px] block mt-1"
                         >
                             顯示較少
                         </button>
