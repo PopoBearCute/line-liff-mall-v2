@@ -44,7 +44,7 @@ export function StoriesBar({ leaderAvatar, leaderName, products = [], onProductC
                         className="flex flex-col items-center gap-1 min-w-[72px] snap-center cursor-pointer group"
                         onClick={() => onProductClick?.(product.name)}
                     >
-                        <div className="p-[3px] rounded-full bg-gradient-to-tr from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 group-hover:from-primary-green group-hover:to-emerald-400 transition-all duration-300 group-hover:scale-105">
+                        <div className="p-[3px] rounded-full bg-gradient-to-tr from-amber-400 to-fuchsia-600 group-hover:scale-105 transition-all duration-300">
                             <div className="rounded-full bg-white dark:bg-black p-[2px]">
                                 <Avatar className="w-16 h-16 border-2 border-white dark:border-black">
                                     <AvatarImage src={product.img} alt={product.name} className="object-cover" />
