@@ -231,11 +231,12 @@ export default function GroupBuyPage() {
     }));
   };
 
-  const handleEnableProduct = async (productName: string, currentIsEnabled?: boolean) => {
+  const handleEnableProduct = async (productName: string, isValue?: any) => {
     if (!leaderId || !isLeader) return;
     setIsEnabling(true);
 
-    // Determine the new state (toggle)
+    // Normalize and toggle
+    const currentIsEnabled = isValue === true || String(isValue).toLowerCase() === 'true' || Number(isValue) === 1;
     const newEnabledState = !currentIsEnabled;
 
     try {

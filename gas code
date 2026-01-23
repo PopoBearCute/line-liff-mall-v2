@@ -65,7 +65,7 @@ function doGet(e) {
                     };
                 }
                 wavesMap[waveId].products.push({
-                    name: row[1],
+                    name: String(row[1]).trim(),
                     origPrice: row[2] ? Number(row[2]) : null,
                     price: row[3],
                     description: row[4] || "",
@@ -103,7 +103,7 @@ function doGet(e) {
             const bLeader = String(row[2]);
             if (bLeader === String(leaderId) && row[6]) {
                 if (!enabledProductsMap[bWave]) enabledProductsMap[bWave] = [];
-                const prods = String(row[6]).split(',');
+                const prods = String(row[6]).split(',').map(s => s.trim()).filter(s => s !== "");
                 enabledProductsMap[bWave].push(...prods);
             }
         });
@@ -137,7 +137,7 @@ function doGet(e) {
                 prod.voters = votersMap[prod.name] || [];
                 prod.buyerAvatars = prodAvatarsMap[prod.name] || []; // [Phase 7]
                 const enabledList = enabledProductsMap[waveObj.wave] || [];
-                prod.isEnabled = enabledList.includes(prod.name);
+                prod.isEnabled = enabledList.includes(prod.name.trim());
             });
         });
         return createJsonResponse({
