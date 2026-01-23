@@ -346,6 +346,75 @@ export default function GroupBuyPage() {
     }
   };
 
+  // [Phase 14] Individual Product Share
+  const handleShareProduct = async (p: Product) => {
+    if (!p) return;
+
+    try {
+      // 处理图片网址 (如果是 Google Drive 则转换)
+      let displayImg = p.img || "https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=600&auto=format&fit=crop";
+      if (displayImg.includes('drive.google.com')) {
+        const fileId = displayImg.match(/[-\w]{25,}/)?.[0];
+        if (fileId) displayImg = `https://lh3.googleusercontent.com/u/0/d/${fileId}=w800-h800-p-k-no-nu`;
+      }
+
+      const cleanName = (p.name || "熱門商品").replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, 30);
+      const shareUrl = `${window.location.origin}${window.location.pathname}?leaderId=${leaderId || ""}`;
+
+      const bubble = {
+        "type": "bubble",
+        "size": "mega",
+        "hero": {
+          "type": "image",
+          "url": displayImg,
+          "size": "full",
+          "aspectRatio": "20:13",
+          "aspectMode": "fit"
+        },
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "contents": [
+            { "type": "text", "text": cleanName, "weight": "bold", "size": "md", "wrap": true, "maxLines": 2 },
+            { "type": "text", "text": "進來湊個單 團主就開團 🔥", "size": "xs", "color": "#E63946", "margin": "sm" }
+          ]
+        },
+        "footer": {
+          "type": "box",
+          "layout": "vertical",
+          "contents": [
+            {
+              "type": "button",
+              "height": "sm",
+              "style": "primary",
+              "color": "#E63946",
+              "action": {
+                "type": "uri",
+                "label": "來去看看",
+                "uri": shareUrl
+              }
+            }
+          ]
+        }
+      };
+
+      if (window.liff && window.liff.isApiAvailable('shareTargetPicker')) {
+        await window.liff.shareTargetPicker({
+          type: "flex",
+          altText: `分享商品：${cleanName}`,
+          contents: {
+            "type": "carousel",
+            "contents": [bubble]
+          }
+        });
+        toast.success("分享成功！");
+      }
+    } catch (error) {
+      console.error("Share failed:", error);
+      toast.error("分享取消或失敗");
+    }
+  };
+
   const handleShare = async () => {
     if (!leaderId) return;
 
@@ -570,6 +639,7 @@ export default function GroupBuyPage() {
                 onSingleSubmit={handleSubmit}
                 submittingProduct={submittingProduct}
                 onEnableProduct={handleEnableProduct} // Pass the handler
+                onShare={handleShareProduct}
               />
             </div>
           )}
@@ -589,6 +659,7 @@ export default function GroupBuyPage() {
                 onRemoveVoter={handleRemoveVoter}
                 onSingleSubmit={handleSubmit}
                 submittingProduct={submittingProduct}
+                onShare={handleShareProduct}
               />
             </div>
           )}

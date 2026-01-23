@@ -32,6 +32,7 @@ interface IGFeedCardProps {
     leaderName?: string;
     currentUserId?: string; // 新增：供檢查個人登記上限使用
     onEnableProduct?: () => void; // Toggle handler
+    onShare?: (product: Product) => void;
 }
 
 export function IGFeedCard({
@@ -47,7 +48,8 @@ export function IGFeedCard({
     currentUserId,
     onSubmit,
     isSubmitting = false,
-    onEnableProduct
+    onEnableProduct,
+    onShare
 }: IGFeedCardProps & { onSubmit?: () => void; isSubmitting?: boolean }) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
@@ -160,8 +162,14 @@ export function IGFeedCard({
                             />
                         </div>
                     ) : (
-                        <button className="text-gray-900 dark:text-white">
-                            <MoreHorizontal className="w-5 h-5" />
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onShare?.(product);
+                            }}
+                            className="text-gray-400 hover:text-primary-blue transition-colors active:scale-90"
+                        >
+                            <Send className="w-5 h-5 -rotate-12 translate-y-[-1px]" />
                         </button>
                     )}
                 </div>
