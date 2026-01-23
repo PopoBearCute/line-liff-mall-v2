@@ -215,7 +215,10 @@ function doPost(e) {
                 let list = currentEnabled ? currentEnabled.split(',').map(s => s.trim()).filter(s => s !== "") : [];
                 const targetName = String(prodName).trim();
                 
-                if (isEnabled === true || isEnabled === 'true') {
+                // 寬鬆判斷 boolean
+                const shouldEnable = (isEnabled === true || String(isEnabled).toLowerCase() === 'true' || isEnabled === 1);
+
+                if (shouldEnable) {
                     // 啟用：加入清單 (若不存在)
                     if (!list.includes(targetName)) {
                         list.push(targetName);
@@ -228,7 +231,9 @@ function doPost(e) {
                 bindingSheet.getRange(rowIdx, 7).setValue(list.join(','));
             } else {
                 // 新建 binding row (僅在啟用時才新增)
-                if (isEnabled === true || isEnabled === 'true') {
+                const shouldEnable = (isEnabled === true || String(isEnabled).toLowerCase() === 'true' || isEnabled === 1);
+                
+                if (shouldEnable) {
                     bindingSheet.appendRow([
                         bindingKey, wave, leaderId, leaderId, '團購主', new Date(), prodName
                     ]);
