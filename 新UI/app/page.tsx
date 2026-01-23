@@ -232,36 +232,58 @@ export default function GroupBuyPage() {
   };
 
   const handleEnableProduct = async (productName: string, isValue?: any) => {
-    if (!leaderId || !isLeader) return;
+    // [DEBUG] Step 1: Entry check
+    toast.info(`[DEBUG 1] 進入 handleEnableProduct`, { description: `商品: ${productName}, isValue: ${isValue}` });
+
+    if (!leaderId || !isLeader) {
+      toast.error(`[DEBUG] 權限不足`, { description: `leaderId: ${leaderId}, isLeader: ${isLeader}` });
+      return;
+    }
     setIsEnabling(true);
 
     // Normalize and toggle
     const currentIsEnabled = isValue === true || String(isValue).toLowerCase() === 'true' || Number(isValue) === 1;
     const newEnabledState = !currentIsEnabled;
 
+    // [DEBUG] Step 2: State calculation
+    toast.info(`[DEBUG 2] 狀態計算`, { description: `目前: ${currentIsEnabled}, 新狀態: ${newEnabledState}` });
+
     try {
       const wave = activeWaves.find((w: ActiveWave) => w.products.some((p: Product) => p.name === productName))?.wave;
-      if (!wave) throw new Error("Wave not found");
+      if (!wave) {
+        toast.error(`[DEBUG] 找不到 Wave`);
+        throw new Error("Wave not found");
+      }
+
+      // [DEBUG] Step 3: Request payload
+      const payload = {
+        action: 'enable_product',
+        wave: wave,
+        leaderId: leaderId,
+        leaderName: userProfile?.displayName || '團購主',
+        prodName: productName,
+        isEnabled: newEnabledState
+      };
+      toast.info(`[DEBUG 3] 發送請求`, { description: `Wave: ${wave}, isEnabled: ${newEnabledState}` });
 
       const response = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'enable_product',
-          wave: wave,
-          leaderId: leaderId,
-          leaderName: userProfile?.displayName || '團購主',
-          prodName: productName,
-          isEnabled: newEnabledState // Pass the new desired state
-        })
+        body: JSON.stringify(payload)
       });
       const data = await response.json();
+
+      // [DEBUG] Step 4: Response
+      toast.info(`[DEBUG 4] 收到回應`, { description: `success: ${data.success}, found: ${data.debug?.found}` });
+
       if (data.success) {
         toast.success(newEnabledState ? `已開放 ${productName}！` : `已關閉 ${productName}`);
         await loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
+      } else {
+        toast.error(`[DEBUG] API 回傳失敗`, { description: data.error || 'Unknown' });
       }
-    } catch (error) {
-      toast.error("操作失敗");
+    } catch (error: any) {
+      toast.error(`[DEBUG] 錯誤`, { description: error?.message || error?.toString() });
     } finally {
       setIsEnabling(false);
     }
