@@ -205,7 +205,7 @@ export function IGFeedCard({
                     </div>
                 )}
 
-                )}
+
 
                 {/* Avatar Stack */}
                 {product.buyerAvatars && product.buyerAvatars.length > 0 && (
