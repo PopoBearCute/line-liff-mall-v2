@@ -74,8 +74,8 @@ export default function GroupBuyPage() {
 
   // IG-Style Tabs State
   const [activeTab, setActiveTab] = useState(0);
-  const [debugLogs, setDebugLogs] = useState<string[]>([]);
-  const [showDebug, setShowDebug] = useState(false);
+
+  // Fixed Swipe Config based on user tuning
 
   // Fixed Swipe Config based on user tuning
   // Fixed Swipe Config based on user tuning
@@ -84,12 +84,6 @@ export default function GroupBuyPage() {
   // Handle Tab Animation
 
 
-  const addLog = (msg: string, data?: any) => {
-    const timestamp = new Date().toLocaleTimeString();
-    const logEntry = `[${timestamp}] ${msg}${data ? '\n' + JSON.stringify(data, null, 2) : ''}`;
-    setDebugLogs(prev => [logEntry, ...prev].slice(0, 50)); // Keep last 50
-    console.log(msg, data || "");
-  };
 
   useEffect(() => {
     initializeLiff();
@@ -466,8 +460,11 @@ export default function GroupBuyPage() {
         "contents": { "type": "carousel", "contents": [...productBubbles, moreBubble] }
       }];
 
-      addLog("=== 📤 SENDING RESTORED CAROUSEL ===");
-      addLog("Products:", candidateProducts.length);
+      const payload = [{
+        "type": "flex",
+        "altText": `${safeLeaderName} 邀請您參加團購`,
+        "contents": { "type": "carousel", "contents": [...productBubbles, moreBubble] }
+      }];
 
       const res = await window.liff.shareTargetPicker(payload);
       if (res) {
@@ -478,8 +475,6 @@ export default function GroupBuyPage() {
 
     } catch (err: any) {
       console.error("Share Error:", err);
-      addLog("Share Error:", err.message);
-
       // Fallback
       navigator.clipboard.writeText(shareUrl);
       toast.error("圖卡分享失敗 (可能是圖片或格式問題)", { description: "已改為複製連結" });
@@ -524,33 +519,6 @@ export default function GroupBuyPage() {
   return (
     <Suspense fallback={<Loading />}>
       {isLoading && <GolfBallLoader />}
-
-      {/* 🛠️ Control Panels */}
-      <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
-        <button
-          onClick={() => setShowDebug(!showDebug)}
-          className="bg-black/80 text-white text-[10px] px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-auto border border-white/20 shadow-xl"
-        >
-          {showDebug ? "關閉 Debug" : "開啟 Debug"}
-        </button>
-      </div>
-
-      {showDebug && (
-        <div className="fixed inset-0 z-[9998] bg-black/90 text-green-400 p-4 font-mono text-xs overflow-auto pointer-events-auto">
-          <div className="flex justify-between items-center mb-4 sticky top-0 bg-black/90 py-2 border-b border-green-900/50">
-            <h3 className="font-bold text-sm text-white">System Debug Logs</h3>
-            <button onClick={() => setDebugLogs([])} className="text-red-400 border border-red-900/50 px-2 py-0.5 rounded">Clear</button>
-          </div>
-
-
-
-          <div className="whitespace-pre-wrap flex flex-col gap-3 pb-20">
-            {debugLogs.length === 0 ? "No logs yet..." : debugLogs.map((log, i) => (
-              <div key={i} className="border-l-2 border-green-800 pl-2 py-1 bg-green-950/20">{log}</div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="mesh-gradient min-h-screen w-full pb-36 overflow-y-auto">
         <Header
