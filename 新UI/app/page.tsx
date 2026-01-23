@@ -32,7 +32,7 @@ interface Product {
 
 interface ActiveWave {
   wave: string;
-  phase: 'collecting' | 'active' | 'closed';
+  phase: 'collecting' | 'active' | 'closed' | 'preparing';
   products: Product[];
 }
 

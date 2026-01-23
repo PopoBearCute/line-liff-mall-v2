@@ -51,9 +51,10 @@ export function IGFeedCard({
 }: IGFeedCardProps & { onSubmit?: () => void; isSubmitting?: boolean }) {
     const [isLiked, setIsLiked] = useState(false);
     const [isToggling, setIsToggling] = useState(false);
-    const totalVotes = voters.reduce((acc, v) => acc + v.qty, 0);
-    const achievedPercent = Math.min(Math.round((totalVotes / product.moq) * 100), 100);
-    const isTargetMet = totalVotes >= product.moq;
+    const totalVotes = Array.isArray(voters) ? voters.reduce((acc, v) => acc + (Number(v.qty) || 0), 0) : 0;
+    const safeMoq = Math.max(Number(product.moq) || 1, 1);
+    const achievedPercent = Math.min(Math.round((totalVotes / safeMoq) * 100), 100) || 0;
+    const isTargetMet = totalVotes >= safeMoq;
 
     const handleToggle = async () => {
         if (onEnableProduct) {
@@ -211,7 +212,7 @@ export function IGFeedCard({
 
                         {/* Bottom Layer: Target Info | Avatar Stack */}
                         <div className="flex justify-between items-center">
-                            <span className="text-[11px] text-gray-500 font-medium font-outfit">
+                            <span className="text-[11px] text-gray-500 font-medium tracking-tight">
                                 目標 {product.moq} 份 / 已達 {product.currentQty || 0} 份
                             </span>
 
