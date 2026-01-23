@@ -4,389 +4,281 @@
  * 1. 單一入口：根據 LeaderID + 日期自動決定顯示內容
  * 2. 一籃一次送：支援 submit_batch_intent 原子性寫入
  * 3. 寫入鎖：全面導入 LockService
+ * 4. Phase 7: 加入用戶頭像 (Avatar) 整合
  */
-const CHANNEL_ACCESS_TOKEN = 'psDv9EJNm0ayber2tERmUaIIAzOZoCqBwM2zN+rWVn0MDI'; 
-// const SPREADSHEET_ID = '...'; // Removed to use getActiveSpreadsheet() for better portability
+const CHANNEL_ACCESS_TOKEN = 'psDv9EJNm0ayber2tERmUaIIAzOZoCqBwM2zN+rWVn0MDI';
 const SHEET_PRODUCTS = 'Products';
-const SHEET_BINDING  = 'LeaderBinding';
-const SHEET_INTENT   = 'IntentDB';
+const SHEET_BINDING = 'LeaderBinding';
+const SHEET_INTENT = 'IntentDB';
 const SHEET_NOTIFY_LOG = 'NotifyLog';
-
 function doGet(e) {
-  const lock = LockService.getScriptLock();
-  // 讀取請求不加鎖，但為了日誌一致性可考慮，這裡為了效能不鎖
-  try {
-    const params = getCaseInsensitiveParams(e.parameter);
-    const { leaderid: leaderId, userid: userId } = params;
-    
-    // 記錄請求
-    logAction('doGet', { leaderId, userId });
-
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const productSheet = ss.getSheetByName(SHEET_PRODUCTS);
-    const intentSheet = ss.getSheetByName(SHEET_INTENT) || ss.insertSheet(SHEET_INTENT);
-    const bindingSheet = ss.getSheetByName(SHEET_BINDING) || ss.insertSheet(SHEET_BINDING);
-
-    // 1. 取得所有活躍波段 (Active Waves)
-    // 定義欄位索引 (0-based)
-    // WaveID(0), Name(1), Orig(2), Price(3), Desc(4), Img(5), Link(6), MOQ(7), ..., WishStart(9), WishEnd(10), SaleStart(11), SaleEnd(12)
-    const productData = productSheet.getDataRange().getValues().slice(1);
-    const now = new Date();
-    
-    // 整理出所有波段的商品與狀態
-    const wavesMap = {};
-    
-    const debugInfo = {
-      totalRows: productData.length,
-      processedWaves: 0,
-      sampleDates: [],
-      filteredReasons: { closed: 0, noDate: 0 }
-    };
-
-    productData.forEach((row, idx) => {
-      const waveId = String(row[0]).trim();
-      if (!waveId) return;
-
-      // Debug: Log first 3 rows' dates to see raw format
-      if (idx < 3) {
-        debugInfo.sampleDates.push({
-          row: idx + 2,
-          rawWishStart: row[8],
-          parsed: parseDateSafe(row[8])
-        });
-      }
-
-      const wishStart = parseDateSafe(row[8]); // Col I (Index 8)
-      const wishEnd   = parseDateSafe(row[9]); // Col J (Index 9)
-      const saleStart = parseDateSafe(row[10]); // Col K (Index 10)
-      const saleEnd   = parseDateSafe(row[11]); // Col L (Index 11)
-
-      // 修正：將結束日期設定為當天的最後一秒 (23:59:59)，避免一到當天就過期
-      if (wishEnd) wishEnd.setHours(23, 59, 59, 999);
-      if (saleEnd) saleEnd.setHours(23, 59, 59, 999);
-
-      // 判斷階段
-      let phase = 'closed';
-      
-      // 開發測試模式：如果完全沒有填日期，預設強制開啟為 'collecting'
-      // 這樣可以避免格式錯誤導致全滅
-      const isAllEmpty = !row[8] && !row[9] && !row[10] && !row[11];
-      
-      if (isAllEmpty) {
-        phase = 'collecting'; 
-      } else {
-        // 正常日期判斷 (加入有效性檢查)
-        const isValid = (d) => d instanceof Date && !isNaN(d.getTime());
-        
-        if (isValid(wishStart) && isValid(wishEnd) && now >= wishStart && now <= wishEnd) {
-          phase = 'collecting';
-        } else if (isValid(wishEnd) && isValid(saleEnd) && now > wishEnd && now <= saleEnd) {
-          phase = 'active';
-        } else {
-           debugInfo.filteredReasons.closed++;
-        }
-      }
-
-      if (phase !== 'closed') {
-        debugInfo.processedWaves++;
-        if (!wavesMap[waveId]) {
-          wavesMap[waveId] = {
-            wave: waveId,
-            phase: phase,
-            products: []
-          };
-        }
-        
-        const endDate = (phase === 'collecting' && wishEnd) ? Utilities.formatDate(wishEnd, "GMT+8", "MM/dd") : 
-                        (phase === 'active' && saleEnd) ? Utilities.formatDate(saleEnd, "GMT+8", "MM/dd") : "";
-
-        wavesMap[waveId].products.push({
-          name: row[1],
-          origPrice: row[2] ? Number(row[2]) : null,
-          price: row[3],
-          description: row[4] || "",
-          img: row[5],
-          link: row[6] || "", // 商城連結
-          moq: Number(row[7]),
-          endDate: endDate // [Phase 8] 加入截止日期
-        });
-      }
-    });
-
-    const activeWaves = Object.values(wavesMap);
-
-    // 2. 身分識別與權限
-    let isLeader = false;
-    let leaderName = '團購主';
-    
-    // 如果 URL 有帶 leaderId，檢查此人是否為系統登錄的團主
-    // 若 userId (瀏覽者) == leaderId (頁面主)，則視為團主本人登入
-    if (leaderId && userId && String(leaderId).trim() === String(userId).trim()) {
-      isLeader = true;
-    }
-    
-    // 取得團主名稱 (從 Binding 表找最近的一筆記錄，或任何一筆符合 leaderId 的)
-    // 注意：Binding 是 By Wave 的，這裡我們嘗試找該 LeaderID 的通用名稱
-    if (leaderId) {
-      const rawBindingRows = bindingSheet.getDataRange().getValues();
-      // 倒序搜尋最新名稱
-      for (let i = rawBindingRows.length - 1; i >= 1; i--) {
-        // Col 2 is LeaderId (check code logic below, usually stored in binding)
-        // Original code: BindingKey(0), Wave(1), LeaderId(2), LeaderId(3), Name(4)
-        if (String(rawBindingRows[i][2]) === String(leaderId)) {
-          leaderName = rawBindingRows[i][4];
-          break;
-        }
-      }
-    }
-
-    // 3. 抓取意向/訂單數據 (Active Waves Only)
-    // 為了效能，我們一次抓取 IntentDB，然後在記憶體中根據 activeWaves 篩選
-    const intentData = intentSheet.getDataRange().getValues().slice(1);
-    const progressMap = {};     // { [prodName]: totalQty }
-    const votersMap = {};       // { [prodName]: [{name, qty, userId}, ...] }
-    const prodAvatarsMap = {};  // [Phase 7] { [prodName]: [avatar1, avatar2, ...] }
-    
-    // 獲取 LeaderBinding 中的啟用商品 (EnabledProducts)
-    // 結構: { [waveId]: [prodName1, prodName2, ...] }
-    const enabledProductsMap = {};
-    const bindingRows = bindingSheet.getDataRange().getValues().slice(1);
-    bindingRows.forEach(row => {
-        // 假設 LeaderBinding 結構有所擴充或利用備註欄
-        // 舊結構: BindingKey, Wave, LeaderId, UserId, Name, Time
-        // 假設我們將 EnabledProducts 存在第 7 欄 (Index 6)
-        const bWave = String(row[1]).trim();
-        const bLeader = String(row[2]).trim();
-        if (bLeader === String(leaderId).trim() && row[6]) { // Col 7
-             if (!enabledProductsMap[bWave]) enabledProductsMap[bWave] = [];
-             const prods = String(row[6]).split(',').map(s => s.trim()).filter(s => s !== "");
-             enabledProductsMap[bWave].push(...prods);
-        }
-    });
-
-    // 聚合統計
-    intentData.forEach(row => {
-      // Intent: UniqueKey(0), Wave(1), LeaderID(2), UserID(3), ProdName(4), Qty(5), ..., Avatar(8)
-      const rowWave = String(row[1]);
-      const rowLeader = String(row[2]);
-      
-      const isWaveActive = activeWaves.some(w => w.wave === rowWave);
-      
-      if (isWaveActive && rowLeader === String(leaderId || '')) {
-        const prodName = row[4];
-        const qty = Number(row[5]);
-        const uId = row[3];
-        const uName = row[7];
-        const uAvatar = row[8]; // [Phase 7]
-
-        if (qty > 0) {
-          progressMap[prodName] = (progressMap[prodName] || 0) + qty;
-          
-          if (!votersMap[prodName]) votersMap[prodName] = [];
-          votersMap[prodName].push({ name: uName, qty: qty, userId: uId });
-
-          // [Phase 7] 聚合頭像
-          if (!prodAvatarsMap[prodName]) prodAvatarsMap[prodName] = [];
-          if (uAvatar && !prodAvatarsMap[prodName].includes(uAvatar)) {
-            prodAvatarsMap[prodName].push(uAvatar);
-          }
-        }
-      }
-    });
-
-    // 將數據注入到 activeWaves 結構中，方便前端渲染
-    activeWaves.forEach(waveObj => {
-      const enabledList = (enabledProductsMap[waveObj.wave] || []).map(s => s.trim());
-      waveObj.products.forEach(prod => {
-        prod.currentQty = progressMap[prod.name] || 0;
-        prod.voters = votersMap[prod.name] || [];
-        prod.buyerAvatars = prodAvatarsMap[prod.name] || []; // [Phase 7]
-        // 標記是否被團主啟用 (銷售期用)
-        prod.isEnabled = enabledList.includes(prod.name.trim());
-      });
-    });
-
-    return createJsonResponse({ 
-      success: true, 
-      leaderId, 
-      leaderName, 
-      isLeader, 
-      activeWaves,
-      debug: debugInfo // 回傳 Debug 資訊以利除錯 
-    });
-
-  } catch (err) {
-    console.error(err);
-    return createJsonResponse({ success: false, error: err.toString() });
-  }
-}
-
-function doPost(e) {
-  const lock = LockService.getScriptLock();
-  try {
-    // 試圖獲取鎖，最多等待 30 秒
-    lock.waitLock(30000); 
-    
-    const data = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    
-    logAction('doPost', data);
-
-    // --- Action: Batch Submit (一籃一次送) ---
-    if (data.action === 'submit_batch_intent') {
-        const { wave, leaderId, userId, userName, userAvatar, items } = data;
-        // items: [{ prodName, qty }, ...]
-        
-        const intentSheet = ss.getSheetByName(SHEET_INTENT);
-        const bindingSheet = ss.getSheetByName(SHEET_BINDING);
-        
-        // 1. 確保 Binding 存在 (自動註冊 Leader)
-        // 雖然是 batch，但通常屬於同一個 wave
-        const bindingKey = String(leaderId || '').trim() + '_' + String(wave).trim();
-        const bindingFound = bindingSheet.getRange("A:A").createTextFinder(bindingKey).matchEntireCell(true).findNext();
-        if (!bindingFound && leaderId) {
-             bindingSheet.appendRow([
-                 bindingKey, wave, leaderId, leaderId, data.leaderName || '團購主', new Date(), "" // Col 7 for EnabledProducts
-             ]);
-        }
-        
-        // 2. 批次處理商品
-        // 為了效能，這裡還是得逐一檢查 Unique Key。
-        // 若量大，可優化為先讀取所有相關資料到記憶體，但目前 Sheet 讀寫量級還行。
-        items.forEach(item => {
-            const { prodName, qty } = item;
-            const uniqueKey = String(leaderId).trim() + '_' + String(wave).trim() + '_' + String(userId).trim() + '_' + String(prodName).trim();
-            
-            const finder = intentSheet.getRange("A:A").createTextFinder(uniqueKey).matchEntireCell(true);
-            const foundRow = finder.findNext();
-            
-            if (foundRow) {
-                const rowIdx = foundRow.getRow();
-                // 覆蓋模式 or 累加模式？
-                // 根據新 UI 邏輯，前端購物車是 "增量" (delta) 還是 "絕對值"？
-                // 通常 submit_batch 傳遞的是「這次要加多少」。
-                // 若前端傳來的是絕對值，則需先讀取舊值。
-                // 假設前端傳來的是 **增量 (Delta)** (因為購物車按鈕是 +1/-1)
-                
-                const currentQty = Number(intentSheet.getRange(rowIdx, 6).getValue()) || 0;
-                let newQty = currentQty + Number(qty);
-                if (newQty < 0) newQty = 0; // 防呆
-                
-                // 若為 0，是否刪除？目前保留 0 記錄
-                
-                intentSheet.getRange(rowIdx, 6).setValue(newQty);
-                intentSheet.getRange(rowIdx, 7).setValue(new Date());
-                intentSheet.getRange(rowIdx, 8).setValue(userName);
-                intentSheet.getRange(rowIdx, 9).setValue(userAvatar || ""); // [Phase 7] 更新頭像
+    const lock = LockService.getScriptLock();
+    try {
+        const params = getCaseInsensitiveParams(e.parameter);
+        const { leaderid: leaderId, userid: userId } = params;
+        // 記錄請求
+        logAction('doGet', { leaderId, userId });
+        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        const productSheet = ss.getSheetByName(SHEET_PRODUCTS);
+        const intentSheet = ss.getSheetByName(SHEET_INTENT) || ss.insertSheet(SHEET_INTENT);
+        const bindingSheet = ss.getSheetByName(SHEET_BINDING) || ss.insertSheet(SHEET_BINDING);
+        // 1. 取得所有活躍波段 (Active Waves)
+        const productData = productSheet.getDataRange().getValues().slice(1);
+        const now = new Date();
+        const wavesMap = {};
+        const debugInfo = {
+            totalRows: productData.length,
+            processedWaves: 0,
+            sampleDates: [],
+            filteredReasons: { closed: 0, noDate: 0 }
+        };
+        productData.forEach((row, idx) => {
+            const waveId = String(row[0]).trim();
+            if (!waveId) return;
+            const wishStart = parseDateSafe(row[8]);
+            const wishEnd = parseDateSafe(row[9]);
+            const saleStart = parseDateSafe(row[10]);
+            const saleEnd = parseDateSafe(row[11]);
+            if (wishEnd) wishEnd.setHours(23, 59, 59, 999);
+            if (saleEnd) saleEnd.setHours(23, 59, 59, 999);
+            let phase = 'closed';
+            const isAllEmpty = !row[8] && !row[9] && !row[10] && !row[11];
+            if (isAllEmpty) {
+                phase = 'collecting';
             } else {
-                // 新增
-                let initialQty = Number(qty);
-                if (initialQty < 0) initialQty = 0;
-                if (initialQty > 0) { // 只在數量 > 0 時新增記錄
-                    // [Phase 7] 新增欄位 I (Index 9)
-                    intentSheet.appendRow([
-                        uniqueKey, wave, leaderId, userId, prodName, initialQty, new Date(), userName, userAvatar || ""
-                    ]);
+                const isValid = (d) => d instanceof Date && !isNaN(d.getTime());
+                if (isValid(wishStart) && isValid(wishEnd) && now >= wishStart && now <= wishEnd) {
+                    phase = 'collecting';
+                } else if (isValid(wishEnd) && isValid(saleEnd) && now > wishEnd && now <= saleEnd) {
+                    phase = 'active';
+                } else {
+                    debugInfo.filteredReasons.closed++;
+                }
+            }
+            if (phase !== 'closed') {
+                debugInfo.processedWaves++;
+                if (!wavesMap[waveId]) {
+                    wavesMap[waveId] = {
+                        wave: waveId,
+                        phase: phase,
+                        products: []
+                    };
+                }
+                wavesMap[waveId].products.push({
+                    name: row[1],
+                    origPrice: row[2] ? Number(row[2]) : null,
+                    price: row[3],
+                    description: row[4] || "",
+                    img: row[5],
+                    link: row[6] || "",
+                    moq: Number(row[7])
+                });
+            }
+        });
+        const activeWaves = Object.values(wavesMap);
+        // 2. 身分識別與權限
+        let isLeader = false;
+        let leaderName = '團購主';
+        if (leaderId && userId && String(leaderId).trim() === String(userId).trim()) {
+            isLeader = true;
+        }
+        if (leaderId) {
+            const rawBindingRows = bindingSheet.getDataRange().getValues();
+            for (let i = rawBindingRows.length - 1; i >= 1; i--) {
+                if (String(rawBindingRows[i][2]) === String(leaderId)) {
+                    leaderName = rawBindingRows[i][4];
+                    break;
+                }
+            }
+        }
+        // 3. 抓取意向/訂單數據 (Active Waves Only)
+        const intentData = intentSheet.getDataRange().getValues().slice(1);
+        const progressMap = {};
+        const votersMap = {};
+        const prodAvatarsMap = {};  // [Phase 7] 
+        const enabledProductsMap = {};
+        const bindingRows = bindingSheet.getDataRange().getValues().slice(1);
+        bindingRows.forEach(row => {
+            const bWave = String(row[1]);
+            const bLeader = String(row[2]);
+            if (bLeader === String(leaderId) && row[6]) {
+                if (!enabledProductsMap[bWave]) enabledProductsMap[bWave] = [];
+                const prods = String(row[6]).split(',');
+                enabledProductsMap[bWave].push(...prods);
+            }
+        });
+        // 聚合統計
+        intentData.forEach(row => {
+            const rowWave = String(row[1]);
+            const rowLeader = String(row[2]);
+            const isWaveActive = activeWaves.some(w => w.wave === rowWave);
+            if (isWaveActive && rowLeader === String(leaderId || '')) {
+                const prodName = row[4];
+                const qty = Number(row[5]);
+                const uId = row[3];
+                const uName = row[7];
+                const uAvatar = row[8]; // [Phase 7]
+                if (qty > 0) {
+                    progressMap[prodName] = (progressMap[prodName] || 0) + qty;
+                    if (!votersMap[prodName]) votersMap[prodName] = [];
+                    votersMap[prodName].push({ name: uName, qty: qty, userId: uId });
+                    // [Phase 7] 聚合頭像
+                    if (!prodAvatarsMap[prodName]) prodAvatarsMap[prodName] = [];
+                    if (uAvatar && !prodAvatarsMap[prodName].includes(uAvatar)) {
+                        prodAvatarsMap[prodName].push(uAvatar);
+                    }
                 }
             }
         });
-        
-        return createJsonResponse({ success: true });
+        // 將數據注入到 activeWaves 結構中
+        activeWaves.forEach(waveObj => {
+            waveObj.products.forEach(prod => {
+                prod.currentQty = progressMap[prod.name] || 0;
+                prod.voters = votersMap[prod.name] || [];
+                prod.buyerAvatars = prodAvatarsMap[prod.name] || []; // [Phase 7]
+                const enabledList = enabledProductsMap[waveObj.wave] || [];
+                prod.isEnabled = enabledList.includes(prod.name);
+            });
+        });
+        return createJsonResponse({
+            success: true,
+            leaderId,
+            leaderName,
+            isLeader,
+            activeWaves,
+            debug: debugInfo
+        });
+    } catch (err) {
+        console.error(err);
+        return createJsonResponse({ success: false, error: err.toString() });
     }
-
-    // --- Action: Enable Product (團購主啟用商品) ---
-    if (data.action === 'enable_product') {
-        const { wave, leaderId, prodName } = data;
-        const bindingSheet = ss.getSheetByName(SHEET_BINDING);
-        const bindingKey = String(leaderId).trim() + '_' + String(wave).trim();
-        
-        const finder = bindingSheet.getRange("A:A").createTextFinder(bindingKey).matchEntireCell(true);
-        const found = finder.findNext();
-        
-        if (found) {
-            let rowIdx = found.getRow();
-            let currentEnabled = String(bindingSheet.getRange(rowIdx, 7).getValue() || '');
-            let list = currentEnabled ? currentEnabled.split(',').map(s => s.trim()).filter(s => s !== "") : [];
-            const targetName = prodName.trim();
-            if (!list.includes(targetName)) {
-                list.push(targetName);
-                bindingSheet.getRange(rowIdx, 7).setValue(list.join(','));
+}
+function doPost(e) {
+    const lock = LockService.getScriptLock();
+    try {
+        lock.waitLock(30000);
+        const data = JSON.parse(e.postData.contents);
+        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        logAction('doPost', data);
+        // --- Action: Batch Submit (一籃一次送) ---
+        if (data.action === 'submit_batch_intent') {
+            const { wave, leaderId, userId, userName, userAvatar, items } = data;
+            const intentSheet = ss.getSheetByName(SHEET_INTENT) || ss.insertSheet(SHEET_INTENT);
+            const bindingSheet = ss.getSheetByName(SHEET_BINDING) || ss.insertSheet(SHEET_BINDING);
+            // Ensure IntentDB headers
+            if (intentSheet.getLastRow() === 0) {
+                intentSheet.appendRow(["UniqueKey", "Wave", "LeaderId", "UserId", "ProdName", "Qty", "UpdateTime", "UserName", "UserAvatar"]);
             }
-        } else {
-            bindingSheet.appendRow([
-                bindingKey, wave, leaderId, leaderId, data.leaderName || '團購主', new Date(), prodName.trim()
-            ]);
+            const bindingKey = String(leaderId || '').trim() + '_' + String(wave).trim();
+            const bindingFound = bindingSheet.getRange("A:A").createTextFinder(bindingKey).matchEntireCell(true).findNext();
+            if (!bindingFound && leaderId) {
+                bindingSheet.appendRow([
+                    bindingKey, wave, leaderId, leaderId, data.leaderName || '團購主', new Date(), ""
+                ]);
+            }
+            items.forEach(item => {
+                const { prodName, qty } = item;
+                const uniqueKey = String(leaderId).trim() + '_' + String(wave).trim() + '_' + String(userId).trim() + '_' + String(prodName).trim();
+                const finder = intentSheet.getRange("A:A").createTextFinder(uniqueKey).matchEntireCell(true);
+                const foundRow = finder.findNext();
+                if (foundRow) {
+                    const rowIdx = foundRow.getRow();
+                    const currentQty = Number(intentSheet.getRange(rowIdx, 6).getValue()) || 0;
+                    let newQty = currentQty + Number(qty);
+                    if (newQty < 0) newQty = 0;
+                    intentSheet.getRange(rowIdx, 6).setValue(newQty);
+                    intentSheet.getRange(rowIdx, 7).setValue(new Date());
+                    intentSheet.getRange(rowIdx, 8).setValue(userName);
+                    intentSheet.getRange(rowIdx, 9).setValue(userAvatar || ""); // [Phase 7] 更新頭像
+                } else {
+                    let initialQty = Number(qty);
+                    if (initialQty < 0) initialQty = 0;
+                    if (initialQty > 0) {
+                        intentSheet.appendRow([
+                            uniqueKey, wave, leaderId, userId, prodName, initialQty, new Date(), userName, userAvatar || ""
+                        ]);
+                    }
+                }
+            });
+            return createJsonResponse({ success: true });
         }
-        return createJsonResponse({ success: true });
+        // --- Action: Enable Product (團購主啟用/停用商品) ---
+        if (data.action === 'enable_product') {
+            const { wave, leaderId, prodName, isEnabled } = data; // 新增 isEnabled 參數
+            const bindingSheet = ss.getSheetByName(SHEET_BINDING) || ss.insertSheet(SHEET_BINDING);
+            const bindingKey = String(leaderId).trim() + '_' + String(wave).trim();
+            const finder = bindingSheet.getRange("A:A").createTextFinder(bindingKey).matchEntireCell(true);
+            const found = finder.findNext();
+            if (found) {
+                let rowIdx = found.getRow();
+                let currentEnabled = String(bindingSheet.getRange(rowIdx, 7).getValue() || '');
+                let list = currentEnabled ? currentEnabled.split(',').map(s => s.trim()).filter(s => s !== "") : [];
+                const targetName = String(prodName).trim();
+                
+                if (isEnabled === true || isEnabled === 'true') {
+                    // 啟用：加入清單 (若不存在)
+                    if (!list.includes(targetName)) {
+                        list.push(targetName);
+                    }
+                } else {
+                    // 停用：從清單移除
+                    list = list.filter(name => name !== targetName);
+                }
+                
+                bindingSheet.getRange(rowIdx, 7).setValue(list.join(','));
+            } else {
+                // 新建 binding row (僅在啟用時才新增)
+                if (isEnabled === true || isEnabled === 'true') {
+                    bindingSheet.appendRow([
+                        bindingKey, wave, leaderId, leaderId, '團購主', new Date(), prodName
+                    ]);
+                }
+            }
+            return createJsonResponse({ success: true });
+        }
+        // --- Action: Auto Register Leader (團主自動註冊) ---
+        if (data.action === 'auto_register_leader') {
+            const { wave, leaderId, leaderName } = data;
+            const bindingSheet = ss.getSheetByName(SHEET_BINDING) || ss.insertSheet(SHEET_BINDING);
+            const bindingKey = String(leaderId).trim() + '_' + String(wave).trim();
+            const finder = bindingSheet.getRange("A:A").createTextFinder(bindingKey).matchEntireCell(true);
+            const found = finder.findNext();
+            if (!found && leaderId) {
+                bindingSheet.appendRow([
+                    bindingKey, wave, leaderId, leaderId, leaderName || '團購主', new Date(), ""
+                ]);
+            }
+            return createJsonResponse({ success: true });
+        }
+    } catch (err) {
+        return createJsonResponse({ success: false, error: err.toString() });
+    } finally {
+        lock.releaseLock();
     }
-
-    // --- Action: Auto Register Leader (團主自動註冊) ---
-    if (data.action === 'auto_register_leader') {
-        const { wave, leaderId, leaderName } = data;
-        const bindingSheet = ss.getSheetByName(SHEET_BINDING);
-        
-        if (!bindingSheet) {
-            return createJsonResponse({ success: false, error: 'Sheet LeaderBinding missing' });
-        }
-
-        const bindingKey = String(leaderId).trim() + '_' + String(wave).trim();
-        
-        // 檢查是否已存在
-        const finder = bindingSheet.getRange("A:A").createTextFinder(bindingKey).matchEntireCell(true);
-        const found = finder.findNext();
-        
-        if (!found && leaderId) {
-            // 不存在則新增
-            bindingSheet.appendRow([
-                bindingKey, wave, leaderId, leaderId, leaderName || '團購主', new Date(), ""
-            ]);
-        }
-        
-        return createJsonResponse({ success: true });
-    }
-    
-    // --- Legacy Support or Other Actions ---
-    // (保留舊有 action 邏輯以免完全壞掉，但建議全面轉向 batch)
-
-  } catch (err) {
-    return createJsonResponse({ success: false, error: err.toString() });
-  } finally {
-    lock.releaseLock();
-  }
 }
-
 function getCaseInsensitiveParams(obj) {
-  const result = {};
-  for (let key in obj) {
-    result[key.toLowerCase()] = obj[key];
-  }
-  return result;
+    const result = {};
+    for (let key in obj) {
+        result[key.toLowerCase()] = obj[key];
+    }
+    return result;
 }
-
 function logAction(type, data) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let logSheet = ss.getSheetByName(SHEET_NOTIFY_LOG) || ss.insertSheet(SHEET_NOTIFY_LOG);
-    if (logSheet.getLastRow() === 0) {
-      logSheet.appendRow(['Timestamp', 'Type', 'Data']);
-    }
-    logSheet.appendRow([new Date(), type, JSON.stringify(data)]);
-    
-    const lastRow = logSheet.getLastRow();
-    if (lastRow > 1001) {
-      logSheet.deleteRows(2, lastRow - 1001);
-    }
-  } catch (e) {}
+    try {
+        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        let logSheet = ss.getSheetByName(SHEET_NOTIFY_LOG) || ss.insertSheet(SHEET_NOTIFY_LOG);
+        if (logSheet.getLastRow() === 0) {
+            logSheet.appendRow(['Timestamp', 'Type', 'Data']);
+        }
+        logSheet.appendRow([new Date(), type, JSON.stringify(data)]);
+    } catch (e) { }
 }
-
 function createJsonResponse(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
-
-// 輔助：安全日期解析
 function parseDateSafe(val) {
-  if (!val) return null;
-  if (val instanceof Date) return val;
-  const d = new Date(val);
-  return isNaN(d.getTime()) ? null : d;
+    if (!val) return null;
+    if (val instanceof Date) return val;
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
 }
