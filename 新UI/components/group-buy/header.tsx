@@ -1,4 +1,5 @@
 import { Crown, User, Share2 } from "lucide-react";
+import Image from "next/image";
 
 interface HeaderProps {
   wave: string;
@@ -8,7 +9,7 @@ interface HeaderProps {
   onShare?: () => void;
 }
 
-export function Header({ roleTag, isLeader, onShare }: HeaderProps) {
+export function Header({ roleTag, isLeader, onShare, leaderName }: HeaderProps) {
   return (
     <div className="fixed top-4 right-4 z-[50] flex gap-2">
       {/* 團主專用分享按鈕 */}
@@ -25,7 +26,7 @@ export function Header({ roleTag, isLeader, onShare }: HeaderProps) {
       {/* 身分識別圖示 */}
       <div
         className={`
-          flex h-10 w-10 items-center justify-center rounded-full shadow-lg backdrop-blur-md border border-white/20
+          flex h-10 w-10 items-center justify-center rounded-full shadow-lg backdrop-blur-md border border-white/20 overflow-hidden
           ${isLeader
             ? "bg-gradient-to-br from-amber-400/90 to-amber-500/90 text-white"
             : "bg-white/70 text-gray-700"
@@ -34,7 +35,13 @@ export function Header({ roleTag, isLeader, onShare }: HeaderProps) {
         title={roleTag}
       >
         {isLeader ? (
-          <Crown className="h-5 w-5" />
+          <Image
+            src="/leader-avatar.png"
+            alt={leaderName || "Leader"}
+            width={40}
+            height={40}
+            className="w-full h-full object-cover"
+          />
         ) : (
           <User className="h-5 w-5" />
         )}

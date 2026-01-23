@@ -523,6 +523,7 @@ export default function GroupBuyPage() {
           isLeader={isLeader}
           onShare={handleShare}
           wave={activeWaves[0]?.wave || ""}
+          leaderName={leaderName}
         />
 
 

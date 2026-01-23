@@ -96,7 +96,13 @@ export function IGFeedCard({
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-full p-[1.5px] bg-gradient-to-tr from-yellow-400 to-pink-600">
                         <div className="w-full h-full rounded-full bg-white dark:bg-black p-[1.5px] overflow-hidden">
-                            <div className="w-full h-full bg-gray-200 flex items-center justify-center text-[10px]">L</div>
+                            <Image
+                                src="/leader-avatar.png"
+                                alt={leaderName || "Leader"}
+                                width={32}
+                                height={32}
+                                className="w-full h-full object-cover"
+                            />
                         </div>
                     </div>
                     <div className="flex flex-col">
