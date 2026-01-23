@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BadgeCheck, Heart, MessageCircle, Send, MoreHorizontal, Plus, Minus, Flame, Box, Clock, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Product {
     name: string;
@@ -14,6 +15,7 @@ interface Product {
     description: string;
     link?: string;
     isEnabled?: boolean;
+    buyerAvatars?: string[];
 }
 
 interface IGFeedCardProps {
@@ -200,6 +202,25 @@ export function IGFeedCard({
                                 style={{ width: mode === 'collecting' ? `${achievedPercent}%` : '80%' }}
                             ></div>
                         </div>
+                    </div>
+                )}
+
+                )}
+
+                {/* Avatar Stack */}
+                {product.buyerAvatars && product.buyerAvatars.length > 0 && (
+                    <div className="flex items-center -space-x-2 mb-2 ml-1">
+                        {product.buyerAvatars.slice(0, 5).map((avatar, i) => (
+                            <Avatar key={i} className="w-6 h-6 border-2 border-white dark:border-black">
+                                <AvatarImage src={avatar} />
+                                <AvatarFallback className="text-[9px]">U</AvatarFallback>
+                            </Avatar>
+                        ))}
+                        {product.buyerAvatars.length > 5 && (
+                            <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px] border-2 border-white dark:border-black font-medium text-gray-500">
+                                +{product.buyerAvatars.length - 5}
+                            </div>
+                        )}
                     </div>
                 )}
 
