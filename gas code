@@ -206,42 +206,38 @@ function doPost(e) {
         }
         // --- Action: Enable Product (團購主啟用/停用商品) ---
         if (data.action === 'enable_product') {
-            const { wave, leaderId, prodName, isEnabled } = data; // 新增 isEnabled 參數
+            const { wave, leaderId, prodName, isEnabled } = data;
             const bindingSheet = ss.getSheetByName(SHEET_BINDING) || ss.insertSheet(SHEET_BINDING);
             const bindingKey = String(leaderId).trim() + '_' + String(wave).trim();
             const finder = bindingSheet.getRange("A:A").createTextFinder(bindingKey).matchEntireCell(true);
             const found = finder.findNext();
+            
+            const targetName = String(prodName || "").trim();
+            const shouldEnable = (isEnabled === true || String(isEnabled).toLowerCase() === 'true' || isEnabled === 1);
+            
+            logAction('DEBUG_Toggle', { prodName: targetName, shouldEnable, bindingKey });
+
             if (found) {
                 let rowIdx = found.getRow();
                 let currentEnabled = String(bindingSheet.getRange(rowIdx, 7).getValue() || '');
+                // 強制清理清單中的每一個項目
                 let list = currentEnabled ? currentEnabled.split(',').map(s => s.trim()).filter(s => s !== "") : [];
-                const targetName = String(prodName).trim();
                 
-                // 寬鬆判斷 boolean
-                const shouldEnable = (isEnabled === true || String(isEnabled).toLowerCase() === 'true' || isEnabled === 1);
-
                 if (shouldEnable) {
-                    // 啟用：加入清單 (若不存在)
                     if (!list.includes(targetName)) {
                         list.push(targetName);
                     }
                 } else {
-                    // 停用：從清單移除
                     list = list.filter(name => name !== targetName);
                 }
                 
                 bindingSheet.getRange(rowIdx, 7).setValue(list.join(','));
-            } else {
-                // 新建 binding row (僅在啟用時才新增)
-                const shouldEnable = (isEnabled === true || String(isEnabled).toLowerCase() === 'true' || isEnabled === 1);
-                
-                if (shouldEnable) {
-                    bindingSheet.appendRow([
-                        bindingKey, wave, leaderId, leaderId, '團購主', new Date(), prodName
-                    ]);
-                }
+            } else if (shouldEnable) {
+                bindingSheet.appendRow([
+                    bindingKey, wave, leaderId, leaderId, '團購主', new Date(), targetName
+                ]);
             }
-            return createJsonResponse({ success: true });
+            return createJsonResponse({ success: true, debug: { targetName, shouldEnable, found: !!found } });
         }
         // --- Action: Auto Register Leader (團主自動註冊) ---
         if (data.action === 'auto_register_leader') {
