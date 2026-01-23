@@ -97,7 +97,7 @@ export function IGFeedCard({
                     <div className="w-8 h-8 rounded-full p-[1.5px] bg-gradient-to-tr from-yellow-400 to-pink-600">
                         <div className="w-full h-full rounded-full bg-white dark:bg-black p-[1.5px] overflow-hidden">
                             <Image
-                                src="/leader-avatar.png"
+                                src="/line-liff-mall-v2/leader-avatar.png"
                                 alt={leaderName || "Leader"}
                                 width={32}
                                 height={32}

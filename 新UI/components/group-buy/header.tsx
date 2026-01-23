@@ -36,7 +36,7 @@ export function Header({ roleTag, isLeader, onShare, leaderName }: HeaderProps) 
       >
         {isLeader ? (
           <Image
-            src="/leader-avatar.png"
+            src="/line-liff-mall-v2/leader-avatar.png"
             alt={leaderName || "Leader"}
             width={40}
             height={40}
