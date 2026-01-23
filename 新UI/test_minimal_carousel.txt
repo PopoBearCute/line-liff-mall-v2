@@ -1,0 +1,35 @@
+// 這是要測試的最簡化 Carousel JSON
+// 請用電腦打開此檔案，貼到瀏覽器 console 測試
+
+const testPayload = [{
+  "type": "flex",
+  "altText": "Test",
+  "contents": {
+    "type": "carousel",
+    "contents": [
+      {
+        "type": "bubble",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "contents": [
+            { "type": "text", "text": "Card 1" }
+          ]
+        }
+      },
+      {
+        "type": "bubble",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "contents": [
+            { "type": "text", "text": "Card 2" }
+          ]
+        }
+      }
+    ]
+  }
+}];
+
+// 然後執行：
+// await window.liff.shareTargetPicker(testPayload);
