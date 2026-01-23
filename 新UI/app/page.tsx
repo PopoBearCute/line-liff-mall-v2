@@ -265,7 +265,11 @@ export default function GroupBuyPage() {
 
       const data = await response.json();
       if (data.success) {
-        toast.success(newEnabledState ? `已開放 ${productName}` : `已關閉 ${productName}`);
+        // Show detailed debug info from backend
+        const debugInfo = data.debug ? `(Row: ${data.debug.rows?.join(',') || 'New'}, Found: ${data.debug.found})` : '';
+        toast.success(newEnabledState ? `已開放 ${productName} ${debugInfo}` : `已關閉 ${productName} ${debugInfo}`, {
+          duration: 5000
+        });
         await loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
       } else {
         throw new Error(data.error);
@@ -664,16 +668,28 @@ export default function GroupBuyPage() {
             leaderName={leaderName}
             products={storiesProducts}
             onProductClick={(name: string) => {
-              // 1. 若商品在現有 Tab，直接捲動
-              const element = document.getElementById(name);
-              if (element) {
-                element.scrollIntoView({ behavior: 'smooth' });
-              } else {
-                // 2. 若找不到，切換到許願 Tab 再捲動 (因為限動顯示的是登記中商品)
-                setActiveTab(1);
+              // Confirm which tab the product belongs to
+              const isActive = activeProducts.some(p => p.name === name);
+              const isCollecting = collectingProducts.some(p => p.name === name);
+
+              let targetTab = activeTab;
+              if (isActive) targetTab = 0; // Hot Sale Tab
+              else if (isCollecting) targetTab = 1; // Wishlist Tab
+
+              if (activeTab !== targetTab) {
+                setActiveTab(targetTab);
+                // Wait for tab switch render
                 setTimeout(() => {
-                  document.getElementById(name)?.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
+                  const element = document.getElementById(name);
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  } else {
+                    console.warn(`Element ${name} not found after tab switch`);
+                  }
+                }, 150);
+              } else {
+                const element = document.getElementById(name);
+                element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }
             }}
           />
