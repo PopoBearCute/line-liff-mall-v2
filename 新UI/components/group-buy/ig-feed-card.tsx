@@ -242,7 +242,7 @@ export function IGFeedCard({
                     <span className={isExpanded ? "" : "line-clamp-2"}>
                         {product.description}
                     </span>
-                    {!isExpanded && product.description && product.description.length > 30 && (
+                    {!isExpanded && typeof product.description === 'string' && product.description.length > 30 && (
                         <button
                             onClick={() => setIsExpanded(true)}
                             className="text-gray-500 ml-1 hover:text-gray-700 text-[13px]"

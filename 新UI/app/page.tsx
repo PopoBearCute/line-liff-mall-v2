@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/group-buy/header";
 import { IGProductFeed } from "@/components/group-buy/ig-product-feed";
+import { StoriesBar } from "@/components/group-buy/stories-bar";
 import { StickyTabs } from "@/components/group-buy/sticky-tabs";
 
 import { SeedMode } from "@/components/group-buy/seed-mode";
@@ -529,6 +530,18 @@ export default function GroupBuyPage() {
           leaderName={leaderName}
         />
 
+        {/* Stories Bar */}
+        <div className="pt-16 pb-2">
+          <StoriesBar
+            leaderName={leaderName}
+            products={activeProducts}
+            onProductClick={(name: string) => {
+              // Simple anchor scrolling or toast for now
+              // We can implement actual scrolling if products have IDs, but for now just a toast demo or no-op
+              console.log("Clicked story:", name);
+            }}
+          />
+        </div>
 
         {/* 4. Tab Content (IG Feed Style) */}
         <div className="flex-1 w-full max-w-md mx-auto pt-4 px-0">
