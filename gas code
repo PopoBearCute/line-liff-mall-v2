@@ -273,7 +273,7 @@ function doPost(e) {
                 intentSheet.getRange(rowIdx, 6).setValue(newQty);
                 intentSheet.getRange(rowIdx, 7).setValue(new Date());
                 intentSheet.getRange(rowIdx, 8).setValue(userName);
-                if (userAvatar) intentSheet.getRange(rowIdx, 9).setValue(userAvatar); // [Phase 7] 更新頭像
+                intentSheet.getRange(rowIdx, 9).setValue(userAvatar || ""); // [Phase 7] 更新頭像
             } else {
                 // 新增
                 let initialQty = Number(qty);
