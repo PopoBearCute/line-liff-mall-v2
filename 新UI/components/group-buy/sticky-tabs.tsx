@@ -9,8 +9,7 @@ interface StickyTabsProps {
 export function StickyTabs({ activeTab, onTabChange }: StickyTabsProps) {
     const tabs = [
         { name: "熱銷開團", icon: Flame },
-        { name: "許願登記", icon: MessageCircleHeart },
-        { name: "團主籌備", icon: PackageOpen }
+        { name: "許願登記", icon: MessageCircleHeart }
     ];
 
     return (

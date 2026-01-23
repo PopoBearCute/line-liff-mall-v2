@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { BadgeCheck, Heart, MessageCircle, Send, MoreHorizontal, Plus, Minus, Flame, Box, Clock } from "lucide-react";
+import { BadgeCheck, Heart, MessageCircle, Send, MoreHorizontal, Plus, Minus, Flame, Box, Clock, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { Switch } from "@/components/ui/switch";
 
 interface Product {
     name: string;
@@ -26,6 +27,7 @@ interface IGFeedCardProps {
     isLeader?: boolean;
     leaderName?: string;
     currentUserId?: string; // 新增：供檢查個人登記上限使用
+    onEnableProduct?: () => void; // Toggle handler
 }
 
 export function IGFeedCard({
@@ -40,12 +42,34 @@ export function IGFeedCard({
     leaderName,
     currentUserId,
     onSubmit,
-    isSubmitting = false
+    isSubmitting = false,
+    onEnableProduct
 }: IGFeedCardProps & { onSubmit?: () => void; isSubmitting?: boolean }) {
     const [isLiked, setIsLiked] = useState(false);
+    const [isToggling, setIsToggling] = useState(false);
     const totalVotes = voters.reduce((acc, v) => acc + v.qty, 0);
     const achievedPercent = Math.min(Math.round((totalVotes / product.moq) * 100), 100);
     const isTargetMet = totalVotes >= product.moq;
+
+    const handleToggle = async () => {
+        if (onEnableProduct) {
+            setIsToggling(true);
+            await onEnableProduct();
+            // We don't set setIsToggling(false) here immediately if we expect a prop update to clear it?
+            // Actually, since onEnableProduct in page.tsx is async but void in signature here (we didn't type it async), 
+            // we should probably just rely on re-render. 
+            // But let's set it back to false after a delay or just let it spin until re-render functionality?
+            // Better to timeout or assume parent update. 
+            // For now, let's just let it spin until props change.
+            setTimeout(() => setIsToggling(false), 2000); // Failsafe
+        }
+    };
+
+    // Check if enabled (handling string/number/boolean)
+    const isEnabled = product.isEnabled === true ||
+        String(product.isEnabled).toLowerCase() === 'true' ||
+        Number(product.isEnabled) === 1;
+
 
     // --- Dynamic Configuration based on Mode ---
     const config = {
@@ -118,9 +142,23 @@ export function IGFeedCard({
                         </div>
                     </div>
                 </div>
-                <button className="text-gray-900 dark:text-white">
-                    <MoreHorizontal className="w-5 h-5" />
-                </button>
+                <div>
+                    {isLeader && onEnableProduct ? (
+                        <div className="flex items-center gap-2">
+                            {isToggling && <Loader2 className="w-4 h-4 animate-spin text-gray-500" />}
+                            <Switch
+                                checked={isEnabled}
+                                onCheckedChange={handleToggle}
+                                disabled={isToggling}
+                                className="data-[state=checked]:bg-primary-blue"
+                            />
+                        </div>
+                    ) : (
+                        <button className="text-gray-900 dark:text-white">
+                            <MoreHorizontal className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* 2. Media (Image) */}

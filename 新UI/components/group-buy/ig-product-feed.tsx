@@ -34,6 +34,7 @@ interface IGProductFeedProps {
     currentUserId?: string;
     onSingleSubmit?: (productName: string) => void;
     submittingProduct?: string | null;
+    onEnableProduct?: (productName: string) => void;
 }
 
 export function IGProductFeed({
@@ -49,7 +50,8 @@ export function IGProductFeed({
     leaderName,
     currentUserId,
     onSingleSubmit,
-    submittingProduct
+    submittingProduct,
+    onEnableProduct
 }: IGProductFeedProps) {
 
     if (isLoading) {
@@ -92,6 +94,7 @@ export function IGProductFeed({
                         onRemove={() => onQuantityChange(product.name, -1)}
                         onSubmit={onSingleSubmit ? () => onSingleSubmit(product.name) : undefined}
                         isSubmitting={submittingProduct === product.name}
+                        onEnableProduct={onEnableProduct ? () => onEnableProduct(product.name) : undefined}
                     />
                 );
             })}

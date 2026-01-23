@@ -481,36 +481,35 @@ export default function GroupBuyPage() {
   if (viewMode === 'loading') return <Loading />;
   if (viewMode === 'seed') return <SeedMode onShare={handleShare} wave={activeWaves[0]?.wave || "1"} />;
 
-  // 1. activeProducts: Phase=active AND isEnabled=true
+  // 1. activeProducts: Phase=active
+  // Logic: 
+  // - Leader: sees ALL active products
+  // - Member: sees only isEnabled active products
   const activeProducts = activeWaves
     .filter(w => w.phase === 'active')
     .flatMap(w => w.products.filter(p => {
+      // If leader, show all. If member, check isEnabled.
+      if (isLeader) return true;
+
       const isEnabled = p.isEnabled === true ||
         String(p.isEnabled).toLowerCase() === 'true' ||
         Number(p.isEnabled) === 1;
       return isEnabled;
     }));
 
-  // 2. collectingProducts: Phase=collecting (Show all)
+  // 2. collectingProducts: Phase=collecting OR Phase=preparing
+  // Show ALL products in these phases
   const collectingProducts = activeWaves
-    .filter(w => w.phase === 'collecting')
+    .filter(w => w.phase === 'collecting' || w.phase === 'preparing')
     .flatMap(w => w.products);
 
-  // 3. preparingProducts: All waves (usually), but FILTER for !isEnabled
-  const preparingProducts = activeWaves
-    .flatMap(w => w.products.filter(p => {
-      const isEnabled = p.isEnabled === true ||
-        String(p.isEnabled).toLowerCase() === 'true' ||
-        Number(p.isEnabled) === 1;
-      return !isEnabled;
-    }));
+  // 3. preparingProducts: REMOVED (Merged into collecting)
 
   const allDisplayProducts = activeProducts;
 
   // --- Derived State for Voters Map ---
   const activeVotersMap = Object.fromEntries(activeProducts.map(p => [p.name, p.voters || []]));
   const collectingVotersMap = Object.fromEntries(collectingProducts.map(p => [p.name, p.voters || []]));
-  const preparingVotersMap = Object.fromEntries(preparingProducts.map(p => [p.name, p.voters || []]));
 
 
   return (
@@ -544,6 +543,7 @@ export default function GroupBuyPage() {
                 onRemoveVoter={handleRemoveVoter}
                 onSingleSubmit={handleSubmit}
                 submittingProduct={submittingProduct}
+                onEnableProduct={handleEnableProduct} // Pass the handler
               />
             </div>
           )}
@@ -555,25 +555,6 @@ export default function GroupBuyPage() {
                 mode="collecting"
                 cart={cart}
                 voters={collectingVotersMap}
-                onQuantityChange={handleQuantityChange}
-                isLoading={isLoading}
-                isLeader={isLeader}
-                leaderName={leaderName || undefined}
-                currentUserId={userProfile?.userId}
-                onRemoveVoter={handleRemoveVoter}
-                onSingleSubmit={handleSubmit}
-                submittingProduct={submittingProduct}
-              />
-            </div>
-          )}
-
-          {activeTab === 2 && (
-            <div className="animate-in fade-in zoom-in-95">
-              <IGProductFeed
-                products={preparingProducts}
-                mode="preparing"
-                cart={cart}
-                voters={preparingVotersMap}
                 onQuantityChange={handleQuantityChange}
                 isLoading={isLoading}
                 isLeader={isLeader}
