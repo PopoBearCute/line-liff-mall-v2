@@ -113,11 +113,11 @@ export default function GroupBuyPage() {
 
       if (!lId) {
         setViewMode('seed');
-        loadData(mockUserId, mockUserId, false);
+        loadData(mockUserId, mockUserId, 'Dev Tester', false);
       } else {
         setLeaderId(lId);
         setViewMode('main');
-        loadData(lId, mockUserId, true);
+        loadData(lId, mockUserId, 'Dev Tester', true);
       }
       return;
     }
@@ -146,7 +146,7 @@ export default function GroupBuyPage() {
 
       if (!lId) {
         setViewMode('seed');
-        loadData(profile.userId, profile.userId, false);
+        loadData(profile.userId, profile.userId, profile.displayName, false);
       } else {
         setLeaderId(lId);
         // 如果目前使用者就是團主，先用 Line 抓到的暱稱預填
@@ -154,7 +154,7 @@ export default function GroupBuyPage() {
           setLeaderName(profile.displayName);
         }
         setViewMode('main');
-        loadData(lId, profile.userId, true);
+        loadData(lId, profile.userId, profile.displayName, true);
       }
     } catch (error) {
       console.error('LIFF initialization failed:', error);
@@ -166,6 +166,7 @@ export default function GroupBuyPage() {
   const loadData = async (
     targetLeaderId: string,
     userId: string,
+    displayName: string,
     showLoader: boolean = false
   ) => {
     if (showLoader) setIsLoading(true);
@@ -201,7 +202,7 @@ export default function GroupBuyPage() {
         setIsLoading(false);
 
         // 自動註冊團主：如果是團主且有 activeWaves，自動建立 LeaderBinding
-        if (data.isLeader && data.activeWaves && data.activeWaves.length > 0 && userProfile) {
+        if (data.isLeader && data.activeWaves && data.activeWaves.length > 0 && displayName) {
           const mainWave = data.activeWaves[0].wave;
           try {
             await fetch(GAS_URL, {
@@ -211,7 +212,7 @@ export default function GroupBuyPage() {
                 action: 'auto_register_leader',
                 wave: mainWave,
                 leaderId: data.leaderId,
-                leaderName: userProfile.displayName
+                leaderName: displayName
               })
             });
           } catch (error) {
@@ -262,7 +263,7 @@ export default function GroupBuyPage() {
       const data = await response.json();
       if (data.success) {
         toast.success(`已啟用 ${productName} 的商城連結！`);
-        await loadData(leaderId, userProfile?.userId || leaderId, false);
+        await loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
       }
     } catch (error) {
       toast.error("啟用失敗");
@@ -306,7 +307,7 @@ export default function GroupBuyPage() {
 
       if (resData.success) {
         toast.success("登記成功！", { description: "背景更新資料中..." });
-        await loadData(leaderId, userProfile.userId, false);
+        await loadData(leaderId, userProfile.userId, userProfile.displayName, false);
         setCart({});
       } else {
         throw new Error(resData.error);
@@ -337,7 +338,7 @@ export default function GroupBuyPage() {
       });
 
       toast.success("已移除紀錄");
-      await loadData(leaderId, userProfile.userId, false);
+      await loadData(leaderId, userProfile.userId, userProfile.displayName, false);
     } catch (error) {
       toast.error("移除失敗");
     }
