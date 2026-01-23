@@ -12,7 +12,7 @@ import Loading from "./loading";
 import { toast } from "sonner";
 import { GolfBallLoader } from "@/components/ui/golf-loader";
 
-const GAS_URL = process.env.NEXT_PUBLIC_GAS_URL || "https://script.google.com/macros/s/AKfycbwCpVM-BSuMgeX4666ECT1YnwtUlHgiZX0yAs4BhW_gZO_I94pBYScn9nINYYx6MK0vmQ/exec";
+const GAS_URL = process.env.NEXT_PUBLIC_GAS_URL || "https://script.google.com/macros/s/AKfycbwxAgTXf1pJ_Jgf58n3Fj9a_niqr7Y6vuqL_0A3gvQ03ZivmY3pzuySW9Ae8FUuFnnhWQ/exec";
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2008798234-72bJqeYx";
 
 // Type definitions
@@ -266,20 +266,7 @@ export default function GroupBuyPage() {
       const data = await response.json();
       if (data.success) {
         toast.success(newEnabledState ? `已開放 ${productName}` : `已關閉 ${productName}`);
-
-        // 2. Background Sync Monitor
-        const refreshedWaves = await loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
-
-        // Find the product in refreshed data
-        const refreshedProd = (refreshedWaves as ActiveWave[])?.flatMap(w => w.products).find(p => p.name === productName);
-        const refreshedState = refreshedProd?.isEnabled === true || String(refreshedProd?.isEnabled).toLowerCase() === 'true' || Number(refreshedProd?.isEnabled) === 1;
-
-        if (refreshedState !== newEnabledState) {
-          toast.warning(`[同步警報] 狀態不一致！`, {
-            description: `預期: ${newEnabledState ? '開啟' : '關閉'}, 實際拿回: ${refreshedState ? '開啟' : '關閉'}。請檢查試算表是否有多筆重複列。`,
-            duration: 10000
-          });
-        }
+        await loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
       } else {
         throw new Error(data.error);
       }

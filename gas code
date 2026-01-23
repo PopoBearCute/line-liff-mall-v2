@@ -133,13 +133,16 @@ function doGet(e) {
             }
         });
         // 將數據注入到 activeWaves 結構中
+        const normalize = (s) => String(s || "").replace(/\s+/g, "");
         activeWaves.forEach(waveObj => {
+            const enabledList = enabledProductsMap[waveObj.wave] || [];
+            const normalizedEnabledList = enabledList.map(item => normalize(item));
+
             waveObj.products.forEach(prod => {
                 prod.currentQty = progressMap[prod.name] || 0;
                 prod.voters = votersMap[prod.name] || [];
                 prod.buyerAvatars = prodAvatarsMap[prod.name] || []; // [Phase 7]
-                const enabledList = enabledProductsMap[waveObj.wave] || [];
-                prod.isEnabled = enabledList.includes(prod.name.trim());
+                prod.isEnabled = normalizedEnabledList.includes(normalize(prod.name));
             });
         });
         return createJsonResponse({
@@ -215,27 +218,36 @@ function doPost(e) {
             const targetName = String(prodName || "").trim();
             const shouldEnable = (isEnabled === true || String(isEnabled).toLowerCase() === 'true' || isEnabled === 1);
             
+            // Normalize for comparison (remove all whitespace)
+            const normalize = (s) => String(s || "").replace(/\s+/g, "");
+            const targetNormalized = normalize(targetName);
+
             logAction('DEBUG_Toggle', { prodName: targetName, shouldEnable, bindingKey });
 
             if (found) {
                 let rowIdx = found.getRow();
                 let currentEnabled = String(bindingSheet.getRange(rowIdx, 7).getValue() || '');
-                // 強制清理清單中的每一個項目
                 let list = currentEnabled ? currentEnabled.split(',').map(s => s.trim()).filter(s => s !== "") : [];
                 
                 if (shouldEnable) {
-                    if (!list.includes(targetName)) {
+                    // Check if already exists (normalized)
+                    const exists = list.some(item => normalize(item) === targetNormalized);
+                    if (!exists) {
                         list.push(targetName);
                     }
                 } else {
-                    list = list.filter(name => name !== targetName);
+                    // Filter out (normalized)
+                    list = list.filter(item => normalize(item) !== targetNormalized);
                 }
                 
                 bindingSheet.getRange(rowIdx, 7).setValue(list.join(','));
+                SpreadsheetApp.flush(); // 強制寫入
+                logAction('DEBUG_Toggle_Done', { newList: list.join(','), rowIdx });
             } else if (shouldEnable) {
                 bindingSheet.appendRow([
-                    bindingKey, wave, leaderId, leaderId, '團購主', new Date(), targetName
+                    bindingKey, wave, leaderId, leaderId, data.leaderName || '團購主', new Date(), targetName
                 ]);
+                SpreadsheetApp.flush();
             }
             return createJsonResponse({ success: true, debug: { targetName, shouldEnable, found: !!found } });
         }
