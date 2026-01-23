@@ -99,12 +99,14 @@ function doGet(e) {
         const enabledProductsMap = {};
         const bindingRows = bindingSheet.getDataRange().getValues().slice(1);
         bindingRows.forEach(row => {
-            const bWave = String(row[1]);
-            const bLeader = String(row[2]);
-            if (bLeader === String(leaderId) && row[6]) {
-                if (!enabledProductsMap[bWave]) enabledProductsMap[bWave] = [];
-                const prods = String(row[6]).split(',').map(s => s.trim()).filter(s => s !== "");
-                enabledProductsMap[bWave].push(...prods);
+            const bWave = String(row[1]).trim();
+            const bLeader = String(row[2]).trim();
+            if (bLeader === String(leaderId).trim()) {
+                const prods = String(row[6] || "").split(',').map(s => s.trim()).filter(s => s !== "");
+                // 必須與 doPost 一致：只採用該波段的第一筆記錄
+                if (!enabledProductsMap[bWave]) {
+                    enabledProductsMap[bWave] = prods;
+                }
             }
         });
         // 聚合統計
