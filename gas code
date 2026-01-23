@@ -155,11 +155,11 @@ function doGet(e) {
         // 假設 LeaderBinding 結構有所擴充或利用備註欄
         // 舊結構: BindingKey, Wave, LeaderId, UserId, Name, Time
         // 假設我們將 EnabledProducts 存在第 7 欄 (Index 6)
-        const bWave = String(row[1]);
-        const bLeader = String(row[2]);
-        if (bLeader === String(leaderId) && row[6]) { // Col 7
+        const bWave = String(row[1]).trim();
+        const bLeader = String(row[2]).trim();
+        if (bLeader === String(leaderId).trim() && row[6]) { // Col 7
              if (!enabledProductsMap[bWave]) enabledProductsMap[bWave] = [];
-             const prods = String(row[6]).split(',');
+             const prods = String(row[6]).split(',').map(s => s.trim()).filter(s => s !== "");
              enabledProductsMap[bWave].push(...prods);
         }
     });
@@ -196,13 +196,13 @@ function doGet(e) {
 
     // 將數據注入到 activeWaves 結構中，方便前端渲染
     activeWaves.forEach(waveObj => {
+      const enabledList = (enabledProductsMap[waveObj.wave] || []).map(s => s.trim());
       waveObj.products.forEach(prod => {
         prod.currentQty = progressMap[prod.name] || 0;
         prod.voters = votersMap[prod.name] || [];
         prod.buyerAvatars = prodAvatarsMap[prod.name] || []; // [Phase 7]
         // 標記是否被團主啟用 (銷售期用)
-        const enabledList = enabledProductsMap[waveObj.wave] || [];
-        prod.isEnabled = enabledList.includes(prod.name);
+        prod.isEnabled = enabledList.includes(prod.name.trim());
       });
     });
 
@@ -297,30 +297,26 @@ function doPost(e) {
     // --- Action: Enable Product (團購主啟用商品) ---
     if (data.action === 'enable_product') {
         const { wave, leaderId, prodName } = data;
-        // 寫入 LeaderBinding 的第 7 欄 (G欄)
         const bindingSheet = ss.getSheetByName(SHEET_BINDING);
         const bindingKey = String(leaderId).trim() + '_' + String(wave).trim();
         
-        let rowIdx = -1;
         const finder = bindingSheet.getRange("A:A").createTextFinder(bindingKey).matchEntireCell(true);
         const found = finder.findNext();
         
         if (found) {
-            rowIdx = found.getRow();
-            // 讀取現有
+            let rowIdx = found.getRow();
             let currentEnabled = String(bindingSheet.getRange(rowIdx, 7).getValue() || '');
-            let list = currentEnabled ? currentEnabled.split(',') : [];
-            if (!list.includes(prodName)) {
-                list.push(prodName);
+            let list = currentEnabled ? currentEnabled.split(',').map(s => s.trim()).filter(s => s !== "") : [];
+            const targetName = prodName.trim();
+            if (!list.includes(targetName)) {
+                list.push(targetName);
                 bindingSheet.getRange(rowIdx, 7).setValue(list.join(','));
             }
         } else {
-            // 若無 Binding 則新增
             bindingSheet.appendRow([
-                bindingKey, wave, leaderId, leaderId, '團購主', new Date(), prodName
+                bindingKey, wave, leaderId, leaderId, data.leaderName || '團購主', new Date(), prodName.trim()
             ]);
         }
-        
         return createJsonResponse({ success: true });
     }
 
