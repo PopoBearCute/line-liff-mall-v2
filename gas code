@@ -133,16 +133,27 @@ function doGet(e) {
             }
         });
         // 將數據注入到 activeWaves 結構中
-        const normalize = (s) => String(s || "").replace(/\s+/g, "");
+        const superNormalize = (s) => {
+            return String(s || "")
+                .replace(/\s+/g, "")
+                .replace(/[（(]/g, "(")
+                .replace(/[）)]/g, ")")
+                .replace(/[【\[]/g, "[")
+                .replace(/[】\]]/g, "]")
+                .replace(/['’]/g, "'")
+                .toLowerCase();
+        };
+
         activeWaves.forEach(waveObj => {
             const enabledList = enabledProductsMap[waveObj.wave] || [];
-            const normalizedEnabledList = enabledList.map(item => normalize(item));
+            // Assuming enabledList contains raw strings, we normalize them for lookup
+            const normalizedEnabledList = enabledList.map(item => superNormalize(item));
 
             waveObj.products.forEach(prod => {
                 prod.currentQty = progressMap[prod.name] || 0;
                 prod.voters = votersMap[prod.name] || [];
                 prod.buyerAvatars = prodAvatarsMap[prod.name] || []; // [Phase 7]
-                prod.isEnabled = normalizedEnabledList.includes(normalize(prod.name));
+                prod.isEnabled = normalizedEnabledList.includes(superNormalize(prod.name));
             });
         });
         return createJsonResponse({
@@ -218,41 +229,52 @@ function doPost(e) {
             const targetName = String(prodName || "").trim();
             const shouldEnable = (isEnabled === true || String(isEnabled).toLowerCase() === 'true' || isEnabled === 1);
             
-            // Normalize for comparison (remove all whitespace)
-            const normalize = (s) => String(s || "").replace(/\s+/g, "");
-            const targetNormalized = normalize(targetName);
+            // Super Normalize: Unify punctuation and remove whitespace
+            const superNormalize = (s) => {
+                return String(s || "")
+                    .replace(/\s+/g, "")
+                    .replace(/[（(]/g, "(")
+                    .replace(/[）)]/g, ")")
+                    .replace(/[【\[]/g, "[")
+                    .replace(/[】\]]/g, "]")
+                    .replace(/['’]/g, "'")
+                    .toLowerCase();
+            };
+            const targetNormalized = superNormalize(targetName);
 
-            // Find the row by Leader ID (Col 3) and Wave (Col 2) - same as doGet
-            let foundRowIdx = -1;
+            // Find ALL matching rows by Leader ID and Wave
+            // We iterate through ALL rows to ensure we handle duplicates
+            const matchingIndices = [];
             for (let i = 1; i < bindingRows.length; i++) {
                 const rWave = String(bindingRows[i][1]).trim();
                 const rLeader = String(bindingRows[i][2]).trim();
                 if (rLeader === targetLeaderId && rWave === targetWave) {
-                    foundRowIdx = i + 1; // row index is 1-based
-                    break;
+                    matchingIndices.push(i + 1); // Store 1-based row index
                 }
             }
 
-            logAction('DEBUG_Toggle_Started', { prodName: targetName, shouldEnable, leaderId: targetLeaderId, wave: targetWave, foundRowIdx });
+            logAction('DEBUG_Toggle_Started', { prodName: targetName, shouldEnable, leaderId: targetLeaderId, wave: targetWave, matches: matchingIndices });
 
-            if (foundRowIdx !== -1) {
-                let currentEnabled = String(bindingSheet.getRange(foundRowIdx, 7).getValue() || '');
-                let list = currentEnabled ? currentEnabled.split(',').map(s => s.trim()).filter(s => s !== "") : [];
-                
-                if (shouldEnable) {
-                    if (!list.some(item => normalize(item) === targetNormalized)) {
-                        list.push(targetName);
+            if (matchingIndices.length > 0) {
+                // Update ALL matching rows
+                matchingIndices.forEach(rowIdx => {
+                    let currentEnabled = String(bindingSheet.getRange(rowIdx, 7).getValue() || '');
+                    let list = currentEnabled ? currentEnabled.split(',').map(s => s.trim()).filter(s => s !== "") : [];
+                    
+                    if (shouldEnable) {
+                        if (!list.some(item => superNormalize(item) === targetNormalized)) {
+                            list.push(targetName);
+                        }
+                    } else {
+                        list = list.filter(item => superNormalize(item) !== targetNormalized);
                     }
-                } else {
-                    list = list.filter(item => normalize(item) !== targetNormalized);
-                }
+                    bindingSheet.getRange(rowIdx, 7).setValue(list.join(','));
+                });
                 
-                bindingSheet.getRange(foundRowIdx, 7).setValue(list.join(','));
                 SpreadsheetApp.flush(); 
-                logAction('DEBUG_Toggle_Success', { newList: list.join(','), row: foundRowIdx });
-                return createJsonResponse({ success: true, debug: { found: true, row: foundRowIdx } });
+                return createJsonResponse({ success: true, debug: { found: true, rows: matchingIndices } });
             } else if (shouldEnable) {
-                // Not found and trying to enable -> Create new row
+                // No row found, create one
                 const bindingKey = targetLeaderId + '_' + targetWave;
                 bindingSheet.appendRow([
                     bindingKey, targetWave, targetLeaderId, targetLeaderId, data.leaderName || '團購主', new Date(), targetName
@@ -260,8 +282,6 @@ function doPost(e) {
                 SpreadsheetApp.flush();
                 return createJsonResponse({ success: true, debug: { created: true } });
             } else {
-                // Not found and trying to disable -> Nothing to remove
-                logAction('DEBUG_Toggle_Error', { msg: "Row not found for disable", targetLeaderId, targetWave });
                 return createJsonResponse({ success: false, error: "此團購波段尚未建立綁定資料，無法關閉商品。" });
             }
         }
