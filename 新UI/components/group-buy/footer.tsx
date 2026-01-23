@@ -31,7 +31,7 @@ export function Footer({
 
           {/* Left Side: Info or Share */}
           <div className="flex items-center gap-3 pl-2">
-            {isLeader ? (
+            {isLeader && totalQty === 0 ? (
               <button
                 onClick={onShare}
                 className="flex items-center gap-2 text-sm font-medium text-gray-300 hover:text-white transition-colors"
@@ -43,8 +43,13 @@ export function Footer({
               </button>
             ) : (
               <div className="flex flex-col">
-                <span className="text-xs text-gray-400">已登記商品</span>
-                <span className="text-lg font-bold leading-none">{totalQty} <span className="text-xs font-normal text-gray-500">件</span></span>
+                <span className="text-xs text-gray-400">
+                  {totalQty < 0 ? "減少登記" : "本次追加"}
+                </span>
+                <span className={`text-lg font-bold leading-none ${totalQty < 0 ? 'text-red-400' : 'text-white'}`}>
+                  {totalQty > 0 ? `+${totalQty}` : totalQty}
+                  <span className="text-xs font-normal text-gray-500 ml-1">件</span>
+                </span>
               </div>
             )}
           </div>
