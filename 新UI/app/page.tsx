@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { GolfBallLoader } from "@/components/ui/golf-loader";
 
 const GAS_URL = process.env.NEXT_PUBLIC_GAS_URL || "https://script.google.com/macros/s/AKfycbwppi9lq8VA5ab97nIvoHPoUL-cZhewMgKzJj43JVMpzO7yVgX1Ch7kiKh5LqQ5aJa-9A/exec";
-const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2008798234-yXHoEXCb";
+const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2008798234-72bJqeYx";
 
 // Type definitions
 interface Product {
