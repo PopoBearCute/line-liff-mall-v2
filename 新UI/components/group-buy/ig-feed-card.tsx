@@ -181,13 +181,21 @@ export function IGFeedCard({
                     src={product.img}
                     alt={product.name}
                     fill
-                    className={`object-contain ${mode === 'preparing' ? 'opacity-80 grayscale-[0.2]' : ''}`}
+                    className={`object-contain ${mode === 'preparing' ? 'opacity-80 grayscale-[0.2]' : ''} ${isLeader && mode === 'active' && !isEnabled ? 'opacity-50 grayscale' : ''}`}
                     priority={false}
                 />
                 {mode === 'preparing' && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[1px]">
                         <span className="bg-black/60 text-white px-3 py-1 rounded-full text-xs backdrop-blur-md border border-white/20">
                             即將開團
+                        </span>
+                    </div>
+                )}
+                {/* Leader: Product not enabled overlay */}
+                {isLeader && mode === 'active' && !isEnabled && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
+                        <span className="bg-gray-700/90 text-white px-4 py-1.5 rounded-full text-xs font-medium backdrop-blur-md border border-white/10">
+                            前台不顯示
                         </span>
                     </div>
                 )}
@@ -317,9 +325,25 @@ export function IGFeedCard({
                         {(!showStepper && mode !== 'preparing') && (
                             <button
                                 onClick={mode === 'active' && config.action ? config.action : onAdd}
-                                className={`${config.btnColor} text-white text-xs font-bold px-6 py-2.5 rounded-full transition-colors shadow-sm whitespace-nowrap active:scale-95`}
+                                disabled={isLeader && mode === 'active' && !isEnabled}
+                                className={`${isLeader && mode === 'active' && !isEnabled ? 'bg-gray-400 cursor-not-allowed' : config.btnColor} text-white text-xs font-bold px-6 py-2.5 rounded-full transition-colors shadow-sm whitespace-nowrap active:scale-95 disabled:active:scale-100`}
                             >
                                 {config.btnText}
+                            </button>
+                        )}
+
+                        {/* Leader Toggle: 開放購買 / 關閉購買 */}
+                        {isLeader && mode === 'active' && onEnableProduct && (
+                            <button
+                                onClick={handleToggle}
+                                disabled={isToggling}
+                                className={`text-xs font-bold px-4 py-2 rounded-full transition-all active:scale-95 whitespace-nowrap flex items-center gap-1.5 ${isEnabled
+                                    ? 'bg-red-500 hover:bg-red-600 text-white'
+                                    : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                                    } ${isToggling ? 'opacity-50 cursor-wait' : ''}`}
+                            >
+                                {isToggling && <Loader2 className="w-3 h-3 animate-spin" />}
+                                {isEnabled ? '關閉購買' : '開放購買'}
                             </button>
                         )}
 
