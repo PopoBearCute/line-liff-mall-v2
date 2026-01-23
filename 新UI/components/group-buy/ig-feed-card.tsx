@@ -83,7 +83,7 @@ export function IGFeedCard({
             headerLabel: "Hot Sale",
             headerIcon: <Flame className="w-3 h-3 text-red-500 fill-red-500" />,
             btnColor: "bg-primary-green hover:bg-green-600",
-            btnText: "立即購買",
+            btnText: "來去下單",
             progressColor: "bg-primary-green",
             statusText: `剩餘庫存: 充足`, // Placeholder logic
             action: () => window.open(product.link, '_blank'),

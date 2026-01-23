@@ -531,7 +531,7 @@ export default function GroupBuyPage() {
         />
 
         {/* Stories Bar */}
-        <div className="pt-16 pb-2">
+        <div className="pt-[68px] pb-3">
           <StoriesBar
             leaderAvatar={userProfile?.pictureUrl || undefined}
             leaderName={leaderName}
