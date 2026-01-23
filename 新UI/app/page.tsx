@@ -11,7 +11,7 @@ import Loading from "./loading";
 import { toast } from "sonner";
 import { GolfBallLoader } from "@/components/ui/golf-loader";
 
-const GAS_URL = process.env.NEXT_PUBLIC_GAS_URL || "https://script.google.com/macros/s/AKfycbwAETlogWFMDpL5AR8-WNLp-VFvmFTXHZC2psShrSYgDMNR8a41zC4oeII1DNJTwkamkQ/exec";
+const GAS_URL = process.env.NEXT_PUBLIC_GAS_URL || "https://script.google.com/macros/s/AKfycbwZexzTZIKGj2h5K4xBmxHCRck47ue1vXDt7w8PR17WFwTMDr5iL67pVr-AXoXbrv7Szw/exec";
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2008798234-yXHoEXCb";
 
 // Type definitions

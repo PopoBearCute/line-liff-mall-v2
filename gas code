@@ -6,8 +6,7 @@
  * 3. 寫入鎖：全面導入 LockService
  */
 const CHANNEL_ACCESS_TOKEN = 'psDv9EJNm0ayber2tERmUaIIAzOZoCqBwM2zN+rWVn0MDI'; 
-const SPREADSHEET_ID = '10JIr20lx0iapFBV9P3GcpiK1OgO9wP1kB5iwfoeq9iU'; 
-
+// const SPREADSHEET_ID = '...'; // Removed to use getActiveSpreadsheet() for better portability
 const SHEET_PRODUCTS = 'Products';
 const SHEET_BINDING  = 'LeaderBinding';
 const SHEET_INTENT   = 'IntentDB';
@@ -23,10 +22,10 @@ function doGet(e) {
     // 記錄請求
     logAction('doGet', { leaderId, userId });
 
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
     const productSheet = ss.getSheetByName(SHEET_PRODUCTS);
-    const intentSheet = ss.getSheetByName(SHEET_INTENT);
-    const bindingSheet = ss.getSheetByName(SHEET_BINDING);
+    const intentSheet = ss.getSheetByName(SHEET_INTENT) || ss.insertSheet(SHEET_INTENT);
+    const bindingSheet = ss.getSheetByName(SHEET_BINDING) || ss.insertSheet(SHEET_BINDING);
 
     // 1. 取得所有活躍波段 (Active Waves)
     // 定義欄位索引 (0-based)
@@ -225,7 +224,7 @@ function doPost(e) {
     lock.waitLock(30000); 
     
     const data = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
     
     logAction('doPost', data);
 
@@ -366,10 +365,9 @@ function getCaseInsensitiveParams(obj) {
 
 function logAction(type, data) {
   try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    let logSheet = ss.getSheetByName(SHEET_NOTIFY_LOG);
-    if (!logSheet) {
-      logSheet = ss.insertSheet(SHEET_NOTIFY_LOG);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let logSheet = ss.getSheetByName(SHEET_NOTIFY_LOG) || ss.insertSheet(SHEET_NOTIFY_LOG);
+    if (logSheet.getLastRow() === 0) {
       logSheet.appendRow(['Timestamp', 'Type', 'Data']);
     }
     logSheet.appendRow([new Date(), type, JSON.stringify(data)]);
