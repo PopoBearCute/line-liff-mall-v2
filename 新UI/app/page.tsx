@@ -552,8 +552,8 @@ export default function GroupBuyPage() {
           />
         </div>
 
-        {/* 4. Tab Content (IG Feed Style) */}
-        <div className="flex-1 w-full max-w-md mx-auto pt-4 px-0">
+        {/* 4. Tab Content (IG Feed Style) - Removed extra pt-4 to tighten gap */}
+        <div className="flex-1 w-full max-w-md mx-auto px-0">
           {activeTab === 0 && (
             <div className="animate-in fade-in zoom-in-95">
               <IGProductFeed
