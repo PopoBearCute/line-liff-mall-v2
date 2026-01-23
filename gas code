@@ -211,10 +211,10 @@ function doPost(e) {
         if (data.action === 'enable_product') {
             const { wave, leaderId, prodName, isEnabled } = data;
             const bindingSheet = ss.getSheetByName(SHEET_BINDING) || ss.insertSheet(SHEET_BINDING);
-            const bindingKey = String(leaderId).trim() + '_' + String(wave).trim();
-            const finder = bindingSheet.getRange("A:A").createTextFinder(bindingKey).matchEntireCell(true);
-            const found = finder.findNext();
+            const bindingRows = bindingSheet.getDataRange().getValues();
             
+            const targetLeaderId = String(leaderId).trim();
+            const targetWave = String(wave).trim();
             const targetName = String(prodName || "").trim();
             const shouldEnable = (isEnabled === true || String(isEnabled).toLowerCase() === 'true' || isEnabled === 1);
             
@@ -222,34 +222,48 @@ function doPost(e) {
             const normalize = (s) => String(s || "").replace(/\s+/g, "");
             const targetNormalized = normalize(targetName);
 
-            logAction('DEBUG_Toggle', { prodName: targetName, shouldEnable, bindingKey });
+            // Find the row by Leader ID (Col 3) and Wave (Col 2) - same as doGet
+            let foundRowIdx = -1;
+            for (let i = 1; i < bindingRows.length; i++) {
+                const rWave = String(bindingRows[i][1]).trim();
+                const rLeader = String(bindingRows[i][2]).trim();
+                if (rLeader === targetLeaderId && rWave === targetWave) {
+                    foundRowIdx = i + 1; // row index is 1-based
+                    break;
+                }
+            }
 
-            if (found) {
-                let rowIdx = found.getRow();
-                let currentEnabled = String(bindingSheet.getRange(rowIdx, 7).getValue() || '');
+            logAction('DEBUG_Toggle_Started', { prodName: targetName, shouldEnable, leaderId: targetLeaderId, wave: targetWave, foundRowIdx });
+
+            if (foundRowIdx !== -1) {
+                let currentEnabled = String(bindingSheet.getRange(foundRowIdx, 7).getValue() || '');
                 let list = currentEnabled ? currentEnabled.split(',').map(s => s.trim()).filter(s => s !== "") : [];
                 
                 if (shouldEnable) {
-                    // Check if already exists (normalized)
-                    const exists = list.some(item => normalize(item) === targetNormalized);
-                    if (!exists) {
+                    if (!list.some(item => normalize(item) === targetNormalized)) {
                         list.push(targetName);
                     }
                 } else {
-                    // Filter out (normalized)
                     list = list.filter(item => normalize(item) !== targetNormalized);
                 }
                 
-                bindingSheet.getRange(rowIdx, 7).setValue(list.join(','));
-                SpreadsheetApp.flush(); // 強制寫入
-                logAction('DEBUG_Toggle_Done', { newList: list.join(','), rowIdx });
+                bindingSheet.getRange(foundRowIdx, 7).setValue(list.join(','));
+                SpreadsheetApp.flush(); 
+                logAction('DEBUG_Toggle_Success', { newList: list.join(','), row: foundRowIdx });
+                return createJsonResponse({ success: true, debug: { found: true, row: foundRowIdx } });
             } else if (shouldEnable) {
+                // Not found and trying to enable -> Create new row
+                const bindingKey = targetLeaderId + '_' + targetWave;
                 bindingSheet.appendRow([
-                    bindingKey, wave, leaderId, leaderId, data.leaderName || '團購主', new Date(), targetName
+                    bindingKey, targetWave, targetLeaderId, targetLeaderId, data.leaderName || '團購主', new Date(), targetName
                 ]);
                 SpreadsheetApp.flush();
+                return createJsonResponse({ success: true, debug: { created: true } });
+            } else {
+                // Not found and trying to disable -> Nothing to remove
+                logAction('DEBUG_Toggle_Error', { msg: "Row not found for disable", targetLeaderId, targetWave });
+                return createJsonResponse({ success: false, error: "此團購波段尚未建立綁定資料，無法關閉商品。" });
             }
-            return createJsonResponse({ success: true, debug: { targetName, shouldEnable, found: !!found } });
         }
         // --- Action: Auto Register Leader (團主自動註冊) ---
         if (data.action === 'auto_register_leader') {
