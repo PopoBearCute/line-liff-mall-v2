@@ -28,7 +28,14 @@ interface IGFeedCardProps {
     currentUserId?: string; // 新增：供檢查個人登記上限使用
 }
 
-onRemove,
+export function IGFeedCard({
+    product,
+    mode,
+    voters = [],
+    cartQty = 0,
+    onJoin,
+    onAdd,
+    onRemove,
     isLeader,
     leaderName,
     currentUserId
