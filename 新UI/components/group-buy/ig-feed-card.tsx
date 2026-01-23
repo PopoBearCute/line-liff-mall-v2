@@ -16,6 +16,8 @@ interface Product {
     link?: string;
     isEnabled?: boolean;
     buyerAvatars?: string[];
+    currentQty?: number;
+    endDate?: string;
 }
 
 interface IGFeedCardProps {
@@ -185,42 +187,51 @@ export function IGFeedCard({
             <div className="px-3 mt-3">
                 {mode !== 'preparing' && (
                     <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-2.5 border border-gray-100 dark:border-gray-800 mb-3 space-y-2">
-                        <div className="flex justify-between items-baseline mb-1">
+                        {/* Top Layer: Percent | Deadline */}
+                        <div className="flex justify-between items-baseline">
                             <span className="text-sm font-bold text-gray-900 dark:text-white tracking-tight">
-                                {mode === 'collecting' ? '達成率' : '銷售狀況'}
-                                <span className={`ml-1 ${mode === 'collecting' ? (isTargetMet ? 'text-primary-green' : 'text-primary-blue') : 'text-primary-green'}`}>
-                                    {mode === 'collecting' ? `${achievedPercent}%` : '熱賣中'}
+                                達成率 <span className={`ml-1 ${isTargetMet ? 'text-emerald-500' : 'text-sky-500'}`}>
+                                    {achievedPercent}%
                                 </span>
                             </span>
-                            <span className="text-[10px] text-gray-500">
-                                {config.statusText}
-                            </span>
+                            {product.endDate && (
+                                <span className="text-[11px] text-gray-500 font-medium">
+                                    截止日期: {product.endDate}
+                                </span>
+                            )}
                         </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+
+                        {/* Middle Layer: Progress Bar */}
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                             <div
-                                className={`h-1.5 rounded-full ${config.progressColor} transition-all duration-500`}
-                                style={{ width: mode === 'collecting' ? `${achievedPercent}%` : '80%' }}
+                                className={`h-2 rounded-full ${isTargetMet ? 'bg-emerald-500' : 'bg-sky-500'} transition-all duration-500`}
+                                style={{ width: `${Math.min(achievedPercent, 100)}%` }}
                             ></div>
                         </div>
-                    </div>
-                )}
 
+                        {/* Bottom Layer: Target Info | Avatar Stack */}
+                        <div className="flex justify-between items-center">
+                            <span className="text-[11px] text-gray-500 font-medium font-outfit">
+                                目標 {product.moq} 份 / 已達 {product.currentQty || 0} 份
+                            </span>
 
-
-                {/* Avatar Stack */}
-                {product.buyerAvatars && product.buyerAvatars.length > 0 && (
-                    <div className="flex items-center -space-x-2 mb-2 ml-1">
-                        {product.buyerAvatars.slice(0, 5).map((avatar, i) => (
-                            <Avatar key={i} className="w-6 h-6 border-2 border-white dark:border-black">
-                                <AvatarImage src={avatar} />
-                                <AvatarFallback className="text-[9px]">U</AvatarFallback>
-                            </Avatar>
-                        ))}
-                        {product.buyerAvatars.length > 5 && (
-                            <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px] border-2 border-white dark:border-black font-medium text-gray-500">
-                                +{product.buyerAvatars.length - 5}
-                            </div>
-                        )}
+                            {/* Avatar Stack moved here */}
+                            {product.buyerAvatars && product.buyerAvatars.length > 0 && (
+                                <div className="flex items-center -space-x-1.5 translate-x-1">
+                                    {product.buyerAvatars.slice(0, 3).map((avatar, i) => (
+                                        <Avatar key={i} className="w-5 h-5 border border-white dark:border-black shadow-sm">
+                                            <AvatarImage src={avatar} />
+                                            <AvatarFallback className="text-[7px]">U</AvatarFallback>
+                                        </Avatar>
+                                    ))}
+                                    {product.buyerAvatars.length > 3 && (
+                                        <div className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[8px] border border-white dark:border-black font-bold text-gray-500 shadow-sm">
+                                            +{product.buyerAvatars.length - 3}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
 

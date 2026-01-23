@@ -27,6 +27,7 @@ interface Product {
   currentQty?: number;
   voters?: Voter[];
   buyerAvatars?: string[]; // Add buyerAvatars
+  endDate?: string; // [Phase 8] Add endDate
 }
 
 interface ActiveWave {
