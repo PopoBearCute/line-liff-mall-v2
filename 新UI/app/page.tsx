@@ -235,11 +235,10 @@ export default function GroupBuyPage() {
     if (!leaderId || !isLeader) return;
     setIsEnabling(true);
 
-    // Normalize
     const currentIsEnabled = isValue === true || String(isValue).toLowerCase() === 'true' || Number(isValue) === 1;
     const newEnabledState = !currentIsEnabled;
 
-    // 1. Optimistic Update (Immediate Feedback)
+    // 1. Optimistic Update
     setActiveWaves(prev => prev.map(wave => ({
       ...wave,
       products: wave.products.map(p =>
@@ -266,21 +265,33 @@ export default function GroupBuyPage() {
 
       const data = await response.json();
       if (data.success) {
-        toast.success(newEnabledState ? `已開放 ${productName}！` : `已關閉 ${productName}`);
-        // 2. Sync in background with cache-busting
-        loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
+        toast.success(newEnabledState ? `已開放 ${productName}` : `已關閉 ${productName}`);
+
+        // 2. Background Sync Monitor
+        const refreshedWaves = await loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
+
+        // Find the product in refreshed data
+        const refreshedProd = (refreshedWaves as ActiveWave[])?.flatMap(w => w.products).find(p => p.name === productName);
+        const refreshedState = refreshedProd?.isEnabled === true || String(refreshedProd?.isEnabled).toLowerCase() === 'true' || Number(refreshedProd?.isEnabled) === 1;
+
+        if (refreshedState !== newEnabledState) {
+          toast.warning(`[同步警報] 狀態不一致！`, {
+            description: `預期: ${newEnabledState ? '開啟' : '關閉'}, 實際拿回: ${refreshedState ? '開啟' : '關閉'}。請檢查試算表是否有多筆重複列。`,
+            duration: 10000
+          });
+        }
       } else {
         throw new Error(data.error);
       }
-    } catch (error) {
-      // 3. Rollback on failure
+    } catch (error: any) {
+      // 3. Rollback
       setActiveWaves(prev => prev.map(wave => ({
         ...wave,
         products: wave.products.map(p =>
           p.name === productName ? { ...p, isEnabled: currentIsEnabled } : p
         )
       })));
-      toast.error("操作失敗，請稍後再試");
+      toast.error("操作失敗", { description: error?.message });
     } finally {
       setIsEnabling(false);
     }
