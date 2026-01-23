@@ -53,6 +53,7 @@ export function FullWidthProductCard({
   isEnabling = false,
   showQuantityControls = true,
 }: FullWidthProductCardProps) {
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
   const hasVoters = voters.length > 0;
 
   // 決定按鈕狀態：如果是銷售期 (有 link)，則顯示購買相關按鈕
@@ -98,9 +99,24 @@ export function FullWidthProductCard({
             <h4 className="text-base font-bold leading-tight text-foreground line-clamp-2">
               {product.name}
             </h4>
-            <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-              {product.description}
-            </p>
+            <div className="mt-0.5 text-xs text-muted-foreground">
+              <div className="relative">
+                <p className={`${!isDescExpanded ? "line-clamp-2" : ""} break-words text-left`}>
+                  {product.description}
+                </p>
+                {product.description && product.description.length > 40 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDescExpanded(!isDescExpanded);
+                    }}
+                    className="mt-1 font-bold text-primary hover:underline focus:outline-none block"
+                  >
+                    {isDescExpanded ? "收起" : "...更多"}
+                  </button>
+                )}
+              </div>
+            </div>
 
             {/* 📊 Inline Progress Bar */}
             <div className="mt-2.5">
