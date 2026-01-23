@@ -75,16 +75,6 @@ export default function GroupBuyPage() {
   // IG-Style Tabs State
   const [activeTab, setActiveTab] = useState(0);
 
-  // Fixed Swipe Config based on user tuning
-
-  // Fixed Swipe Config based on user tuning
-  // Fixed Swipe Config based on user tuning
-  // const SWIPE_CONFIG = {
-  //   elastic: 0.1,
-  // Handle Tab Animation
-
-
-
   useEffect(() => {
     initializeLiff();
   }, []);
@@ -453,12 +443,6 @@ export default function GroupBuyPage() {
           ]
         }
       };
-
-      const payload = [{
-        "type": "flex",
-        "altText": `${safeLeaderName} 邀請您參加團購`,
-        "contents": { "type": "carousel", "contents": [...productBubbles, moreBubble] }
-      }];
 
       const payload = [{
         "type": "flex",

@@ -16,13 +16,16 @@ export function Footer({
   onShare,
   cart = {} // Default to empty
 }: FooterProps & { cart?: Record<string, number> }) {
-  // Calculate total items
+  // Calculate total items (sum of deltas)
   const totalQty = Object.values(cart).reduce((a, b) => a + b, 0);
+
+  // Check if there are ANY changes (non-zero deltas)
+  const hasChanges = Object.values(cart).some(qty => qty !== 0);
 
   // Conditions to show footer:
   // 1. Leader always sees it (for Share button)
-  // 2. Consumer sees it ONLY if they have items in cart
-  if (!isLeader && totalQty === 0) return null;
+  // 2. Consumer sees it ONLY if they have items in cart OR the cart is showing changes
+  if (!isLeader && !hasChanges) return null;
 
   return (
     <div className="fixed bottom-6 inset-x-0 z-50 px-4 pointer-events-none">
@@ -31,7 +34,7 @@ export function Footer({
 
           {/* Left Side: Info or Share */}
           <div className="flex items-center gap-3 pl-2">
-            {isLeader && totalQty === 0 ? (
+            {isLeader && !hasChanges ? (
               <button
                 onClick={onShare}
                 className="flex items-center gap-2 text-sm font-medium text-gray-300 hover:text-white transition-colors"
@@ -54,31 +57,32 @@ export function Footer({
             )}
           </div>
 
-          {/* Right Side: Action Button */}
-          {/* If Leader AND 0 items -> Show Share as main action? Or just hide submit? */}
-          {/* Current logic: Submit button is always there if validation passes, or maybe disabled */}
 
-          {(totalQty > 0 || isLeader) && (
+          {/* Right Side: Action Button */}
+          {/* Show Submit button when there are changes (positive or negative)
+              Show Share button only when leader with no changes */}
+          {hasChanges ? (
             <button
-              onClick={totalQty > 0 ? onSubmit : onShare} // If leader has 0 items, main button behaves as share? Or just keep it separate.
-              // Let's keep it simple: Consumer -> Submit. Leader -> Share (if 0 items) or Submit (if has items).
-              disabled={isSubmitting || (totalQty === 0 && !isLeader)}
-              className={`
-               flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95
-               ${totalQty > 0
-                  ? 'bg-white text-black hover:bg-gray-200'
-                  : 'bg-white/10 text-gray-400' // Leader sharing mode styling
-                }
-             `}
+              onClick={onSubmit}
+              disabled={isSubmitting}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 bg-white text-black hover:bg-gray-200"
             >
               {isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                totalQty > 0 ? <Send className="w-4 h-4" /> : <Share2 className="w-4 h-4" />
+                <Send className="w-4 h-4" />
               )}
-              {totalQty > 0 ? "確認送出" : "分享連結"}
+              確認送出
             </button>
-          )}
+          ) : isLeader ? (
+            <button
+              onClick={onShare}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 bg-white/10 text-gray-400"
+            >
+              <Share2 className="w-4 h-4" />
+              分享連結
+            </button>
+          ) : null}
 
         </div>
       </div>
