@@ -94,7 +94,7 @@ export function IGFeedCard({
                     <div className="flex flex-col">
                         <div className="flex items-center gap-1">
                             <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                                {leaderName || "團購主"}
+                                {leaderName ? `${leaderName}嚴選` : "團購主"}
                             </span>
                             <BadgeCheck className="w-3 h-3 text-primary-blue fill-primary-blue text-white" />
                         </div>
