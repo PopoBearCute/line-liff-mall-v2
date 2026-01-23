@@ -12,7 +12,7 @@ import Loading from "./loading";
 import { toast } from "sonner";
 import { GolfBallLoader } from "@/components/ui/golf-loader";
 
-const GAS_URL = process.env.NEXT_PUBLIC_GAS_URL || "https://script.google.com/macros/s/AKfycbwbDUsYftDBh9THXwX1ZCuo0oqJkm0BpUpLLBjyYhvGcGt_WWR9-uckASoGQo9RpcSs1w/exec";
+const GAS_URL = process.env.NEXT_PUBLIC_GAS_URL || "https://script.google.com/macros/s/AKfycbwCpVM-BSuMgeX4666ECT1YnwtUlHgiZX0yAs4BhW_gZO_I94pBYScn9nINYYx6MK0vmQ/exec";
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2008798234-72bJqeYx";
 
 // Type definitions
@@ -232,58 +232,36 @@ export default function GroupBuyPage() {
   };
 
   const handleEnableProduct = async (productName: string, isValue?: any) => {
-    // [DEBUG] Step 1: Entry check
-    toast.info(`[DEBUG 1] 進入 handleEnableProduct`, { description: `商品: ${productName}, isValue: ${isValue}` });
-
-    if (!leaderId || !isLeader) {
-      toast.error(`[DEBUG] 權限不足`, { description: `leaderId: ${leaderId}, isLeader: ${isLeader}` });
-      return;
-    }
+    if (!leaderId || !isLeader) return;
     setIsEnabling(true);
 
     // Normalize and toggle
     const currentIsEnabled = isValue === true || String(isValue).toLowerCase() === 'true' || Number(isValue) === 1;
     const newEnabledState = !currentIsEnabled;
 
-    // [DEBUG] Step 2: State calculation
-    toast.info(`[DEBUG 2] 狀態計算`, { description: `目前: ${currentIsEnabled}, 新狀態: ${newEnabledState}` });
-
     try {
       const wave = activeWaves.find((w: ActiveWave) => w.products.some((p: Product) => p.name === productName))?.wave;
-      if (!wave) {
-        toast.error(`[DEBUG] 找不到 Wave`);
-        throw new Error("Wave not found");
-      }
-
-      // [DEBUG] Step 3: Request payload
-      const payload = {
-        action: 'enable_product',
-        wave: wave,
-        leaderId: leaderId,
-        leaderName: userProfile?.displayName || '團購主',
-        prodName: productName,
-        isEnabled: newEnabledState
-      };
-      toast.info(`[DEBUG 3] 發送請求`, { description: `Wave: ${wave}, isEnabled: ${newEnabledState}` });
+      if (!wave) throw new Error("Wave not found");
 
       const response = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          action: 'enable_product',
+          wave: wave,
+          leaderId: leaderId,
+          leaderName: userProfile?.displayName || '團購主',
+          prodName: productName,
+          isEnabled: newEnabledState
+        })
       });
       const data = await response.json();
-
-      // [DEBUG] Step 4: Response
-      toast.info(`[DEBUG 4] 收到回應`, { description: `success: ${data.success}, found: ${data.debug?.found}` });
-
       if (data.success) {
         toast.success(newEnabledState ? `已開放 ${productName}！` : `已關閉 ${productName}`);
         await loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
-      } else {
-        toast.error(`[DEBUG] API 回傳失敗`, { description: data.error || 'Unknown' });
       }
-    } catch (error: any) {
-      toast.error(`[DEBUG] 錯誤`, { description: error?.message || error?.toString() });
+    } catch (error) {
+      toast.error("操作失敗");
     } finally {
       setIsEnabling(false);
     }
