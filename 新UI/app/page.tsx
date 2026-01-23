@@ -245,6 +245,7 @@ export default function GroupBuyPage() {
 
       const response = await fetch(GAS_URL, {
         method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
           action: 'enable_product',
           wave: wave,
@@ -335,6 +336,7 @@ export default function GroupBuyPage() {
     try {
       await fetch(GAS_URL, {
         method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
           action: 'submit_batch_intent',
           wave: activeWaves[0]?.wave,
