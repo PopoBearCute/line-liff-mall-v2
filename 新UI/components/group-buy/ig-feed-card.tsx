@@ -84,8 +84,10 @@ export function IGFeedCard({
     // Actually, it's better to pass currentUserId to IGFeedCard or just look for the voter that matches a specific flag.
     // For now, let's assume we pass the profile down or use a safer approach in page.tsx.
 
-    // Updated: showStepper should be visible if there's ANY cart activity (positive or negative)
-    const showStepper = (mode === 'collecting' || mode === 'active') && cartQty !== 0;
+    // Updated: showStepper should be visible if:
+    // 1. There is ANY cart activity (positive or negative)
+    // 2. OR the user already has a record (so they can start subtract)
+    const showStepper = (mode === 'collecting' || mode === 'active') && (cartQty !== 0 || myExistingQty > 0);
 
     return (
         <article className="bg-white dark:bg-black pb-4 border-b border-gray-100 dark:border-gray-800 mb-2">
