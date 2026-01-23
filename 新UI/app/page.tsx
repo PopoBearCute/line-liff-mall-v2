@@ -611,6 +611,15 @@ export default function GroupBuyPage() {
         </div>
       </div>
       <StickyTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* 5. Sticky Footer (Cart & Actions) */}
+      <Footer
+        isLeader={isLeader}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onShare={handleShare}
+        cart={cart}
+      />
     </Suspense>
   );
 }
