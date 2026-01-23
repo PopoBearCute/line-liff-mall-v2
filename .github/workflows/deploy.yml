@@ -37,7 +37,7 @@ jobs:
       - name: Build with Next.js
         run: cd 新UI && pnpm build
         env:
-          NEXT_PUBLIC_GAS_URL: https://script.google.com/macros/s/AKfycbwPl-X2nswIUOetDWJ1RqOYEbt0Jbleex-dUbqoYa1lJObvBLFx7QwrU4yxrKo7r_fdvQ/exec
+          NEXT_PUBLIC_GAS_URL: https://script.google.com/macros/s/AKfycbylQ5sfpywrniXyfcRuWfEhUYcqdCVZdAOyPQjes9pSbgr9GYFllCopww6QNWJ1-nHPqA/exec
           NEXT_PUBLIC_LIFF_ID: 2008798234-72bJqeYx
 
       - name: Upload artifact
