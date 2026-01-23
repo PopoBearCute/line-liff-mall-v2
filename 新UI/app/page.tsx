@@ -533,11 +533,11 @@ export default function GroupBuyPage() {
         {/* Stories Bar */}
         <div className="pt-16 pb-2">
           <StoriesBar
+            leaderAvatar={userProfile?.pictureUrl || undefined}
             leaderName={leaderName}
-            products={activeProducts}
+            products={collectingProducts}
             onProductClick={(name: string) => {
               // Simple anchor scrolling or toast for now
-              // We can implement actual scrolling if products have IDs, but for now just a toast demo or no-op
               console.log("Clicked story:", name);
             }}
           />

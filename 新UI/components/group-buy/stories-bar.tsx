@@ -9,21 +9,22 @@ interface Product {
 }
 
 interface StoriesBarProps {
+    leaderAvatar?: string;
     leaderName?: string;
     products?: Product[];
     onProductClick?: (productName: string) => void;
 }
 
-export function StoriesBar({ leaderName, products = [], onProductClick }: StoriesBarProps) {
+export function StoriesBar({ leaderAvatar, leaderName, products = [], onProductClick }: StoriesBarProps) {
     return (
         <div className="w-full max-w-md mx-auto pt-2 pb-2">
             <div className="flex gap-4 overflow-x-auto px-4 pb-2 scrollbar-none snap-x">
                 {/* 1. Leader Story (Fixed) */}
                 <div className="flex flex-col items-center gap-1 min-w-[72px] snap-center cursor-pointer group">
-                    <div className="relative p-[3px] rounded-full bg-gradient-to-tr from-amber-400 to-fuchsia-600 group-hover:scale-105 transition-transform duration-300">
-                        <div className="rounded-full bg-white dark:bg-black p-[2px]">
-                            <Avatar className="w-16 h-16 border-2 border-white dark:border-black">
-                                <AvatarImage src="/line-liff-mall-v2/leader-avatar.png" alt="Leader" className="object-cover" />
+                    <div className="relative p-[3px] rounded-full group-hover:scale-105 transition-transform duration-300">
+                        <div className="rounded-full bg-white dark:bg-black p-[2px] border border-gray-100 dark:border-gray-800">
+                            <Avatar className="w-16 h-16">
+                                <AvatarImage src={leaderAvatar || "/line-liff-mall-v2/leader-avatar.png"} alt="Leader" className="object-cover" />
                                 <AvatarFallback>Leader</AvatarFallback>
                             </Avatar>
                         </div>
@@ -51,9 +52,6 @@ export function StoriesBar({ leaderName, products = [], onProductClick }: Storie
                                 </Avatar>
                             </div>
                         </div>
-                        <span className="text-xs text-center text-gray-600 dark:text-gray-300 truncate w-16">
-                            {product.name}
-                        </span>
                     </div>
                 ))}
             </div>
