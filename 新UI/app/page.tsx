@@ -622,8 +622,10 @@ export default function GroupBuyPage() {
   const collectingVotersMap = Object.fromEntries(collectingProducts.map(p => [p.name, p.voters || []]));
 
 
-  // [Phase 14 Refinement] Sort StoriesBar products by popularity (total registered qty)
-  const storiesProducts = [...collectingProducts].sort((a, b) => (b.currentQty || 0) - (a.currentQty || 0));
+  // [Phase 16 Refinement] StoriesBar: Merge Active & Collecting, Sort by Popularity (Qty)
+  // "只論登記數量 不論標籤頁別"
+  const storiesProducts = [...activeProducts, ...collectingProducts]
+    .sort((a, b) => (b.currentQty || 0) - (a.currentQty || 0));
 
   return (
     <Suspense fallback={<Loading />}>
