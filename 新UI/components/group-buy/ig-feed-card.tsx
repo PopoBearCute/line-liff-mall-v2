@@ -49,6 +49,7 @@ export function IGFeedCard({
     isSubmitting = false,
     onEnableProduct
 }: IGFeedCardProps & { onSubmit?: () => void; isSubmitting?: boolean }) {
+    const [isExpanded, setIsExpanded] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [isToggling, setIsToggling] = useState(false);
     const totalVotes = Array.isArray(voters) ? voters.reduce((acc, v) => acc + (Number(v.qty) || 0), 0) : 0;
@@ -237,10 +238,19 @@ export function IGFeedCard({
                 )}
 
                 <div className="text-[14px] text-gray-900 dark:text-white leading-relaxed mb-1">
-                    <span className="font-semibold mr-1">商品詳情</span>
-                    {product.name}
+                    <span className="font-bold mr-2">{product.name}</span>
+                    <span className={isExpanded ? "" : "line-clamp-2"}>
+                        {product.description}
+                    </span>
+                    {!isExpanded && product.description && product.description.length > 30 && (
+                        <button
+                            onClick={() => setIsExpanded(true)}
+                            className="text-gray-500 ml-1 hover:text-gray-700 text-[13px]"
+                        >
+                            ... more
+                        </button>
+                    )}
                 </div>
-                <p className="text-xs text-gray-500 line-clamp-2">{product.description}</p>
             </div>
 
             {/* 5. Sticky/Fixed Action Row */}
