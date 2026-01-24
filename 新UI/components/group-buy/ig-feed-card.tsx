@@ -212,11 +212,9 @@ export function IGFeedCard({
                                     {achievedPercent}%
                                 </span>
                             </span>
-                            {product.endDate && (
-                                <span className="text-[11px] text-gray-500 font-medium">
-                                    截止日期: {product.endDate}
-                                </span>
-                            )}
+                            <span className="text-[11px] text-gray-500 font-medium">
+                                {product.endDate ? `截止日期: ${product.endDate}` : "長期開團"}
+                            </span>
                         </div>
 
                         {/* Middle Layer: Progress Bar */}
