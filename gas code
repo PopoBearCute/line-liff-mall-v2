@@ -65,13 +65,26 @@ function doGet(e) {
                     };
                 }
                 const formatDate = (date) => {
-                    if (!date) return "";
-                    const m = date.getMonth() + 1;
-                    const d = date.getDate();
-                    const h = date.getHours();
-                    const i = date.getMinutes();
-                    return `${m}/${d} ${h}:${i < 10 ? '0' + i : i}`;
+                    if (!date) return null;
+                    try {
+                        const d = new Date(date);
+                        if (isNaN(d.getTime())) return null;
+                        const m = d.getMonth() + 1;
+                        const day = d.getDate();
+                        const h = d.getHours();
+                        const i = d.getMinutes();
+                        return `${m}/${day} ${h}:${i < 10 ? '0' + i : i}`;
+                    } catch (e) { return null; }
                 };
+
+                // Choose best date: if in collecting, wishEnd. If active, saleEnd. 
+                // Fallback: Use whichever one is available.
+                let displayDate = null;
+                if (phase === 'collecting') {
+                    displayDate = formatDate(wishEnd) || formatDate(saleEnd);
+                } else {
+                    displayDate = formatDate(saleEnd) || formatDate(wishEnd);
+                }
 
                 wavesMap[waveId].products.push({
                     name: String(row[1]).trim(),
@@ -81,7 +94,7 @@ function doGet(e) {
                     img: row[5],
                     link: row[6] || "",
                     moq: Number(row[7]),
-                    endDate: phase === 'collecting' ? formatDate(wishEnd) : formatDate(saleEnd)
+                    endDate: displayDate || ""
                 });
             }
         });

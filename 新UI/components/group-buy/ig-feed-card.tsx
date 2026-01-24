@@ -147,15 +147,11 @@ export function IGFeedCard({
                         <div className="flex items-center gap-1 text-xs text-secondary">
                             {config.headerIcon}
                             <span>{config.headerLabel}</span>
-                            {product.endDate && (
-                                <>
-                                    <span className="mx-1">•</span>
-                                    <div className="flex items-center gap-0.5 text-red-500 dark:text-red-400 font-medium">
-                                        <Clock className="w-3 h-3" />
-                                        <span>截止 {product.endDate}</span>
-                                    </div>
-                                </>
-                            )}
+                            <span className="mx-1">•</span>
+                            <div className="flex items-center gap-0.5 text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-950/30 px-1 rounded">
+                                <Clock className="w-3 h-3" />
+                                <span>{product.endDate ? `截止 ${product.endDate}` : "長期開團"}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
