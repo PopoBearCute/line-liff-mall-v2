@@ -616,23 +616,35 @@ export default function GroupBuyPage() {
   // Logic: 
   // - Leader: sees ALL active products
   // - Member: sees only isEnabled active products
+  // - Sort: isEnabled first, then by achievement rate descending
   const activeProducts = activeWaves
     .filter(w => w.phase === 'active')
     .flatMap(w => w.products.filter(p => {
-      // If leader, show all. If member, check isEnabled.
       if (isLeader) return true;
-
-      const isEnabled = p.isEnabled === true ||
-        String(p.isEnabled).toLowerCase() === 'true' ||
-        Number(p.isEnabled) === 1;
+      const isEnabled = p.isEnabled === true || String(p.isEnabled).toLowerCase() === 'true' || Number(p.isEnabled) === 1;
       return isEnabled;
-    }));
+    }))
+    .sort((a, b) => {
+      if (isLeader) {
+        const aEnabled = a.isEnabled === true || String(a.isEnabled).toLowerCase() === 'true' || Number(a.isEnabled) === 1;
+        const bEnabled = b.isEnabled === true || String(b.isEnabled).toLowerCase() === 'true' || Number(b.isEnabled) === 1;
+        if (aEnabled !== bEnabled) return aEnabled ? -1 : 1;
+      }
+      const rateA = (a.currentQty || 0) / Math.max(a.moq || 1, 1);
+      const rateB = (b.currentQty || 0) / Math.max(b.moq || 1, 1);
+      return rateB - rateA;
+    });
 
   // 2. collectingProducts: Phase=collecting OR Phase=preparing
-  // Show ALL products in these phases
+  // Show ALL products in these phases, sorted by achievement rate descending
   const collectingProducts = activeWaves
     .filter(w => w.phase === 'collecting' || w.phase === 'preparing')
-    .flatMap(w => w.products);
+    .flatMap(w => w.products)
+    .sort((a, b) => {
+      const rateA = (a.currentQty || 0) / Math.max(a.moq || 1, 1);
+      const rateB = (b.currentQty || 0) / Math.max(b.moq || 1, 1);
+      return rateB - rateA;
+    });
 
   // 3. preparingProducts: REMOVED (Merged into collecting)
 
