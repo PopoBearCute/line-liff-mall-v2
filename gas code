@@ -75,12 +75,17 @@ function doGet(e) {
                     };
                 }
 
-                // --- 日期格式化邏輯 (寬鬆模式) ---
+                // --- 日期格式化邏輯 (寬鬆模式 + 智慧顯示) ---
                 const formatDate = (date) => {
                     if (!date) return null;
                     try {
-                        // 嘗試強制轉型為 Date 物件再格式化
-                        return Utilities.formatDate(new Date(date), Session.getScriptTimeZone(), "M/d HH:mm");
+                        const d = new Date(date);
+                        // 如果時間是 23:59，只顯示日期 (e.g. 1/24)
+                        if (d.getHours() === 23 && d.getMinutes() === 59) {
+                             return Utilities.formatDate(d, Session.getScriptTimeZone(), "M/d");
+                        }
+                        // 否則顯示完整時間 (e.g. 1/24 12:00)
+                        return Utilities.formatDate(d, Session.getScriptTimeZone(), "M/d HH:mm");
                     } catch (e) { return null; }
                 };
 
