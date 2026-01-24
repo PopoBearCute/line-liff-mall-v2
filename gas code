@@ -1,27 +1,31 @@
 /**
  * 團購系統後端 - Leader Hub (單一入口) 架構版
- * V2.0 核心變更：
- * 1. 單一入口：根據 LeaderID + 日期自動決定顯示內容
- * 2. 一籃一次送：支援 submit_batch_intent 原子性寫入
- * 3. 寫入鎖：全面導入 LockService
- * 4. Phase 7: 加入用戶頭像 (Avatar) 整合
+ * V2.2 最終穩定版
+ * 特性：
+ * 1. 截止日期 (EndDate): 使用 Utilities.formatDate 確保 Google 伺服器正確輸出日期。
+ * 2. 核彈級比對 (Super Normalize): 無視所有標點、全半形、空格差異。
+ * 3. 強制同步 (Flush & Multi-row): 確保試算表資料 100% 被更新。
  */
 const CHANNEL_ACCESS_TOKEN = 'psDv9EJNm0ayber2tERmUaIIAzOZoCqBwM2zN+rWVn0MDI';
 const SHEET_PRODUCTS = 'Products';
 const SHEET_BINDING = 'LeaderBinding';
 const SHEET_INTENT = 'IntentDB';
 const SHEET_NOTIFY_LOG = 'NotifyLog';
+
 function doGet(e) {
     const lock = LockService.getScriptLock();
     try {
         const params = getCaseInsensitiveParams(e.parameter);
         const { leaderid: leaderId, userid: userId } = params;
+        
         // 記錄請求
         logAction('doGet', { leaderId, userId });
+
         const ss = SpreadsheetApp.getActiveSpreadsheet();
         const productSheet = ss.getSheetByName(SHEET_PRODUCTS);
         const intentSheet = ss.getSheetByName(SHEET_INTENT) || ss.insertSheet(SHEET_INTENT);
         const bindingSheet = ss.getSheetByName(SHEET_BINDING) || ss.insertSheet(SHEET_BINDING);
+
         // 1. 取得所有活躍波段 (Active Waves)
         const productData = productSheet.getDataRange().getValues().slice(1);
         const now = new Date();
@@ -29,24 +33,29 @@ function doGet(e) {
         const debugInfo = {
             totalRows: productData.length,
             processedWaves: 0,
-            sampleDates: [],
             filteredReasons: { closed: 0, noDate: 0 }
         };
+
         productData.forEach((row, idx) => {
             const waveId = String(row[0]).trim();
             if (!waveId) return;
+
             const wishStart = parseDateSafe(row[8]);
             const wishEnd = parseDateSafe(row[9]);
             const saleStart = parseDateSafe(row[10]);
             const saleEnd = parseDateSafe(row[11]);
+            
             if (wishEnd) wishEnd.setHours(23, 59, 59, 999);
             if (saleEnd) saleEnd.setHours(23, 59, 59, 999);
+
             let phase = 'closed';
             const isAllEmpty = !row[8] && !row[9] && !row[10] && !row[11];
+
             if (isAllEmpty) {
                 phase = 'collecting';
             } else {
                 const isValid = (d) => d instanceof Date && !isNaN(d.getTime());
+                
                 if (isValid(wishStart) && isValid(wishEnd) && now >= wishStart && now <= wishEnd) {
                     phase = 'collecting';
                 } else if (isValid(wishEnd) && isValid(saleEnd) && now > wishEnd && now <= saleEnd) {
@@ -55,6 +64,7 @@ function doGet(e) {
                     debugInfo.filteredReasons.closed++;
                 }
             }
+
             if (phase !== 'closed') {
                 debugInfo.processedWaves++;
                 if (!wavesMap[waveId]) {
@@ -64,27 +74,22 @@ function doGet(e) {
                         products: []
                     };
                 }
+
+                // --- 日期格式化邏輯 (修復日期顯示問題) ---
                 const formatDate = (date) => {
-                    if (!date) return null;
+                    if (!date || !(date instanceof Date)) return null;
                     try {
-                        const d = new Date(date);
-                        if (isNaN(d.getTime())) return null;
-                        const m = d.getMonth() + 1;
-                        const day = d.getDate();
-                        const h = d.getHours();
-                        const i = d.getMinutes();
-                        return `${m}/${day} ${h}:${i < 10 ? '0' + i : i}`;
+                        return Utilities.formatDate(date, Session.getScriptTimeZone(), "M/d HH:mm");
                     } catch (e) { return null; }
                 };
 
-                // Choose best date: if in collecting, wishEnd. If active, saleEnd. 
-                // Fallback: Use whichever one is available.
                 let displayDate = null;
                 if (phase === 'collecting') {
                     displayDate = formatDate(wishEnd) || formatDate(saleEnd);
                 } else {
                     displayDate = formatDate(saleEnd) || formatDate(wishEnd);
                 }
+                // ------------------------------------------
 
                 wavesMap[waveId].products.push({
                     name: String(row[1]).trim(),
@@ -98,13 +103,16 @@ function doGet(e) {
                 });
             }
         });
+
         const activeWaves = Object.values(wavesMap);
+
         // 2. 身分識別與權限
         let isLeader = false;
         let leaderName = '團購主';
         if (leaderId && userId && String(leaderId).trim() === String(userId).trim()) {
             isLeader = true;
         }
+
         if (leaderId) {
             const rawBindingRows = bindingSheet.getDataRange().getValues();
             for (let i = rawBindingRows.length - 1; i >= 1; i--) {
@@ -114,40 +122,43 @@ function doGet(e) {
                 }
             }
         }
-        // 3. 抓取意向/訂單數據 (Active Waves Only)
+
+        // 3. 抓取意向/訂單數據
         const intentData = intentSheet.getDataRange().getValues().slice(1);
         const progressMap = {};
         const votersMap = {};
-        const prodAvatarsMap = {};  // [Phase 7] 
+        const prodAvatarsMap = {};  
         const enabledProductsMap = {};
+        
         const bindingRows = bindingSheet.getDataRange().getValues().slice(1);
         bindingRows.forEach(row => {
             const bWave = String(row[1]).trim();
             const bLeader = String(row[2]).trim();
             if (bLeader === String(leaderId).trim()) {
                 const prods = String(row[6] || "").split(',').map(s => s.trim()).filter(s => s !== "");
-                // 必須與 doPost 一致：只採用該波段的第一筆記錄
                 if (!enabledProductsMap[bWave]) {
                     enabledProductsMap[bWave] = prods;
                 }
             }
         });
-        // 聚合統計
+
         intentData.forEach(row => {
             const rowWave = String(row[1]);
             const rowLeader = String(row[2]);
             const isWaveActive = activeWaves.some(w => w.wave === rowWave);
+            
             if (isWaveActive && rowLeader === String(leaderId || '')) {
                 const prodName = row[4];
                 const qty = Number(row[5]);
                 const uId = row[3];
                 const uName = row[7];
-                const uAvatar = row[8]; // [Phase 7]
+                const uAvatar = row[8];
+
                 if (qty > 0) {
                     progressMap[prodName] = (progressMap[prodName] || 0) + qty;
                     if (!votersMap[prodName]) votersMap[prodName] = [];
                     votersMap[prodName].push({ name: uName, qty: qty, userId: uId });
-                    // [Phase 7] 聚合頭像
+                    
                     if (!prodAvatarsMap[prodName]) prodAvatarsMap[prodName] = [];
                     if (uAvatar && !prodAvatarsMap[prodName].includes(uAvatar)) {
                         prodAvatarsMap[prodName].push(uAvatar);
@@ -155,7 +166,8 @@ function doGet(e) {
                 }
             }
         });
-        // 將數據注入到 activeWaves 結構中
+
+        // --- Super Normalize (修復"山不掉"問題) ---
         const superNormalize = (s) => {
             return String(s || "")
                 .replace(/\s+/g, "")
@@ -169,16 +181,16 @@ function doGet(e) {
 
         activeWaves.forEach(waveObj => {
             const enabledList = enabledProductsMap[waveObj.wave] || [];
-            // Assuming enabledList contains raw strings, we normalize them for lookup
             const normalizedEnabledList = enabledList.map(item => superNormalize(item));
 
             waveObj.products.forEach(prod => {
                 prod.currentQty = progressMap[prod.name] || 0;
                 prod.voters = votersMap[prod.name] || [];
-                prod.buyerAvatars = prodAvatarsMap[prod.name] || []; // [Phase 7]
+                prod.buyerAvatars = prodAvatarsMap[prod.name] || [];
                 prod.isEnabled = normalizedEnabledList.includes(superNormalize(prod.name));
             });
         });
+
         return createJsonResponse({
             success: true,
             leaderId,
@@ -187,11 +199,14 @@ function doGet(e) {
             activeWaves,
             debug: debugInfo
         });
+
     } catch (err) {
         console.error(err);
+        if (lock) lock.releaseLock(); // Failsafe
         return createJsonResponse({ success: false, error: err.toString() });
     }
 }
+
 function doPost(e) {
     const lock = LockService.getScriptLock();
     try {
@@ -199,36 +214,42 @@ function doPost(e) {
         const data = JSON.parse(e.postData.contents);
         const ss = SpreadsheetApp.getActiveSpreadsheet();
         logAction('doPost', data);
+
         // --- Action: Batch Submit (一籃一次送) ---
         if (data.action === 'submit_batch_intent') {
             const { wave, leaderId, userId, userName, userAvatar, items } = data;
             const intentSheet = ss.getSheetByName(SHEET_INTENT) || ss.insertSheet(SHEET_INTENT);
             const bindingSheet = ss.getSheetByName(SHEET_BINDING) || ss.insertSheet(SHEET_BINDING);
-            // Ensure IntentDB headers
+
             if (intentSheet.getLastRow() === 0) {
                 intentSheet.appendRow(["UniqueKey", "Wave", "LeaderId", "UserId", "ProdName", "Qty", "UpdateTime", "UserName", "UserAvatar"]);
             }
+
             const bindingKey = String(leaderId || '').trim() + '_' + String(wave).trim();
             const bindingFound = bindingSheet.getRange("A:A").createTextFinder(bindingKey).matchEntireCell(true).findNext();
+            
             if (!bindingFound && leaderId) {
                 bindingSheet.appendRow([
                     bindingKey, wave, leaderId, leaderId, data.leaderName || '團購主', new Date(), ""
                 ]);
             }
+
             items.forEach(item => {
                 const { prodName, qty } = item;
                 const uniqueKey = String(leaderId).trim() + '_' + String(wave).trim() + '_' + String(userId).trim() + '_' + String(prodName).trim();
                 const finder = intentSheet.getRange("A:A").createTextFinder(uniqueKey).matchEntireCell(true);
                 const foundRow = finder.findNext();
+                
                 if (foundRow) {
                     const rowIdx = foundRow.getRow();
                     const currentQty = Number(intentSheet.getRange(rowIdx, 6).getValue()) || 0;
                     let newQty = currentQty + Number(qty);
                     if (newQty < 0) newQty = 0;
+                    
                     intentSheet.getRange(rowIdx, 6).setValue(newQty);
                     intentSheet.getRange(rowIdx, 7).setValue(new Date());
                     intentSheet.getRange(rowIdx, 8).setValue(userName);
-                    intentSheet.getRange(rowIdx, 9).setValue(userAvatar || ""); // [Phase 7] 更新頭像
+                    intentSheet.getRange(rowIdx, 9).setValue(userAvatar || ""); 
                 } else {
                     let initialQty = Number(qty);
                     if (initialQty < 0) initialQty = 0;
@@ -241,6 +262,7 @@ function doPost(e) {
             });
             return createJsonResponse({ success: true });
         }
+
         // --- Action: Enable Product (團購主啟用/停用商品) ---
         if (data.action === 'enable_product') {
             const { wave, leaderId, prodName, isEnabled } = data;
@@ -252,7 +274,7 @@ function doPost(e) {
             const targetName = String(prodName || "").trim();
             const shouldEnable = (isEnabled === true || String(isEnabled).toLowerCase() === 'true' || isEnabled === 1);
             
-            // Super Normalize: Unify punctuation and remove whitespace
+            // --- Super Normalize (一致的比對邏輯) ---
             const superNormalize = (s) => {
                 return String(s || "")
                     .replace(/\s+/g, "")
@@ -265,21 +287,20 @@ function doPost(e) {
             };
             const targetNormalized = superNormalize(targetName);
 
-            // Find ALL matching rows by Leader ID and Wave
-            // We iterate through ALL rows to ensure we handle duplicates
+            // --- Multi-Row Update (修正重複列與同步問題) ---
             const matchingIndices = [];
             for (let i = 1; i < bindingRows.length; i++) {
                 const rWave = String(bindingRows[i][1]).trim();
                 const rLeader = String(bindingRows[i][2]).trim();
                 if (rLeader === targetLeaderId && rWave === targetWave) {
-                    matchingIndices.push(i + 1); // Store 1-based row index
+                    matchingIndices.push(i + 1); 
                 }
             }
 
             logAction('DEBUG_Toggle_Started', { prodName: targetName, shouldEnable, leaderId: targetLeaderId, wave: targetWave, matches: matchingIndices });
 
             if (matchingIndices.length > 0) {
-                // Update ALL matching rows
+                // 更新所有符合的列
                 matchingIndices.forEach(rowIdx => {
                     let currentEnabled = String(bindingSheet.getRange(rowIdx, 7).getValue() || '');
                     let list = currentEnabled ? currentEnabled.split(',').map(s => s.trim()).filter(s => s !== "") : [];
@@ -294,10 +315,10 @@ function doPost(e) {
                     bindingSheet.getRange(rowIdx, 7).setValue(list.join(','));
                 });
                 
-                SpreadsheetApp.flush(); 
+                SpreadsheetApp.flush(); // 強制同步
                 return createJsonResponse({ success: true, debug: { found: true, rows: matchingIndices } });
             } else if (shouldEnable) {
-                // No row found, create one
+                // 沒找到則新增
                 const bindingKey = targetLeaderId + '_' + targetWave;
                 bindingSheet.appendRow([
                     bindingKey, targetWave, targetLeaderId, targetLeaderId, data.leaderName || '團購主', new Date(), targetName
@@ -308,7 +329,8 @@ function doPost(e) {
                 return createJsonResponse({ success: false, error: "此團購波段尚未建立綁定資料，無法關閉商品。" });
             }
         }
-        // --- Action: Auto Register Leader (團主自動註冊) ---
+
+        // --- Action: Auto Register Leader ---
         if (data.action === 'auto_register_leader') {
             const { wave, leaderId, leaderName } = data;
             const bindingSheet = ss.getSheetByName(SHEET_BINDING) || ss.insertSheet(SHEET_BINDING);
@@ -322,12 +344,14 @@ function doPost(e) {
             }
             return createJsonResponse({ success: true });
         }
+
     } catch (err) {
         return createJsonResponse({ success: false, error: err.toString() });
     } finally {
         lock.releaseLock();
     }
 }
+
 function getCaseInsensitiveParams(obj) {
     const result = {};
     for (let key in obj) {
@@ -335,6 +359,7 @@ function getCaseInsensitiveParams(obj) {
     }
     return result;
 }
+
 function logAction(type, data) {
     try {
         const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -345,9 +370,11 @@ function logAction(type, data) {
         logSheet.appendRow([new Date(), type, JSON.stringify(data)]);
     } catch (e) { }
 }
+
 function createJsonResponse(obj) {
     return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
+
 function parseDateSafe(val) {
     if (!val) return null;
     if (val instanceof Date) return val;
