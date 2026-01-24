@@ -13,6 +13,7 @@ interface Product {
     link?: string;
     isEnabled?: boolean;
     buyerAvatars?: string[];
+    endDate?: string;
 }
 
 interface Voter {

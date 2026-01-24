@@ -64,6 +64,15 @@ function doGet(e) {
                         products: []
                     };
                 }
+                const formatDate = (date) => {
+                    if (!date) return "";
+                    const m = date.getMonth() + 1;
+                    const d = date.getDate();
+                    const h = date.getHours();
+                    const i = date.getMinutes();
+                    return `${m}/${d} ${h}:${i < 10 ? '0' + i : i}`;
+                };
+
                 wavesMap[waveId].products.push({
                     name: String(row[1]).trim(),
                     origPrice: row[2] ? Number(row[2]) : null,
@@ -71,7 +80,8 @@ function doGet(e) {
                     description: row[4] || "",
                     img: row[5],
                     link: row[6] || "",
-                    moq: Number(row[7])
+                    moq: Number(row[7]),
+                    endDate: phase === 'collecting' ? formatDate(wishEnd) : formatDate(saleEnd)
                 });
             }
         });
