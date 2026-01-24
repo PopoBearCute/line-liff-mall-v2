@@ -625,14 +625,20 @@ export default function GroupBuyPage() {
       return isEnabled;
     }))
     .sort((a, b) => {
+      // 1. If leader, enabled products always come first
       if (isLeader) {
         const aEnabled = a.isEnabled === true || String(a.isEnabled).toLowerCase() === 'true' || Number(a.isEnabled) === 1;
         const bEnabled = b.isEnabled === true || String(b.isEnabled).toLowerCase() === 'true' || Number(b.isEnabled) === 1;
         if (aEnabled !== bEnabled) return aEnabled ? -1 : 1;
       }
-      const rateA = (a.currentQty || 0) / Math.max(a.moq || 1, 1);
-      const rateB = (b.currentQty || 0) / Math.max(b.moq || 1, 1);
-      return rateB - rateA;
+
+      // 2. Sort by Achievement Rate (Descending)
+      const rateA = (Number(a.currentQty) || 0) / Math.max(Number(a.moq) || 1, 1);
+      const rateB = (Number(b.currentQty) || 0) / Math.max(Number(b.moq) || 1, 1);
+      if (rateB !== rateA) return rateB - rateA;
+
+      // 3. Secondary sort by name (Ascending) for consistency
+      return (a.name || "").localeCompare(b.name || "");
     });
 
   // 2. collectingProducts: Phase=collecting OR Phase=preparing
@@ -641,9 +647,10 @@ export default function GroupBuyPage() {
     .filter(w => w.phase === 'collecting' || w.phase === 'preparing')
     .flatMap(w => w.products)
     .sort((a, b) => {
-      const rateA = (a.currentQty || 0) / Math.max(a.moq || 1, 1);
-      const rateB = (b.currentQty || 0) / Math.max(b.moq || 1, 1);
-      return rateB - rateA;
+      const rateA = (Number(a.currentQty) || 0) / Math.max(Number(a.moq) || 1, 1);
+      const rateB = (Number(b.currentQty) || 0) / Math.max(Number(b.moq) || 1, 1);
+      if (rateB !== rateA) return rateB - rateA;
+      return (a.name || "").localeCompare(b.name || "");
     });
 
   // 3. preparingProducts: REMOVED (Merged into collecting)

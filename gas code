@@ -147,32 +147,6 @@ function doGet(e) {
                 }
             }
         });
-
-        intentData.forEach(row => {
-            const rowWave = String(row[1]);
-            const rowLeader = String(row[2]);
-            const isWaveActive = activeWaves.some(w => w.wave === rowWave);
-            
-            if (isWaveActive && rowLeader === String(leaderId || '')) {
-                const prodName = row[4];
-                const qty = Number(row[5]);
-                const uId = row[3];
-                const uName = row[7];
-                const uAvatar = row[8];
-
-                if (qty > 0) {
-                    progressMap[prodName] = (progressMap[prodName] || 0) + qty;
-                    if (!votersMap[prodName]) votersMap[prodName] = [];
-                    votersMap[prodName].push({ name: uName, qty: qty, userId: uId });
-                    
-                    if (!prodAvatarsMap[prodName]) prodAvatarsMap[prodName] = [];
-                    if (uAvatar && !prodAvatarsMap[prodName].includes(uAvatar)) {
-                        prodAvatarsMap[prodName].push(uAvatar);
-                    }
-                }
-            }
-        });
-
         // --- Super Normalize (修復"山不掉"問題) ---
         const superNormalize = (s) => {
             return String(s || "")
@@ -185,15 +159,43 @@ function doGet(e) {
                 .toLowerCase();
         };
 
+        // 聚合統計
+        intentData.forEach(row => {
+            const rowWave = String(row[1]);
+            const rowLeader = String(row[2]);
+            const isWaveActive = activeWaves.some(w => w.wave === rowWave);
+            
+            if (isWaveActive && rowLeader === String(leaderId || '')) {
+                const prodName = row[4];
+                const normalizedName = superNormalize(prodName); // 統一化鍵名
+                const qty = Number(row[5]);
+                const uId = row[3];
+                const uName = row[7];
+                const uAvatar = row[8];
+
+                if (qty > 0) {
+                    progressMap[normalizedName] = (progressMap[normalizedName] || 0) + qty;
+                    if (!votersMap[normalizedName]) votersMap[normalizedName] = [];
+                    votersMap[normalizedName].push({ name: uName, qty: qty, userId: uId });
+                    
+                    if (!prodAvatarsMap[normalizedName]) prodAvatarsMap[normalizedName] = [];
+                    if (uAvatar && !prodAvatarsMap[normalizedName].includes(uAvatar)) {
+                        prodAvatarsMap[normalizedName].push(uAvatar);
+                    }
+                }
+            }
+        });
+
         activeWaves.forEach(waveObj => {
             const enabledList = enabledProductsMap[waveObj.wave] || [];
             const normalizedEnabledList = enabledList.map(item => superNormalize(item));
 
             waveObj.products.forEach(prod => {
-                prod.currentQty = progressMap[prod.name] || 0;
-                prod.voters = votersMap[prod.name] || [];
-                prod.buyerAvatars = prodAvatarsMap[prod.name] || [];
-                prod.isEnabled = normalizedEnabledList.includes(superNormalize(prod.name));
+                const normalizedProdName = superNormalize(prod.name);
+                prod.currentQty = progressMap[normalizedProdName] || 0;
+                prod.voters = votersMap[normalizedProdName] || [];
+                prod.buyerAvatars = prodAvatarsMap[normalizedProdName] || [];
+                prod.isEnabled = normalizedEnabledList.includes(normalizedProdName);
             });
         });
 
@@ -242,7 +244,9 @@ function doPost(e) {
 
             items.forEach(item => {
                 const { prodName, qty } = item;
-                const uniqueKey = String(leaderId).trim() + '_' + String(wave).trim() + '_' + String(userId).trim() + '_' + String(prodName).trim();
+                // 將 UniqueKey 裡面的商品名稱也強制化，確保後續比對一致
+                const normalizedProdName = superNormalize(prodName);
+                const uniqueKey = String(leaderId).trim() + '_' + String(wave).trim() + '_' + String(userId).trim() + '_' + normalizedProdName;
                 const finder = intentSheet.getRange("A:A").createTextFinder(uniqueKey).matchEntireCell(true);
                 const foundRow = finder.findNext();
                 
