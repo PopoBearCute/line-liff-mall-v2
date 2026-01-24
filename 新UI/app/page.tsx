@@ -12,7 +12,61 @@ import Loading from "./loading";
 import { toast } from "sonner";
 import { GolfBallLoader } from "@/components/ui/golf-loader";
 
-const GAS_URL = process.env.NEXT_PUBLIC_GAS_URL || "https://script.google.com/macros/s/AKfycbxdanIyr7FjmHa8_1mM9VIss_U8qdZHflOvjyGtyc3JR47z-PfT2XUJGPdwdEKkVc2k4w/exec";
+import { supabase } from "@/lib/supabase";
+
+// Helper Functions to Match GAS Logic (Client Side)
+const superNormalize = (s: any): string => {
+  return String(s || "")
+    .replace(/\s+/g, "")
+    .replace(/[（(]/g, "(")
+    .replace(/[）)]/g, ")")
+    .replace(/[【\[]/g, "[")
+    .replace(/[】\]]/g, "]")
+    .replace(/['’]/g, "'")
+    .toLowerCase();
+};
+
+const parseDateSafe = (val: any): Date | null => {
+  if (!val) return null;
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+const formatDate = (date: Date | null): string | null => {
+  if (!date) return null;
+  try {
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: 'Asia/Taipei',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false,
+    };
+    const df = new Intl.DateTimeFormat('en-US', options);
+    const parts = df.formatToParts(date);
+    const part = (type: string) => parts.find(p => p.type === type)?.value;
+    const h = parseInt(part('hour') || '0', 10);
+    const m = parseInt(part('minute') || '0', 10);
+    if (h === 23 && m === 59) return `${part('month')}/${part('day')}`;
+    return `${part('month')}/${part('day')} ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  } catch (e) { return null; }
+};
+
+const getLegacyTimeStr = (): string => {
+  return new Date().toLocaleString('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: true
+  });
+};
+
+// const GAS_URL = process.env.NEXT_PUBLIC_GAS_URL || "https://script.google.com/macros/s/AKfycbxdanIyr7FjmHa8_1mM9VIss_U8qdZHflOvjyGtyc3JR47z-PfT2XUJGPdwdEKkVc2k4w/exec";
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2008798234-72bJqeYx";
 
 // Type definitions
@@ -159,63 +213,181 @@ export default function GroupBuyPage() {
   ) => {
     if (showLoader) setIsLoading(true);
     try {
-      const response = await fetch(`${GAS_URL}?leaderId=${targetLeaderId}&userId=${userId}&t=${Date.now()}`);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      // 1. Fetch Data directly from Supabase
+      const [productsRes, intentRes, bindingRes] = await Promise.all([
+        supabase.from('products').select('*'),
+        supabase.from('intentdb').select('*'),
+        supabase.from('leaderbinding').select('*'),
+      ]);
 
-      const data = await response.json();
+      if (productsRes.error) throw productsRes.error;
+      if (intentRes.error) throw intentRes.error;
+      if (bindingRes.error) throw bindingRes.error;
 
-      if (data.success) {
-        setActiveWaves(data.activeWaves || []);
-        setIsLeader(previewMode === 'consumer' ? false : (data.isLeader || false));
+      const productData = productsRes.data || [];
+      const intentData = intentRes.data || [];
+      const bindingData = bindingRes.data || [];
 
-        // 只有在 GAS 回傳的是有效名稱且目前沒名字，或 GAS 回傳的不是預設值時才更新
-        if (data.leaderName && data.leaderName !== '團購主') {
-          setLeaderName(data.leaderName);
-        } else if (!leaderName) {
-          setLeaderName('團購主');
-        }
+      // 2. Process Waves Logic
+      const now = new Date();
+      const wavesMap: Record<string, any> = {};
 
-        setLeaderId(data.leaderId);
+      productData.forEach((row: any) => {
+        const waveId = String(row.WaveID || "").trim();
+        if (!waveId) return;
 
-        setCart(prev => {
-          const newCart = { ...prev };
-          data.activeWaves?.forEach((wave: ActiveWave) => {
-            wave.products.forEach(p => {
-              if (newCart[p.name] === undefined) newCart[p.name] = 0;
-            });
-          });
-          return newCart;
-        });
+        const wishStart = parseDateSafe(row['選品開始時間']);
+        const wishEnd = parseDateSafe(row['選品結束時間']);
+        const saleStart = parseDateSafe(row['販售開始時間']);
+        const saleEnd = parseDateSafe(row['販售結束時間']);
 
-        setIsLoading(false);
+        if (wishEnd) wishEnd.setHours(23, 59, 59, 999);
+        if (saleEnd) saleEnd.setHours(23, 59, 59, 999);
 
-        // 自動註冊團主：如果是團主且有 activeWaves，自動建立 LeaderBinding
-        if (data.isLeader && data.activeWaves && data.activeWaves.length > 0 && displayName) {
-          const mainWave = data.activeWaves[0].wave;
-          try {
-            await fetch(GAS_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain' },
-              body: JSON.stringify({
-                action: 'auto_register_leader',
-                wave: mainWave,
-                leaderId: data.leaderId,
-                leaderName: displayName
-              })
-            });
-          } catch (error) {
-            console.error('Auto-register failed:', error);
-            // 不顯示錯誤給使用者，因為這是背景操作
+        let phase = 'closed';
+        const isAllEmpty = !row['選品開始時間'] && !row['選品結束時間'] && !row['販售開始時間'] && !row['販售結束時間'];
+
+        if (isAllEmpty) {
+          phase = 'collecting';
+        } else {
+          const isValid = (d: Date | null) => d instanceof Date && !isNaN(d.getTime());
+          if (isValid(wishStart) && isValid(wishEnd) && wishStart && wishEnd && now >= wishStart && now <= wishEnd) {
+            phase = 'collecting';
+          } else if (isValid(wishEnd) && isValid(saleEnd) && wishEnd && saleEnd && now > wishEnd && now <= saleEnd) {
+            phase = 'active';
           }
         }
 
-        return data.activeWaves;
-      } else {
-        console.error('GAS Error Response:', data);
-        toast.error(`資料載入錯誤: ${data.error || '不明錯誤'}`);
-        setIsLoading(false);
-        return [];
+        if (phase !== 'closed') {
+          if (!wavesMap[waveId]) {
+            wavesMap[waveId] = { wave: waveId, phase: phase, products: [] };
+          }
+
+          let displayDate = (phase === 'collecting')
+            ? (formatDate(wishEnd) || formatDate(saleEnd))
+            : (formatDate(saleEnd) || formatDate(wishEnd));
+
+          wavesMap[waveId].products.push({
+            name: String(row['商品名稱'] || "").trim(),
+            origPrice: row['原價'] ? Number(row['原價']) : null,
+            price: row['團購價'],
+            description: row['商品描述'] || "",
+            img: row['圖片網址'],
+            link: row['商城連結'] || "",
+            moq: Number(row.MOQ || 0),
+            endDate: displayDate || "無日期"
+          });
+        }
+      });
+
+      const activeWavesDerived = Object.values(wavesMap);
+
+      // 3. Leader Identity
+      const isLeaderDerived = (targetLeaderId && userId && String(targetLeaderId).trim() === String(userId).trim()) || false;
+      let leaderNameDerived = '團購主';
+
+      if (targetLeaderId) {
+        const matches = bindingData.filter((r: any) =>
+          String(r['團主 ID'] || r.leader_id || r.LeaderId) === String(targetLeaderId)
+        );
+        if (matches.length > 0) {
+          const lastMatch = matches[matches.length - 1];
+          leaderNameDerived = lastMatch['團主名稱'] || lastMatch.leader_name || lastMatch.LeaderName || leaderNameDerived;
+        }
       }
+
+      // 4. Aggregation
+      const progressMap: Record<string, number> = {};
+      const votersMap: Record<string, any[]> = {};
+      const prodAvatarsMap: Record<string, string[]> = {};
+      const enabledProductsMap: Record<string, string[]> = {};
+
+      bindingData.forEach((row: any) => {
+        const bWave = String(row['波段'] || row.wave || row.Wave).trim();
+        const bLeader = String(row['團主 ID'] || row.leader_id || row.LeaderId).trim();
+        if (bLeader === String(targetLeaderId || '').trim()) {
+          const rawProds = row['已啟用商品'] || row.enabled_products || row.EnabledProducts || "";
+          enabledProductsMap[bWave] = String(rawProds).split(',').map(s => s.trim()).filter(s => s !== "");
+        }
+      });
+
+      intentData.forEach((row: any) => {
+        const rowWave = String(row['波段'] || row.wave || row.Wave);
+        const rowLeader = String(row['團主 ID'] || row.leader_id || row.LeaderId);
+        if (activeWavesDerived.some((w: any) => w.wave === rowWave) && rowLeader === String(targetLeaderId || '')) {
+          const prodName = row['商品名稱'] || row.prod_name || row.ProdName;
+          const normalizedName = superNormalize(prodName);
+          const qty = Number(row['數量'] || row.qty || row.Qty);
+          if (qty > 0) {
+            progressMap[normalizedName] = (progressMap[normalizedName] || 0) + qty;
+            if (!votersMap[normalizedName]) votersMap[normalizedName] = [];
+            votersMap[normalizedName].push({
+              name: row['團員暱稱'] || row.user_name || "匿名",
+              qty: qty,
+              userId: row['團員 ID'] || row.user_id
+            });
+            const avatar = row.picurl || row.user_avatar;
+            if (avatar && !prodAvatarsMap[normalizedName]) prodAvatarsMap[normalizedName] = [];
+            if (avatar && !prodAvatarsMap[normalizedName].includes(avatar)) prodAvatarsMap[normalizedName].push(avatar);
+          }
+        }
+      });
+
+      // 5. Enrich
+      activeWavesDerived.forEach((waveObj: any) => {
+        const enabledList = (enabledProductsMap[waveObj.wave] || []).map(item => superNormalize(item));
+        waveObj.products.forEach((prod: any) => {
+          const normName = superNormalize(prod.name);
+          prod.currentQty = progressMap[normName] || 0;
+          prod.voters = votersMap[normName] || [];
+          prod.buyerAvatars = prodAvatarsMap[normName] || [];
+          prod.isEnabled = enabledList.includes(normName);
+        });
+      });
+
+      setActiveWaves(activeWavesDerived || []);
+      setIsLeader(previewMode === 'consumer' ? false : (isLeaderDerived || false));
+      if (leaderNameDerived && leaderNameDerived !== '團購主') {
+        setLeaderName(leaderNameDerived);
+      } else if (!leaderName) {
+        setLeaderName('團購主');
+      }
+      setLeaderId(targetLeaderId);
+
+      setCart(prev => {
+        const newCart = { ...prev };
+        activeWavesDerived?.forEach((wave: ActiveWave) => {
+          wave.products.forEach(p => {
+            if (newCart[p.name] === undefined) newCart[p.name] = 0;
+          });
+        });
+        return newCart;
+      });
+
+      setIsLoading(false);
+
+      // 6. Auto Register Leader
+      if (isLeaderDerived && activeWavesDerived.length > 0 && displayName) {
+        const mainWave = activeWavesDerived[0].wave;
+        const { data: exists } = await supabase
+          .from('leaderbinding')
+          .select('*')
+          .eq('團主 ID', String(targetLeaderId))
+          .eq('波段', String(mainWave))
+          .maybeSingle();
+
+        if (!exists && targetLeaderId) {
+          await supabase.from('leaderbinding').insert({
+            '波段': String(mainWave),
+            '團主 ID': String(targetLeaderId),
+            '團主名稱': displayName || '團購主',
+            '更新時間': getLegacyTimeStr(),
+            '已啟用商品': ""
+          });
+        }
+      }
+
+      return activeWavesDerived;
     } catch (error) {
       console.error('Data loading failed:', error);
       toast.error('資料載入失敗，可能後端正在更新中');
@@ -250,30 +422,49 @@ export default function GroupBuyPage() {
       const wave = activeWaves.find((w: ActiveWave) => w.products.some((p: Product) => p.name === productName))?.wave;
       if (!wave) throw new Error("Wave not found");
 
-      const response = await fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'enable_product',
-          wave: wave,
-          leaderId: leaderId,
-          leaderName: userProfile?.displayName || '團購主',
-          prodName: productName,
-          isEnabled: newEnabledState
-        })
-      });
+      const targetLeaderId = String(leaderId).trim();
+      const targetWave = String(wave).trim();
+      const targetName = String(productName || "").trim();
+      const targetNormalized = superNormalize(targetName);
 
-      const data = await response.json();
-      if (data.success) {
-        // Show detailed debug info from backend
-        const debugInfo = data.debug ? `(Row: ${data.debug.rows?.join(',') || 'New'}, Found: ${data.debug.found})` : '';
-        toast.success(newEnabledState ? `已開放 ${productName} ${debugInfo}` : `已關閉 ${productName} ${debugInfo}`, {
-          duration: 5000
+      const { data: bindingRow, error: bindingError } = await supabase
+        .from('leaderbinding')
+        .select('*')
+        .eq('團主 ID', targetLeaderId)
+        .eq('波段', targetWave)
+        .maybeSingle();
+
+      if (bindingError) throw bindingError;
+
+      if (bindingRow) {
+        let currentEnabled = String(bindingRow['已啟用商品'] || '');
+        let list = currentEnabled ? currentEnabled.split(',').map(s => s.trim()).filter(s => s !== "") : [];
+
+        if (newEnabledState) {
+          if (!list.some(item => superNormalize(item) === targetNormalized)) {
+            list.push(targetName);
+          }
+        } else {
+          list = list.filter(item => superNormalize(item) !== targetNormalized);
+        }
+
+        await supabase
+          .from('leaderbinding')
+          .update({ '已啟用商品': list.join(',') })
+          .eq('團主 ID', targetLeaderId)
+          .eq('波段', targetWave);
+      } else if (newEnabledState) {
+        await supabase.from('leaderbinding').insert({
+          '波段': targetWave,
+          '團主 ID': targetLeaderId,
+          '團主名稱': userProfile?.displayName || '團購主',
+          '更新時間': getLegacyTimeStr(),
+          '已啟用商品': targetName
         });
-        await loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
-      } else {
-        throw new Error(data.error);
       }
+
+      toast.success(newEnabledState ? `已開放 ${productName}` : `已關閉 ${productName}`);
+      await loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
     } catch (error: any) {
       // 3. Rollback
       setActiveWaves(prev => prev.map(wave => ({
@@ -312,34 +503,59 @@ export default function GroupBuyPage() {
     try {
       const mainWave = activeWaves[0]?.wave || "Unknown";
 
-      const response = await fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'submit_batch_intent',
-          wave: mainWave,
-          leaderId: leaderId,
-          leaderName: userProfile.displayName,
-          userId: userProfile.userId,
-          userName: userProfile.displayName,
-          userAvatar: userProfile.pictureUrl || "", // Force empty string if undefined
-          items: itemsToSubmit
-        })
-      });
+      for (const item of itemsToSubmit) {
+        const { prodName, qty } = item;
+        const normalizedProdName = superNormalize(prodName);
+        const uniqueKey = `${String(leaderId).trim()}_${String(mainWave).trim()}_${String(userProfile.userId).trim()}_${normalizedProdName}`;
 
-      const resData = await response.json();
+        const { data: existingIntent } = await supabase
+          .from('intentdb')
+          .select('*')
+          .eq('唯一金鑰', uniqueKey)
+          .maybeSingle();
 
-      if (resData.success) {
-        toast.success("登記成功！", { description: "已更新您的登記紀錄" });
-        await loadData(leaderId, userProfile.userId, userProfile.displayName, false);
+        if (existingIntent) {
+          const currentQty = Number(existingIntent['數量'] || 0);
+          let newQty = currentQty + Number(qty);
+          if (newQty < 0) newQty = 0;
 
-        if (specificProductName) {
-          setCart(prev => ({ ...prev, [specificProductName]: 0 }));
+          await supabase
+            .from('intentdb')
+            .update({
+              '數量': newQty,
+              '更新時間': getLegacyTimeStr(),
+              '團員暱稱': userProfile.displayName,
+              'picurl': userProfile.pictureUrl || ""
+            })
+            .eq('唯一金鑰', uniqueKey);
         } else {
-          setCart({});
+          let initialQty = Number(qty);
+          if (initialQty < 0) initialQty = 0;
+          if (initialQty > 0) {
+            await supabase
+              .from('intentdb')
+              .insert({
+                '唯一金鑰': uniqueKey,
+                '波段': String(mainWave),
+                '團主 ID': String(leaderId),
+                '團員 ID': String(userProfile.userId),
+                '商品名稱': prodName,
+                '數量': initialQty,
+                '更新時間': getLegacyTimeStr(),
+                '團員暱稱': userProfile.displayName,
+                'picurl': userProfile.pictureUrl || ""
+              });
+          }
         }
+      }
+
+      toast.success("登記成功！", { description: "已更新您的登記紀錄" });
+      await loadData(leaderId, userProfile.userId, userProfile.displayName, false);
+
+      if (specificProductName) {
+        setCart(prev => ({ ...prev, [specificProductName]: 0 }));
       } else {
-        throw new Error(resData.error);
+        setCart({});
       }
     } catch (error) {
       console.error('Submit failed:', error);
@@ -355,18 +571,17 @@ export default function GroupBuyPage() {
     if (!leaderId || !userProfile) return;
 
     try {
-      await fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'submit_batch_intent',
-          wave: activeWaves[0]?.wave,
-          leaderId: leaderId,
-          userId: voterUserId || 'UNKNOWN',
-          userName: voterName,
-          items: [{ prodName: productName, qty: -9999 }]
+      const mainWave = activeWaves[0]?.wave;
+      const normalizedProdName = superNormalize(productName);
+      const uniqueKey = `${String(leaderId).trim()}_${String(mainWave).trim()}_${String(voterUserId || 'UNKNOWN').trim()}_${normalizedProdName}`;
+
+      await supabase
+        .from('intentdb')
+        .update({
+          '數量': 0,
+          '更新時間': getLegacyTimeStr()
         })
-      });
+        .eq('唯一金鑰', uniqueKey);
 
       toast.success("已移除紀錄");
       await loadData(leaderId, userProfile.userId, userProfile.displayName, false);

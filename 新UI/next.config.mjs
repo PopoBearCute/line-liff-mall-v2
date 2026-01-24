@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  basePath: '/line-liff-mall-v2',
-  assetPrefix: '/line-liff-mall-v2',
+  // basePath: '/line-liff-mall-v2',
+  // assetPrefix: '/line-liff-mall-v2',
   typescript: {
     ignoreBuildErrors: true,
   },
