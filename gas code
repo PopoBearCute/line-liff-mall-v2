@@ -75,11 +75,12 @@ function doGet(e) {
                     };
                 }
 
-                // --- 日期格式化邏輯 (修復日期顯示問題) ---
+                // --- 日期格式化邏輯 (寬鬆模式) ---
                 const formatDate = (date) => {
-                    if (!date || !(date instanceof Date)) return null;
+                    if (!date) return null;
                     try {
-                        return Utilities.formatDate(date, Session.getScriptTimeZone(), "M/d HH:mm");
+                        // 嘗試強制轉型為 Date 物件再格式化
+                        return Utilities.formatDate(new Date(date), Session.getScriptTimeZone(), "M/d HH:mm");
                     } catch (e) { return null; }
                 };
 
@@ -99,7 +100,7 @@ function doGet(e) {
                     img: row[5],
                     link: row[6] || "",
                     moq: Number(row[7]),
-                    endDate: displayDate || ""
+                    endDate: displayDate || "無日期" // 改為顯示文字，確認部署成功
                 });
             }
         });
