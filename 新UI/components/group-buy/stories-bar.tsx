@@ -24,7 +24,7 @@ export function StoriesBar({ leaderAvatar, leaderName, products = [], onProductC
                     <div className="relative p-[3px] rounded-full group-hover:scale-105 transition-transform duration-300">
                         <div className="rounded-full bg-white dark:bg-black p-[2px] border border-gray-100 dark:border-gray-800">
                             <Avatar className="w-16 h-16">
-                                <AvatarImage src={leaderAvatar || "/line-liff-mall-v2/leader-avatar.png"} alt="Leader" className="object-cover" />
+                                <AvatarImage src={leaderAvatar || "/leader-avatar.png"} alt="Leader" className="object-cover" />
                                 <AvatarFallback>Leader</AvatarFallback>
                             </Avatar>
                         </div>
@@ -32,8 +32,8 @@ export function StoriesBar({ leaderAvatar, leaderName, products = [], onProductC
                             <Plus className="w-3.5 h-3.5" />
                         </div>
                     </div>
-                    <span className="text-xs text-center font-medium text-gray-900 dark:text-white truncate w-full">
-                        團購主
+                    <span className="text-xs text-center font-medium text-gray-900 dark:text-white truncate w-full px-1">
+                        {leaderName || "團購主"}
                     </span>
                 </div>
 
