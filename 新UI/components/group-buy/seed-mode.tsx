@@ -98,7 +98,7 @@ export function SeedMode({ onEnterShop, onShareCollecting, onShareActive }: Seed
       </div>
 
       <p className="mt-8 text-xs text-gray-400 font-medium">
-        Powered by Line Liff Mall v2
+        Powered by 多角化室
       </p>
     </section>
   );
