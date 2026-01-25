@@ -127,93 +127,89 @@ export async function GET(request: Request) {
 
         const activeWaves = Object.values(wavesMap);
 
-        // 3. Leader Identity
-        let isLeader = (leaderId && userId && String(leaderId).trim() === String(userId).trim()) || false;
-        let leaderName = '團購主';
 
-    }
 
         // 3. Leader Identity & Avatar Lookup
         let isLeader = (leaderId && userId && String(leaderId).trim() === String(userId).trim()) || false;
-    let leaderName = '團購主';
-    let leaderAvatar = '';
+        let leaderName = '團購主';
+        let leaderAvatar = '';
 
-    if (leaderId) {
-        const targetId = String(leaderId).trim();
-        // 3.1 Get Name from Binding
-        const matches = bindingData.filter((r: any) =>
-            String(r['團主 ID']) === targetId
-        );
-        if (matches.length > 0) {
-            const lastMatch = matches[matches.length - 1];
-            leaderName = lastMatch['團主名稱'] || leaderName;
-        }
+        if (leaderId) {
+            const targetId = String(leaderId).trim();
+            // 3.1 Get Name from Binding
+            const matches = bindingData.filter((r: any) =>
+                String(r['團主 ID']) === targetId
+            );
+            if (matches.length > 0) {
+                const lastMatch = matches[matches.length - 1];
+                leaderName = lastMatch['團主名稱'] || leaderName;
+            }
 
-        // 3.2 Get Avatar from IntentDB (Look for any usage by this leader)
-        // Strategy: Find any order placed by this leader to get their avatar
-        // Since we already fetched intentData, we can just search in memory
-        const avatarMatch = intentData.find((r: any) => String(r['團員 ID']) === targetId && r.picurl);
-        if (avatarMatch) {
-            leaderAvatar = avatarMatch.picurl;
-        }
-    }
-
-    // 4. Aggregation (Mapping IntentDB Chinese Columns)
-    const progressMap: Record<string, number> = {};
-    const votersMap: Record<string, any[]> = {};
-    const prodAvatarsMap: Record<string, string[]> = {};
-    const enabledProductsMap: Record<string, string[]> = {};
-
-    bindingData.forEach((row: any) => {
-        // Schema: 所屬波段, 團主 ID, 已啟用商品名單
-        const bWave = String(row['所屬波段'] || "").trim();
-        const bLeader = String(row['團主 ID'] || "").trim();
-        if (bLeader === String(leaderId || '').trim()) {
-            const rawProds = row['已啟用商品名單'] || "";
-            enabledProductsMap[bWave] = String(rawProds).split(',').map(s => s.trim()).filter(s => s !== "");
-        }
-    });
-
-    intentData.forEach((row: any) => {
-        const rowWave = String(row['波段'] || "");
-        const rowLeader = String(row['團主 ID'] || "");
-        if (activeWaves.some((w: any) => w.wave === rowWave) && rowLeader === String(leaderId || '')) {
-            const prodName = row['商品名稱'] || "";
-            const normalizedName = superNormalize(prodName);
-            const qty = Number(row['數量'] || 0);
-            if (qty > 0) {
-                progressMap[normalizedName] = (progressMap[normalizedName] || 0) + qty;
-                if (!votersMap[normalizedName]) votersMap[normalizedName] = [];
-                votersMap[normalizedName].push({
-                    name: row['團員暱稱'] || "匿名",
-                    qty: qty,
-                    userId: row['團員 ID']
-                });
-                const avatar = row.picurl;
-                if (avatar && !prodAvatarsMap[normalizedName]) prodAvatarsMap[normalizedName] = [];
-                if (avatar && !prodAvatarsMap[normalizedName].includes(avatar)) prodAvatarsMap[normalizedName].push(avatar);
+            // 3.2 Get Avatar from IntentDB (Look for any usage by this leader)
+            // Strategy: Find any order placed by this leader to get their avatar
+            // Since we already fetched intentData, we can just search in memory
+            const avatarMatch = intentData.find((r: any) => String(r['團員 ID']) === targetId && r.picurl);
+            if (avatarMatch) {
+                leaderAvatar = avatarMatch.picurl;
             }
         }
-    });
 
-    // 5. Enrich
-    activeWaves.forEach((waveObj: any) => {
-        const enabledList = (enabledProductsMap[waveObj.wave] || []).map(item => superNormalize(item));
-        waveObj.products.forEach((prod: any) => {
-            const normName = superNormalize(prod.name);
-            prod.currentQty = progressMap[normName] || 0;
-            prod.voters = votersMap[normName] || [];
-            prod.buyerAvatars = prodAvatarsMap[normName] || [];
-            prod.isEnabled = enabledList.includes(normName);
+        // 4. Aggregation (Mapping IntentDB Chinese Columns)
+        const progressMap: Record<string, number> = {};
+        const votersMap: Record<string, any[]> = {};
+        const prodAvatarsMap: Record<string, string[]> = {};
+        const enabledProductsMap: Record<string, string[]> = {};
+
+        bindingData.forEach((row: any) => {
+            // Schema: 所屬波段, 團主 ID, 已啟用商品名單
+            const bWave = String(row['所屬波段'] || "").trim();
+            const bLeader = String(row['團主 ID'] || "").trim();
+            if (bLeader === String(leaderId || '').trim()) {
+                const rawProds = row['已啟用商品名單'] || "";
+                enabledProductsMap[bWave] = String(rawProds).split(',').map(s => s.trim()).filter(s => s !== "");
+            }
         });
-    });
 
-    return NextResponse.json({ success: true, leaderId, leaderName, leaderAvatar, isLeader, activeWaves });
+        intentData.forEach((row: any) => {
+            const rowWave = String(row['波段'] || "");
+            const rowLeader = String(row['團主 ID'] || "");
+            if (activeWaves.some((w: any) => w.wave === rowWave) && rowLeader === String(leaderId || '')) {
+                const prodName = row['商品名稱'] || "";
+                const normalizedName = superNormalize(prodName);
+                const qty = Number(row['數量'] || 0);
+                if (qty > 0) {
+                    progressMap[normalizedName] = (progressMap[normalizedName] || 0) + qty;
+                    if (!votersMap[normalizedName]) votersMap[normalizedName] = [];
+                    votersMap[normalizedName].push({
+                        name: row['團員暱稱'] || "匿名",
+                        qty: qty,
+                        userId: row['團員 ID']
+                    });
+                    const avatar = row.picurl;
+                    if (avatar && !prodAvatarsMap[normalizedName]) prodAvatarsMap[normalizedName] = [];
+                    if (avatar && !prodAvatarsMap[normalizedName].includes(avatar)) prodAvatarsMap[normalizedName].push(avatar);
+                }
+            }
+        });
 
-} catch (err: any) {
-    console.error('API Error:', err);
-    return NextResponse.json({ success: false, error: err.toString() }, { status: 500 });
-}
+        // 5. Enrich
+        activeWaves.forEach((waveObj: any) => {
+            const enabledList = (enabledProductsMap[waveObj.wave] || []).map(item => superNormalize(item));
+            waveObj.products.forEach((prod: any) => {
+                const normName = superNormalize(prod.name);
+                prod.currentQty = progressMap[normName] || 0;
+                prod.voters = votersMap[normName] || [];
+                prod.buyerAvatars = prodAvatarsMap[normName] || [];
+                prod.isEnabled = enabledList.includes(normName);
+            });
+        });
+
+        return NextResponse.json({ success: true, leaderId, leaderName, leaderAvatar, isLeader, activeWaves });
+
+    } catch (err: any) {
+        console.error('API Error:', err);
+        return NextResponse.json({ success: false, error: err.toString() }, { status: 500 });
+    }
 }
 
 // Helper for DB Write Time (Matching GAS legacy format: 2026/1/24 上午 1:35:56)
