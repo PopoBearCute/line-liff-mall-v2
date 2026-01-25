@@ -38,7 +38,7 @@ export default function AdminPage() {
     // 1. PIN Auth
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-        if (pin === "8888") {
+        if (pin === "0920401419") {
             setIsAuthenticated(true);
             fetchProducts();
         } else {
