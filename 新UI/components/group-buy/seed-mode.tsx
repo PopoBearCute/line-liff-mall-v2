@@ -4,23 +4,21 @@ import { Share2, Rocket, Sparkles } from "lucide-react";
 import { useState } from "react";
 
 interface SeedModeProps {
-  onShare: () => void;
-  wave: string;
+  onEnterShop: () => void;
+  onShareCollecting: () => void;
+  onShareActive: () => void;
 }
 
-export function SeedMode({ onShare, wave }: SeedModeProps) {
+export function SeedMode({ onEnterShop, onShareCollecting, onShareActive }: SeedModeProps) {
   // Secret Admin Trigger State
   const [clickCount, setClickCount] = useState(0);
   const [lastClickTime, setLastClickTime] = useState(0);
   const [showAdmin, setShowAdmin] = useState(false);
 
   return (
-    <section className="flex flex-col items-center justify-center px-6 py-12">
-      <div className="mb-4">
-        {/* Simplified Seed Content */}
-      </div>
+    <section className="flex flex-col items-center justify-center min-h-screen px-6 py-12 bg-gradient-to-b from-blue-50 to-white">
 
-      <div className="glass-card-featured card-hover flex w-full max-w-sm flex-col items-center rounded-3xl p-8 text-center">
+      <div className="glass-card-featured card-hover flex w-full max-w-sm flex-col items-center rounded-3xl p-8 text-center shadow-xl border border-white/50">
         {/* Animated Icon - Secret Admin Trigger */}
         <div
           className="relative mb-6 cursor-pointer active:scale-95 transition-transform"
@@ -41,42 +39,67 @@ export function SeedMode({ onShare, wave }: SeedModeProps) {
             }
           }}
         >
-          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-primary/20 to-secondary/20">
-            <Rocket className="h-10 w-10 text-primary" />
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary-blue to-teal-400 shadow-lg shadow-blue-200">
+            <Rocket className="h-12 w-12 text-white" />
           </div>
-          <div className="absolute -top-1 -right-1">
-            <Sparkles className="h-5 w-5 text-accent" />
+          <div className="absolute -top-1 -right-1 animate-pulse">
+            <Sparkles className="h-6 w-6 text-yellow-400 fill-yellow-400" />
           </div>
         </div>
 
-        <h3 className="text-xl font-bold text-foreground">
-          不用再數+1了！
+        <h3 className="text-2xl font-black text-gray-900 mb-2">
+          歡迎回來，團購主！
         </h3>
-        <p className="mt-4 text-base font-medium leading-relaxed text-foreground/90">
-          分享您的<span className="text-blue-600 font-bold">專屬圖卡</span><br />
-          讓團員許願，自動加總、輕鬆統計<br />
-          看到「可成團」即可準備開團！
+        <p className="text-gray-600 font-medium mb-8 leading-relaxed">
+          這裡是您的專屬商店入口。<br />
+          點擊下方按鈕進入商店，<br />
+          管理訂單、開放登記或分享好物。
         </p>
 
         {showAdmin && (
           <button
             onClick={() => window.location.href = '/admin'}
-            className="mb-4 text-xs font-bold text-gray-400 border border-gray-200 px-3 py-1 rounded-full hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            className="mb-6 w-full text-xs font-bold text-gray-500 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100 hover:text-gray-800 transition-colors flex items-center justify-center gap-2"
           >
-            🔧 進入管理後台
+            🔧 進入商品管理後台
           </button>
         )}
 
+        {/* 1. Main Action: Enter Shop */}
         <button
-          id="btn-share"
-          type="button"
-          onClick={onShare}
-          className="btn-tactile mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-primary/90 py-4 text-base font-bold text-primary-foreground shadow-lg shadow-primary/25"
+          onClick={onEnterShop}
+          className="btn-tactile w-full flex items-center justify-center gap-2 rounded-2xl bg-gray-900 text-white py-4 text-lg font-bold shadow-lg shadow-gray-300 hover:bg-black transition-all active:scale-95 mb-4"
         >
-          <Share2 className="h-5 w-5" />
-          分享<span className="text-white">專屬圖卡</span>至 LINE 群組
+          <span>🏪</span>
+          進入我的商店
         </button>
+
+        <div className="w-full h-[1px] bg-gray-200 my-4"></div>
+
+        {/* 2. Secondary Actions: Share Buttons */}
+        <div className="w-full space-y-3">
+          <button
+            onClick={onShareCollecting}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 text-gray-700 py-3 text-sm font-bold shadow-sm hover:bg-gray-50 transition-all active:scale-95"
+          >
+            <Share2 className="h-4 w-4 text-blue-500" />
+            分享「集單中」商品圖卡
+          </button>
+
+          <button
+            onClick={onShareActive}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 text-gray-700 py-3 text-sm font-bold shadow-sm hover:bg-gray-50 transition-all active:scale-95"
+          >
+            <Share2 className="h-4 w-4 text-red-500" />
+            分享「上架中」商品圖卡
+          </button>
+        </div>
+
       </div>
+
+      <p className="mt-8 text-xs text-gray-400 font-medium">
+        Powered by Line Liff Mall v2
+      </p>
     </section>
   );
 }

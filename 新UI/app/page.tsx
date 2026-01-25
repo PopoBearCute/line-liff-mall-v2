@@ -486,10 +486,11 @@ export default function GroupBuyPage() {
     }
   };
 
-  const handleShare = async () => {
+  // Refactored handleShare to support "Collecting Only" or "Active Only" modes
+  const handleShare = async (filterMode?: 'collecting' | 'active' | object) => {
     if (!leaderId) return;
 
-    // 防呆：如果資料還沒讀取完，跳出提示
+    // Safety check for loading state
     if (activeWaves.length === 0 && isLoading) {
       toast.info("資料處理中，請稍候再分享...");
       return;
@@ -498,7 +499,6 @@ export default function GroupBuyPage() {
     const shareUrl = `https://liff.line.me/${LIFF_ID}?leaderId=${leaderId}`;
 
     if (!window.liff?.isApiAvailable('shareTargetPicker')) {
-      // Fallback for external browser
       navigator.clipboard.writeText(shareUrl);
       toast.success("連結已複製", { description: "請手動貼上給好友" });
       return;
@@ -506,21 +506,24 @@ export default function GroupBuyPage() {
 
     try {
       const safeLeaderName = (leaderName || '我').replace(/[^\w\u4e00-\u9fa5\s]/g, '').slice(0, 10);
-
-      // (B) 獲取真實商品資料，限制在前 9 個 (留 1 個給 More Card)
-      // 邏輯：優先抓取「許願登記中 (collecting)」的商品
       const validWaves = activeWaves.filter(w => w.phase !== 'closed');
 
-      const collectingProds = validWaves
-        .filter(w => w.phase === 'collecting')
-        .flatMap(w => w.products);
+      const collectingProds = validWaves.filter(w => w.phase === 'collecting').flatMap(w => w.products);
+      const activeProds = validWaves.filter(w => w.phase === 'active').flatMap(w => w.products);
 
-      const activeProds = validWaves
-        .filter(w => w.phase === 'active')
-        .flatMap(w => w.products);
+      let candidateProducts: Product[] = [];
 
-      // 合併但不在此過濾 isEnabled，確保圖卡內容豐富
-      let candidateProducts = [...collectingProds, ...activeProds];
+      // Detect Filter Mode (Filter by string 'collecting' or 'active', ignore if it's an Event object)
+      const mode = (typeof filterMode === 'string') ? filterMode : null;
+
+      if (mode === 'collecting') {
+        candidateProducts = collectingProds;
+      } else if (mode === 'active') {
+        candidateProducts = activeProds;
+      } else {
+        // Default: Mixed (collecting prioritized)
+        candidateProducts = [...collectingProds, ...activeProds];
+      }
 
       // 保底邏輯
       if (candidateProducts.length === 0) {
@@ -624,7 +627,13 @@ export default function GroupBuyPage() {
   };
 
   if (viewMode === 'loading') return <Loading />;
-  if (viewMode === 'seed') return <SeedMode onShare={handleShare} wave={activeWaves[0]?.wave || "1"} />;
+  if (viewMode === 'seed') return (
+    <SeedMode
+      onEnterShop={() => setViewMode('main')}
+      onShareCollecting={() => handleShare('collecting')}
+      onShareActive={() => handleShare('active')}
+    />
+  );
 
   // 1. activeProducts: Phase=active
   // Logic: 
