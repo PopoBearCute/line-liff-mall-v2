@@ -6,8 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { BatchPaste } from "@/components/admin/batch-paste";
-import { Loader2, Trash2 } from "lucide-react";
+import { ProductForm } from "@/components/admin/product-form";
+import { Loader2, Trash2, Edit, Plus } from "lucide-react";
 import Link from 'next/link';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 // Client-side Supabase for Admin (should use env but hardcoded for now as per page.tsx)
 const supabaseUrl = 'https://icrmiwopkmfzbryykwli.supabase.co';
@@ -15,7 +22,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_KEY || 'sb_publishable_9tQY
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface Product {
-    id: number;
+    // id: number; // Removed as determined by debug script
     "WaveID": number;
     "商品名稱": string;
     "原價": number;
@@ -35,6 +42,11 @@ export default function AdminPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [mode, setMode] = useState<'list' | 'batch'>('list');
 
+    // Edit/Add Modal State
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [originalKey, setOriginalKey] = useState<{ wave: number, name: string } | null>(null);
+
     // 1. PIN Auth
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,10 +61,11 @@ export default function AdminPage() {
     // 2. Fetch Products
     const fetchProducts = async () => {
         setIsLoading(true);
+        // Changed ordering to WaveID since 'id' does not exist
         const { data, error } = await supabase
             .from('products')
             .select('*')
-            .order('id', { ascending: false }); // Newest first
+            .order('WaveID', { ascending: false }); // Newest first
 
         if (error) {
             toast.error("讀取失敗: " + error.message);
@@ -95,15 +108,100 @@ export default function AdminPage() {
     };
 
     // 4. Delete
-    const handleDelete = async (id: number, name: string) => {
+    const handleDelete = async (waveId: number, name: string) => {
         if (!confirm(`確定要刪除 [${name}] 嗎？`)) return;
 
-        const { error } = await supabase.from('products').delete().eq('id', id);
+        // Use Composite Key (WaveID + Name) for deletion
+        const { error } = await supabase
+            .from('products')
+            .delete()
+            .eq('WaveID', waveId)
+            .eq('商品名稱', name);
+
         if (error) {
             toast.error("刪除失敗");
         } else {
             toast.success("已刪除");
-            setProducts(prev => prev.filter(p => p.id !== id));
+            setProducts(prev => prev.filter(p => !(p.WaveID === waveId && p["商品名稱"] === name)));
+        }
+    };
+
+    // 5. Open Add Dialog
+    const handleOpenAdd = () => {
+        setEditingProduct(null);
+        setOriginalKey(null);
+        setIsDialogOpen(true);
+    };
+
+    // 6. Open Edit Dialog
+    const handleOpenEdit = (product: Product) => {
+        setEditingProduct(product);
+        setOriginalKey({ wave: product.WaveID, name: product["商品名稱"] });
+        setIsDialogOpen(true);
+    };
+
+    // 7. Save Product (Add or Edit)
+    const handleSaveProduct = async (formData: any) => {
+        // Prepare data
+        const payload = {
+            "WaveID": formData.WaveID,
+            "商品名稱": formData["商品名稱"],
+            "原價": formData["原價"],
+            "團購價": formData["團購價"],
+            "MOQ": formData["MOQ"],
+            "圖片網址": formData["圖片網址"],
+            "商品描述": formData["商品描述"],
+            "商城連結": formData["商城連結"],
+            // Ensure dates exist if inserting, or keep existing? 
+            // New items get default dates
+            "選品開始時間": editingProduct ? editingProduct["販售開始時間"] : new Date().toISOString(),
+            "選品結束時間": editingProduct ? editingProduct["販售結束時間"] : new Date(Date.now() + 7 * 86400000).toISOString(),
+        };
+
+        try {
+            if (originalKey) {
+                // UPDATE
+                // Since PK allows update on non-key columns, but if rename happens we need careful update.
+                // Assuming WaveID+Name is PK, we can't 'update' the PK easily.
+                // Strategy: Delete Old -> Insert New (Safest for composite key changes without proper PK ID support)
+                // Wait, if only other fields changed, we use update.
+                const keyChanged = (originalKey.wave !== payload.WaveID || originalKey.name !== payload["商品名稱"]);
+
+                if (keyChanged) {
+                    // Key changed: Delete old, Insert new
+                    const { error: delErr } = await supabase.from('products')
+                        .delete()
+                        .eq('WaveID', originalKey.wave)
+                        .eq('商品名稱', originalKey.name);
+                    if (delErr) throw delErr;
+
+                    const { error: insErr } = await supabase.from('products').insert([payload]);
+                    if (insErr) throw insErr;
+
+                } else {
+                    // Key same: Simple update
+                    const { error } = await supabase
+                        .from('products')
+                        .update(payload)
+                        .eq('WaveID', originalKey.wave)
+                        .eq('商品名稱', originalKey.name);
+                    if (error) throw error;
+                }
+                toast.success("更新成功");
+
+            } else {
+                // CREATE
+                const { error } = await supabase.from('products').insert([payload]);
+                if (error) throw error;
+                toast.success("新增成功");
+            }
+
+            setIsDialogOpen(false);
+            fetchProducts(); // Refresh
+
+        } catch (err: any) {
+            console.error(err);
+            toast.error("儲存失敗: " + err.message);
         }
     };
 
@@ -114,7 +212,7 @@ export default function AdminPage() {
                     <h1 className="text-xl font-bold text-center">後台管理登入</h1>
                     <Input
                         type="password"
-                        placeholder="請輸入密碼 (8888)"
+                        placeholder="請輸入管理 PIN 碼"
                         value={pin}
                         onChange={e => setPin(e.target.value)}
                         autoFocus
@@ -160,16 +258,21 @@ export default function AdminPage() {
                         <>
                             <div className="mb-4 flex justify-between items-center">
                                 <span className="text-sm text-gray-500">共 {products.length} 筆商品</span>
-                                <Button size="sm" variant="outline" onClick={fetchProducts}>
-                                    {isLoading ? <Loader2 className="animate-spin w-4 h-4" /> : "重新整理"}
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button size="sm" onClick={handleOpenAdd} className="bg-blue-600 hover:bg-blue-700">
+                                        <Plus className="w-4 h-4 mr-1" />
+                                        新增單筆
+                                    </Button>
+                                    <Button size="sm" variant="outline" onClick={fetchProducts}>
+                                        {isLoading ? <Loader2 className="animate-spin w-4 h-4" /> : "重新整理"}
+                                    </Button>
+                                </div>
                             </div>
 
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm text-left border-collapse">
                                     <thead className="bg-gray-100 text-gray-600">
                                         <tr>
-                                            <th className="p-3 border-b">ID</th>
                                             <th className="p-3 border-b">波段</th>
                                             <th className="p-3 border-b">圖片</th>
                                             <th className="p-3 border-b w-[30%]">名稱</th>
@@ -179,9 +282,8 @@ export default function AdminPage() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {products.map(p => (
-                                            <tr key={p.id} className="hover:bg-gray-50 group border-b last:border-0">
-                                                <td className="p-3 text-gray-400">{p.id}</td>
+                                        {products.map((p, idx) => (
+                                            <tr key={`${p.WaveID}_${p["商品名稱"]}_${idx}`} className="hover:bg-gray-50 group border-b last:border-0">
                                                 <td className="p-3">{p.WaveID}</td>
                                                 <td className="p-3">
                                                     {p["圖片網址"] && (
@@ -191,12 +293,20 @@ export default function AdminPage() {
                                                 <td className="p-3 font-medium">{p["商品名稱"]}</td>
                                                 <td className="p-3 text-red-600 font-bold">${p["團購價"]}</td>
                                                 <td className="p-3">{p.MOQ}</td>
-                                                <td className="p-3 text-right">
+                                                <td className="p-3 text-right whitespace-nowrap">
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="h-8 w-8 text-blue-400 hover:text-blue-700 hover:bg-blue-50 mr-1"
+                                                        onClick={() => handleOpenEdit(p)}
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </Button>
                                                     <Button
                                                         size="icon"
                                                         variant="ghost"
                                                         className="h-8 w-8 text-red-400 hover:text-red-700 hover:bg-red-50"
-                                                        onClick={() => handleDelete(p.id, p["商品名稱"])}
+                                                        onClick={() => handleDelete(p.WaveID, p["商品名稱"])}
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </Button>
@@ -217,6 +327,20 @@ export default function AdminPage() {
                     )}
                 </div>
             </div>
+
+            {/* Add/Edit Dialog */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>{editingProduct ? "編輯商品" : "新增商品"}</DialogTitle>
+                    </DialogHeader>
+                    <ProductForm
+                        initialData={editingProduct}
+                        onSave={handleSaveProduct}
+                        onCancel={() => setIsDialogOpen(false)}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
