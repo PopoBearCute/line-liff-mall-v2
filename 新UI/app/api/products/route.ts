@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase'; // Keep for public READ access
+import { createClient } from '@supabase/supabase-js'; // For private WRITE access
 
 // --- Helper Functions to Match GAS Logic ---
 
@@ -255,6 +256,12 @@ export async function POST(request: Request) {
         const data = await request.json();
         const { idToken } = data; // Extract ID Token
 
+        // Initialize Admin Client (Bypasses RLS)
+        // MUST be used for all WRITE operations (Insert/Update)
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_KEY!; // Fallback warns user
+        const adminSupabase = createClient(supabaseUrl, serviceRoleKey);
+
         // --- Action: Batch Submit (一籃一次送) ---
         if (data.action === 'submit_batch_intent') {
             const { wave, leaderId, userId, userName, userAvatar, items } = data;
@@ -267,7 +274,7 @@ export async function POST(request: Request) {
 
             // 1. Auto Binding Check (Ensure LeaderBinding exists)
             // Schema: 所屬波段, 團主 ID
-            const { data: existingBinding } = await supabase
+            const { data: existingBinding } = await adminSupabase
                 .from('leaderbinding')
                 .select('*')
                 .eq('團主 ID', String(leaderId))
@@ -276,7 +283,7 @@ export async function POST(request: Request) {
 
             if (!existingBinding && leaderId) {
                 // Insert new binding
-                await supabase.from('leaderbinding').insert({
+                await adminSupabase.from('leaderbinding').insert({
                     '所屬波段': Number(wave),
                     '團主 ID': String(leaderId),
                     '團主名稱': data.leaderName || '團購主',
@@ -294,7 +301,7 @@ export async function POST(request: Request) {
                 const uniqueKey = `${String(leaderId).trim()}_${String(wave).trim()}_${String(userId).trim()}_${normalizedProdName}`;
 
                 // Check if exists
-                const { data: existingIntent } = await supabase
+                const { data: existingIntent } = await adminSupabase
                     .from('intentdb')
                     .select('*')
                     .eq('唯一金鑰', uniqueKey)
@@ -305,7 +312,7 @@ export async function POST(request: Request) {
                     let newQty = currentQty + Number(qty);
                     if (newQty < 0) newQty = 0;
 
-                    await supabase
+                    await adminSupabase
                         .from('intentdb')
                         .update({
                             '數量': newQty,
@@ -318,7 +325,7 @@ export async function POST(request: Request) {
                     let initialQty = Number(qty);
                     if (initialQty < 0) initialQty = 0;
                     if (initialQty > 0) {
-                        await supabase
+                        await adminSupabase
                             .from('intentdb')
                             .insert({
                                 '唯一金鑰': uniqueKey,
@@ -355,7 +362,7 @@ export async function POST(request: Request) {
             const targetNormalized = superNormalize(targetName);
 
             // Find Binding
-            const { data: bindingRow } = await supabase
+            const { data: bindingRow } = await adminSupabase
                 .from('leaderbinding')
                 .select('*')
                 .eq('團主 ID', targetLeaderId)
@@ -375,7 +382,7 @@ export async function POST(request: Request) {
                 }
 
                 // Update
-                await supabase
+                await adminSupabase
                     .from('leaderbinding')
                     .update({ '已啟用商品名單': list.join(',') })
                     .eq('團主 ID', targetLeaderId)
@@ -384,7 +391,7 @@ export async function POST(request: Request) {
                 return NextResponse.json({ success: true, debug: { found: true } });
             } else if (shouldEnable) {
                 // Not found, create new
-                await supabase.from('leaderbinding').insert({
+                await adminSupabase.from('leaderbinding').insert({
                     '所屬波段': targetWave,
                     '團主 ID': targetLeaderId,
                     '團主名稱': data.leaderName || '團購主',
@@ -410,7 +417,7 @@ export async function POST(request: Request) {
             const targetLeaderId = String(leaderId).trim();
             const targetWave = Number(wave);
 
-            const { data: exists } = await supabase
+            const { data: exists } = await adminSupabase
                 .from('leaderbinding')
                 .select('*')
                 .eq('團主 ID', targetLeaderId)
@@ -418,7 +425,7 @@ export async function POST(request: Request) {
                 .maybeSingle();
 
             if (!exists && leaderId) {
-                await supabase.from('leaderbinding').insert({
+                await adminSupabase.from('leaderbinding').insert({
                     '所屬波段': targetWave,
                     '團主 ID': targetLeaderId,
                     '團主名稱': leaderName || '團購主',
