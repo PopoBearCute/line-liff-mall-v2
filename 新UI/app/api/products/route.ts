@@ -84,8 +84,10 @@ export async function GET(request: Request) {
             const saleStart = parseDateSafe(row['販售開始時間']);
             const saleEnd = parseDateSafe(row['販售結束時間']);
 
-            if (wishEnd) wishEnd.setHours(23, 59, 59, 999);
-            if (saleEnd) saleEnd.setHours(23, 59, 59, 999);
+            // Fix Timezone: Force End of Day to be 23:59:59 in Taipei (UTC+8)
+            // 23:59 TPE = 15:59 UTC
+            if (wishEnd) wishEnd.setUTCHours(15, 59, 59, 999);
+            if (saleEnd) saleEnd.setUTCHours(15, 59, 59, 999);
 
             let phase = 'closed';
             const isAllEmpty = !row['選品開始時間'] && !row['選品結束時間'] && !row['販售開始時間'] && !row['販售結束時間'];
