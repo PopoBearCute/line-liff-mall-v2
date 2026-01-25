@@ -92,7 +92,7 @@ export function IGFeedCard({
             priceColor: "text-black dark:text-white"
         },
         collecting: {
-            headerLabel: "Sponsored",
+            headerLabel: "集單中",
             headerIcon: null,
             btnColor: "bg-primary-blue hover:bg-blue-600",
             btnText: "跟團登記",
