@@ -33,6 +33,7 @@ interface IGProductFeedProps {
     onRemoveVoter?: (productName: string, voterName: string, userId?: string) => void;
     onJoin?: (productName: string) => void;
     leaderName?: string;
+    leaderAvatar?: string;
     currentUserId?: string;
     onSingleSubmit?: (productName: string) => void;
     submittingProduct?: string | null;
@@ -51,6 +52,7 @@ export function IGProductFeed({
     onRemoveVoter,
     onJoin,
     leaderName,
+    leaderAvatar,
     currentUserId,
     onSingleSubmit,
     submittingProduct,
@@ -92,6 +94,7 @@ export function IGProductFeed({
                         cartQty={currentQty}
                         isLeader={isLeader}
                         leaderName={leaderName}
+                        leaderAvatar={leaderAvatar}
                         currentUserId={currentUserId}
                         onJoin={() => onQuantityChange(product.name, 1)}
                         onAdd={() => onQuantityChange(product.name, 1)}

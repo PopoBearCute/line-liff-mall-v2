@@ -66,6 +66,7 @@ export default function GroupBuyPage() {
   const [isLeader, setIsLeader] = useState(false);
   const [leaderId, setLeaderId] = useState<string | null>(leaderIdFromUrl);
   const [leaderName, setLeaderName] = useState<string>("");
+  const [leaderAvatar, setLeaderAvatar] = useState<string>(""); // New State
   const [viewMode, setViewMode] = useState<'loading' | 'seed' | 'main'>(leaderIdFromUrl ? 'main' : 'loading');
   const [activeWaves, setActiveWaves] = useState<ActiveWave[]>([]);
   const [cart, setCart] = useState<Record<string, number>>({});
@@ -188,6 +189,7 @@ export default function GroupBuyPage() {
             setLeaderName('團購主');
           }
         }
+        setLeaderAvatar(data.leaderAvatar || ""); // Set Avatar
 
         setLeaderId(data.leaderId);
 
@@ -700,7 +702,7 @@ export default function GroupBuyPage() {
         {/* Stories Bar */}
         <div className="pt-3">
           <StoriesBar
-            leaderAvatar={userProfile?.pictureUrl || undefined}
+            leaderAvatar={leaderAvatar || userProfile?.pictureUrl || undefined}
             leaderName={leaderName}
             products={storiesProducts}
             onProductClick={(name: string) => {
@@ -744,6 +746,7 @@ export default function GroupBuyPage() {
                 isLoading={isLoading}
                 isLeader={isLeader}
                 leaderName={leaderName || undefined}
+                leaderAvatar={leaderAvatar} // Pass Avatar
                 currentUserId={userProfile?.userId}
                 onRemoveVoter={handleRemoveVoter}
                 onSingleSubmit={handleSubmit}
@@ -765,6 +768,7 @@ export default function GroupBuyPage() {
                 isLoading={isLoading}
                 isLeader={isLeader}
                 leaderName={leaderName || undefined}
+                leaderAvatar={leaderAvatar} // Pass Avatar
                 currentUserId={userProfile?.userId}
                 onRemoveVoter={handleRemoveVoter}
                 onSingleSubmit={handleSubmit}
