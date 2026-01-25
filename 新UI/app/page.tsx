@@ -399,6 +399,12 @@ export default function GroupBuyPage() {
     if (!confirm(`確定要移除 ${voterName} 的 ${productName} 紀錄嗎？`)) return;
     if (!leaderId || !userProfile) return;
 
+    // Get current token
+    let idTok = "";
+    if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
+      idTok = window.liff.getIDToken() || "";
+    }
+
     try {
       await fetch(GAS_URL, {
         method: 'POST',
@@ -409,17 +415,13 @@ export default function GroupBuyPage() {
           leaderId: leaderId,
           userId: voterUserId || 'UNKNOWN',
           userName: voterName,
-          items: [{ prodName: productName, qty: -9999 }]
+          items: [{ prodName: productName, qty: -9999 }],
+          idToken: idTok
         })
       });
 
       toast.success("已移除紀錄");
-      // Get current token for refresh
-      let tok = "";
-      if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
-        tok = window.liff.getIDToken() || "";
-      }
-      await loadData(leaderId, userProfile.userId, userProfile.displayName, false, tok);
+      await loadData(leaderId, userProfile.userId, userProfile.displayName, false, idTok);
     } catch (error) {
       toast.error("移除失敗");
     }
