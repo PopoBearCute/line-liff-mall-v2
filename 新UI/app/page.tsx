@@ -555,7 +555,9 @@ export default function GroupBuyPage() {
     }
 
     try {
-      const safeLeaderName = (leaderName || '我').replace(/[^\w\u4e00-\u9fa5\s]/g, '').slice(0, 10);
+      // Use user's own name if they are the leader (Seed Mode or Owner)
+      const nameToUse = (isLeader && userProfile?.displayName) ? userProfile.displayName : (leaderName || '團購主');
+      const safeLeaderName = nameToUse.replace(/[^\w\u4e00-\u9fa5\s]/g, '').slice(0, 10);
       const validWaves = activeWaves.filter(w => w.phase !== 'closed');
 
       const collectingProds = validWaves.filter(w => w.phase === 'collecting').flatMap(w => w.products);
