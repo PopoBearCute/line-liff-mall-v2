@@ -267,13 +267,16 @@ export async function POST(request: Request) {
 
         // Initialize Admin Client (Bypasses RLS)
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-        const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (!hasServiceKey) {
-            console.warn('[API] Warning: SUPABASE_SERVICE_ROLE_KEY is missing! Write operations will fail.');
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+        if (!serviceRoleKey) {
+            console.error('[API] CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing!');
+            return NextResponse.json({
+                success: false,
+                error: "伺服器配置錯誤：缺少寫入密鑰 (Service Role Key)。如果您在本地開發，請重啟 npm run dev 並確認 .env.local 內容。"
+            }, { status: 500 });
         }
 
-        // Use service_role if available, otherwise fallback to anon (which will fail for writes but might work for reads)
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
         const adminSupabase = createClient(supabaseUrl, serviceRoleKey);
 
         // --- Action: Batch Submit (一籃一次送) ---
@@ -283,23 +286,29 @@ export async function POST(request: Request) {
             // Security Check: Verify User Identity
             const verifiedUserId = await verifyLiffToken(idToken);
             if (!verifiedUserId || verifiedUserId !== String(userId).trim()) {
-                return NextResponse.json({ success: false, error: "身分驗證失敗 (Invalid or Mismatched Token for User)" }, { status: 403 });
+                console.error(`[API Auth] 驗證失敗. Verified: ${verifiedUserId}, Provided: ${userId}`);
+                return NextResponse.json({ success: false, error: "身分驗證失敗，請嘗試重新登入 (Auth Mismatch)" }, { status: 403 });
             }
+
+            const targetWave = Number(wave);
+            const targetUserId = String(userId).trim();
+            // --- USE CLEAN LEADER ID ---
+            const targetLeaderId = cleanLeaderId;
 
             // 1. Auto Binding Check (Ensure LeaderBinding exists)
             // Schema: 所屬波段, 團主 ID
             const { data: existingBinding } = await adminSupabase
                 .from('leaderbinding')
                 .select('*')
-                .eq('團主 ID', String(leaderId))
-                .eq('所屬波段', Number(wave)) // Schema says bigint
+                .eq('團主 ID', targetLeaderId)
+                .eq('所屬波段', targetWave) // Schema says bigint
                 .maybeSingle();
 
-            if (!existingBinding && leaderId) {
+            if (!existingBinding && targetLeaderId) {
                 // Insert new binding
                 await adminSupabase.from('leaderbinding').insert({
-                    '所屬波段': Number(wave),
-                    '團主 ID': String(leaderId),
+                    '所屬波段': targetWave,
+                    '團主 ID': targetLeaderId,
                     '團主名稱': data.leaderName || '團購主',
                     '綁定時間': new Date().toISOString(), // Schema says timestamp with time zone
                     '已啟用商品名單': '' // Initialize
@@ -312,7 +321,7 @@ export async function POST(request: Request) {
                 const normalizedProdName = superNormalize(prodName);
 
                 // UniqueKey logic from GAS: LeaderId_Wave_UserId_NormalizedProdName
-                const uniqueKey = `${String(leaderId).trim()}_${String(wave).trim()}_${String(userId).trim()}_${normalizedProdName}`;
+                const uniqueKey = `${targetLeaderId}_${String(wave).trim()}_${targetUserId}_${normalizedProdName}`;
 
                 // Check if exists
                 const { data: existingIntent, error: selectError } = await adminSupabase
@@ -347,9 +356,9 @@ export async function POST(request: Request) {
                             .from('intentdb')
                             .insert({
                                 '唯一金鑰': uniqueKey,
-                                '波段': Number(wave), // intentdb uses '波段' (bigint)
-                                '團主 ID': String(leaderId),
-                                '團員 ID': String(userId),
+                                '波段': targetWave, // intentdb uses '波段' (bigint)
+                                '團主 ID': targetLeaderId,
+                                '團員 ID': targetUserId,
                                 '商品名稱': prodName,
                                 '數量': initialQty,
                                 '更新時間': getLegacyTimeStr(), // intentdb uses '更新時間' (text)
@@ -371,11 +380,12 @@ export async function POST(request: Request) {
             // Security Check: Verify Leader Identity
             // Only the Leader can enable/disable products
             const verifiedUserId = await verifyLiffToken(idToken);
-            if (!verifiedUserId || verifiedUserId !== String(leaderId).trim()) {
+            if (!verifiedUserId || verifiedUserId !== cleanLeaderId) {
+                console.error(`[API Auth] 團主驗證失敗. Verified: ${verifiedUserId}, Expected Leader: ${cleanLeaderId}`);
                 return NextResponse.json({ success: false, error: "權限不足：您不是本團團主 (Identity Mismatch)" }, { status: 403 });
             }
 
-            const targetLeaderId = String(leaderId).trim();
+            const targetLeaderId = cleanLeaderId;
             const targetWave = Number(wave); // bigint
             const targetName = String(prodName || "").trim();
             const shouldEnable = (isEnabled === true || String(isEnabled).toLowerCase() === 'true' || isEnabled === 1);
@@ -437,11 +447,11 @@ export async function POST(request: Request) {
 
             // Security Check: Verify Leader Identity
             const verifiedUserId = await verifyLiffToken(idToken);
-            if (!verifiedUserId || verifiedUserId !== String(leaderId).trim()) {
+            if (!verifiedUserId || verifiedUserId !== cleanLeaderId) {
                 return NextResponse.json({ success: false, error: "身分驗證失敗 (Token Mismatch)" }, { status: 403 });
             }
 
-            const targetLeaderId = String(leaderId).trim();
+            const targetLeaderId = cleanLeaderId;
             const targetWave = Number(wave);
 
             const { data: exists } = await adminSupabase
