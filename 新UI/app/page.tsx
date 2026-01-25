@@ -247,118 +247,166 @@ export default function GroupBuyPage() {
     }));
   };
 
-  const handleEnableProduct = async (productName: string, isValue?: any) => {
-    if (!leaderId || !isLeader) return;
+  const handleEnableProduct = async (productName: string, currentEnabled: boolean | undefined) => {
+    if (!isLeader) return;
+
+    // Get LIFF Token for Security
+    let idToken = "";
+    if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
+      idToken = window.liff.getIDToken() || "";
+    }
+    // Local Dev Mock
+    const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    if (isLocalDev && !idToken) idToken = "mock_token";
+
+
     setIsEnabling(true);
-
-    const currentIsEnabled = isValue === true || String(isValue).toLowerCase() === 'true' || Number(isValue) === 1;
-    const newEnabledState = !currentIsEnabled;
-
-    // 1. Optimistic Update
-    setActiveWaves(prev => prev.map(wave => ({
-      ...wave,
-      products: wave.products.map(p =>
-        p.name === productName ? { ...p, isEnabled: newEnabledState } : p
-      )
-    })));
+    // Optimistic UI handled by re-fetch or parent state update? 
+    // Ideally we update local state, but Product list is from API. 
+    // Let's just wait for API then reload or let revalidation happen.
+    // Actually, IGFeedCard might want to toggle visual state.
 
     try {
-      const wave = activeWaves.find((w: ActiveWave) => w.products.some((p: Product) => p.name === productName))?.wave;
-      if (!wave) throw new Error("Wave not found");
+      const targetWave = activeWaves.length > 0 ? activeWaves[0].wave : "1";
+      const payload = {
+        action: 'enable_product',
+        wave: targetWave,
+        leaderId: leaderId || userProfile?.userId,
+        leaderName: leaderName,
+        prodName: productName,
+        isEnabled: !currentEnabled,
+        idToken: idToken // Secure Token
+      };
 
-      const response = await fetch(GAS_URL, {
+      await fetch(GAS_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'enable_product',
-          wave: wave,
-          leaderId: leaderId,
-          leaderName: userProfile?.displayName || '團購主',
-          prodName: productName,
-          isEnabled: newEnabledState
-        })
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Content-Type for Next.js API
+        body: JSON.stringify(payload)
       });
 
-      const data = await response.json();
-      if (data.success) {
-        // Show detailed debug info from backend
-        toast.success(newEnabledState ? `已開放 ${productName}` : `已關閉 ${productName}`, {
-          duration: 5000
-        });
-        await loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
-      } else {
-        throw new Error(data.error);
+      // Reload to reflect changes
+      if (leaderId && userProfile) {
+        await loadData(leaderId, userProfile.userId, userProfile.displayName, true);
       }
-    } catch (error: any) {
-      // 3. Rollback
-      setActiveWaves(prev => prev.map(wave => ({
-        ...wave,
-        products: wave.products.map(p =>
-          p.name === productName ? { ...p, isEnabled: currentIsEnabled } : p
-        )
-      })));
-      toast.error("操作失敗", { description: error?.message });
+      toast.success(currentEnabled ? "已關閉購買" : "已開放購買");
+    } catch (e) {
+      console.error(e);
+      toast.error("設定失敗");
     } finally {
       setIsEnabling(false);
     }
   };
 
-  const handleSubmit = async (specificProductName?: string) => {
-    if (!userProfile || !leaderId) return;
-
-    let itemsToSubmit;
-    if (specificProductName) {
-      const qty = cart[specificProductName];
-      if (!qty || qty === 0) return;
-      itemsToSubmit = [{ prodName: specificProductName, qty }];
-      setSubmittingProduct(specificProductName);
-    } else {
-      itemsToSubmit = Object.entries(cart)
-        .filter(([, qty]) => qty !== 0)
-        .map(([name, qty]) => ({ prodName: name, qty }));
-
-      if (itemsToSubmit.length === 0) {
-        toast.warning("請先調整商品數量");
-        return;
+  const handleShare = () => {
+    if (typeof window !== 'undefined' && window.liff) {
+      if (!isLeader) {
+        // Share to friend
+        window.liff.shareTargetPicker([
+          {
+            type: "text",
+            text: "這團購超讚！快來看看！"
+          }
+        ]);
+      } else {
+        // Leader share link (Not implemented button currently)
       }
-      setIsSubmitting(true);
+    }
+  };
+
+  const handleShareProduct = (product: Product) => {
+    if (typeof window !== 'undefined' && window.liff) {
+      const shareUrl = `${window.location.origin}${window.location.pathname}?leaderId=${leaderId || userProfile?.userId}`;
+      const msg = `🔥 ${product.name}\n\n${product.description.slice(0, 50)}...\n\n👉 快來下單：${shareUrl}`;
+
+      if (window.liff.isApiAvailable('shareTargetPicker')) {
+        window.liff.shareTargetPicker([
+          {
+            type: "text",
+            text: msg
+          }
+        ]).then(() => toast.success("已分享"))
+          .catch(() => toast.error("分享取消"));
+      } else {
+        // Fallback Copy
+        navigator.clipboard.writeText(msg);
+        toast.success("連結已複製 (請手動貼上)");
+      }
+    }
+  };
+
+
+  // --- Submit Handler ---
+  const handleSubmit = async (singleProductName?: string) => {
+    if (!userProfile) return;
+
+    // Validate
+    const productsToSubmit = singleProductName
+      ? [{ name: singleProductName, qty: cart[singleProductName] || (mode === 'active' ? 1 : 0) }]
+      : Object.entries(cart).map(([name, qty]) => ({ name, qty }));
+
+    const validItems = productsToSubmit.filter(i => i.qty !== 0);
+
+    // Special Logic for Single Submit in Active Mode context: 
+    // If explicit single submit (Buy Now button), allow even if cart logic differs
+    // But here we rely on cart[name] having been set to 1 by the button click if not present?
+    // Actually, in IGFeedCard, "active" mode -> calls onSubmit directly. 
+    // We should probably ensure qty is 1 if 0.
+    if (singleProductName && (!validItems.length || validItems[0].qty === 0)) {
+      validItems[0].qty = 1; // Default to 1 for direct buy
     }
 
-    try {
-      const mainWave = activeWaves[0]?.wave || "Unknown";
+    if (validItems.length === 0) {
+      toast.error("購物車是空的");
+      return;
+    }
 
-      const response = await fetch(GAS_URL, {
+    // Get LIFF Token
+    let idToken = "";
+    if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
+      idToken = window.liff.getIDToken() || "";
+    }
+    const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    if (isLocalDev && !idToken) idToken = "mock_token";
+
+    if (singleProductName) setSubmittingProduct(singleProductName);
+    else setIsSubmitting(true);
+
+    try {
+      const targetWave = activeWaves.length > 0 ? activeWaves[0].wave : "1";
+
+      const payload = {
+        action: 'submit_batch_intent',
+        wave: targetWave,
+        leaderId: leaderId || userProfile.userId, // Default to self if undefined (Seed Mode)
+        userId: userProfile.userId,
+        userName: userProfile.displayName,
+        userAvatar: userProfile.pictureUrl,
+        items: validItems.map(i => ({
+          prodName: i.name,
+          qty: i.qty
+        })),
+        idToken: idToken // Secure Token
+      };
+
+      // Auto-register leader if in seed mode 
+      // (Wait, seed mode leaderId is undefined, so we pass userId as leaderId effectively creating a new room)
+      // This is handled by API receiving leaderId=userId.
+
+      await fetch(GAS_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'submit_batch_intent',
-          wave: mainWave,
-          leaderId: leaderId,
-          leaderName: userProfile.displayName,
-          userId: userProfile.userId,
-          userName: userProfile.displayName,
-          userAvatar: userProfile.pictureUrl || "", // Force empty string if undefined
-          items: itemsToSubmit
-        })
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
       });
 
-      const resData = await response.json();
+      toast.success("登記成功！");
+      setCart({}); // Clear Cart
 
-      if (resData.success) {
-        toast.success("登記成功！", { description: "已更新您的登記紀錄" });
-        await loadData(leaderId, userProfile.userId, userProfile.displayName, false);
+      // Auto-refresh
+      await loadData(leaderId || userProfile.userId, userProfile.userId, userProfile.displayName, isLeader);
 
-        if (specificProductName) {
-          setCart(prev => ({ ...prev, [specificProductName]: 0 }));
-        } else {
-          setCart({});
-        }
-      } else {
-        throw new Error(resData.error);
-      }
-    } catch (error) {
-      console.error('Submit failed:', error);
-      toast.error("提交失敗");
+    } catch (e) {
+      console.error(e);
+      toast.error("送出失敗");
     } finally {
       setIsSubmitting(false);
       setSubmittingProduct(null);

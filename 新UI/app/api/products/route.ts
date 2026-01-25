@@ -226,13 +226,44 @@ const getLegacyTimeStr = (): string => {
     });
 };
 
+// Helper to verify LIFF ID Token
+async function verifyLiffToken(idToken: string): Promise<string | null> {
+    if (!idToken) return null;
+    try {
+        const res = await fetch('https://api.line.me/oauth2/v2.1/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                id_token: idToken,
+                client_id: process.env.NEXT_PUBLIC_LIFF_ID || '2006762085-R14DOOA1' // Fallback or Env
+            })
+        });
+        const data = await res.json();
+        if (data.error) {
+            console.error('Token Verify Error:', data.error_description);
+            return null;
+        }
+        return data.sub; // The real User ID
+    } catch (e) {
+        console.error('Token Verify Ex:', e);
+        return null;
+    }
+}
+
 export async function POST(request: Request) {
     try {
         const data = await request.json();
+        const { idToken } = data; // Extract ID Token
 
         // --- Action: Batch Submit (一籃一次送) ---
         if (data.action === 'submit_batch_intent') {
             const { wave, leaderId, userId, userName, userAvatar, items } = data;
+
+            // Security Check: Verify User Identity
+            const verifiedUserId = await verifyLiffToken(idToken);
+            if (!verifiedUserId || verifiedUserId !== String(userId).trim()) {
+                return NextResponse.json({ success: false, error: "身分驗證失敗 (Invalid or Mismatched Token for User)" }, { status: 403 });
+            }
 
             // 1. Auto Binding Check (Ensure LeaderBinding exists)
             // Schema: 所屬波段, 團主 ID
@@ -309,6 +340,14 @@ export async function POST(request: Request) {
         // --- Action: Enable Product ---
         if (data.action === 'enable_product') {
             const { wave, leaderId, prodName, isEnabled } = data;
+
+            // Security Check: Verify Leader Identity
+            // Only the Leader can enable/disable products
+            const verifiedUserId = await verifyLiffToken(idToken);
+            if (!verifiedUserId || verifiedUserId !== String(leaderId).trim()) {
+                return NextResponse.json({ success: false, error: "權限不足：您不是本團團主 (Identity Mismatch)" }, { status: 403 });
+            }
+
             const targetLeaderId = String(leaderId).trim();
             const targetWave = Number(wave); // bigint
             const targetName = String(prodName || "").trim();
@@ -361,6 +400,13 @@ export async function POST(request: Request) {
         // --- Action: Auto Register Leader ---
         if (data.action === 'auto_register_leader') {
             const { wave, leaderId, leaderName } = data;
+
+            // Security Check: Verify Leader Identity
+            const verifiedUserId = await verifyLiffToken(idToken);
+            if (!verifiedUserId || verifiedUserId !== String(leaderId).trim()) {
+                return NextResponse.json({ success: false, error: "身分驗證失敗 (Token Mismatch)" }, { status: 403 });
+            }
+
             const targetLeaderId = String(leaderId).trim();
             const targetWave = Number(wave);
 
