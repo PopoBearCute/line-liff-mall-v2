@@ -260,12 +260,13 @@ async function verifyLiffToken(idToken: string): Promise<string | null> {
         const data = await res.json();
         if (data.error) {
             console.error('Token Verify Error:', data.error_description);
-            return null;
+            // Return a special string starting with "ERROR:" to indicate specifics
+            return `ERROR: ${data.error_description || data.error}`;
         }
         return data.sub; // The real User ID
     } catch (e) {
         console.error('Token Verify Ex:', e);
-        return null;
+        return `ERROR: Internal Verify Exception`;
     }
 }
 
@@ -298,6 +299,12 @@ export async function POST(request: Request) {
 
             // Security Check: Verify User Identity
             const verifiedUserId = await verifyLiffToken(idToken);
+
+            // Check if verification returned an error string
+            if (verifiedUserId && verifiedUserId.startsWith('ERROR:')) {
+                return NextResponse.json({ success: false, error: `身分驗證錯誤: ${verifiedUserId.replace('ERROR:', '')}` }, { status: 401 });
+            }
+
             const isAuthValid = (verifiedUserId === 'MOCK_ID_WILD_CARD') || (verifiedUserId === cleanUserId);
 
             if (!isAuthValid) {
@@ -394,6 +401,12 @@ export async function POST(request: Request) {
 
             // Security Check: Verify Leader Identity
             const verifiedUserId = await verifyLiffToken(idToken);
+
+            // Check if verification returned an error string
+            if (verifiedUserId && verifiedUserId.startsWith('ERROR:')) {
+                return NextResponse.json({ success: false, error: `身分驗證錯誤: ${verifiedUserId.replace('ERROR:', '')}` }, { status: 401 });
+            }
+
             const isLeaderAuthValid = (verifiedUserId === 'MOCK_ID_WILD_CARD') || (verifiedUserId === cleanLeaderId);
 
             if (!isLeaderAuthValid) {
@@ -463,6 +476,12 @@ export async function POST(request: Request) {
 
             // Security Check: Verify Identity
             const verifiedUserId = await verifyLiffToken(idToken);
+
+            // Check if verification returned an error string
+            if (verifiedUserId && verifiedUserId.startsWith('ERROR:')) {
+                return NextResponse.json({ success: false, error: `身分驗證錯誤: ${verifiedUserId.replace('ERROR:', '')}` }, { status: 401 });
+            }
+
             const isAutoAuthValid = (verifiedUserId === 'MOCK_ID_WILD_CARD') || (verifiedUserId === cleanLeaderId) || (verifiedUserId === cleanUserId);
 
             if (!isAutoAuthValid) {
