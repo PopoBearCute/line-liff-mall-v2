@@ -10,7 +10,7 @@ import { StickyTabs } from "@/components/group-buy/sticky-tabs";
 import { SeedMode } from "@/components/group-buy/seed-mode";
 import Loading from "./loading";
 import { toast } from "sonner";
-import { GolfBallLoader } from "@/components/ui/golf-loader";
+
 import Image from "next/image";
 
 const GAS_URL = "/api/products";
@@ -676,7 +676,7 @@ export default function GroupBuyPage() {
 
   return (
     <Suspense fallback={<Loading />}>
-      {isLoading && <GolfBallLoader />}
+      {isLoading && <Loading />}
 
       <div className="mesh-gradient min-h-screen w-full pb-36 overflow-y-auto">
         <Header
