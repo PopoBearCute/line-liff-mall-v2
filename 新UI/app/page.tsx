@@ -687,19 +687,6 @@ export default function GroupBuyPage() {
           leaderName={leaderName}
         />
 
-        {/* Mall Branding & Logo */}
-        <div className="flex flex-col items-center pt-8 pb-2">
-          <div className="relative w-16 h-16 mb-2">
-            <Image
-              src="/ball-logo.png"
-              alt="中油PAY行動商城 Logo"
-              fill
-              className="object-contain animate-float"
-            />
-          </div>
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">中油PAY行動商城</h1>
-          <p className="text-[10px] text-gray-500 font-medium">官方正品 · 團購優惠</p>
-        </div>
 
         {/* Stories Bar */}
         <div className="pt-3">
