@@ -278,11 +278,14 @@ export default function GroupBuyPage() {
         idToken: idToken // Secure Token
       };
 
-      await fetch(GAS_URL, {
+      const res = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }, // Content-Type for Next.js API
         body: JSON.stringify(payload)
       });
+
+      const resData = await res.json();
+      if (!res.ok) throw new Error(resData.error || "設定失敗");
 
       // Reload to reflect changes
       if (leaderId && userProfile) {
@@ -359,11 +362,14 @@ export default function GroupBuyPage() {
       // (Wait, seed mode leaderId is undefined, so we pass userId as leaderId effectively creating a new room)
       // This is handled by API receiving leaderId=userId.
 
-      await fetch(GAS_URL, {
+      const res = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+
+      const resData = await res.json();
+      if (!res.ok) throw new Error(resData.error || "送出失敗");
 
       toast.success("登記成功！");
       setCart({}); // Clear Cart
