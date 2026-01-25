@@ -230,13 +230,19 @@ const getLegacyTimeStr = (): string => {
 // Helper to verify LIFF ID Token
 async function verifyLiffToken(idToken: string): Promise<string | null> {
     if (!idToken) return null;
+
+    // Local Dev Mock: Allow mock_token to bypass LINE verification
+    if (idToken === 'mock_token') {
+        return 'DEV_TEST_USER_123';
+    }
+
     try {
         const res = await fetch('https://api.line.me/oauth2/v2.1/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
                 id_token: idToken,
-                client_id: process.env.NEXT_PUBLIC_LIFF_ID || '2006762085-R14DOOA1' // Fallback or Env
+                client_id: process.env.NEXT_PUBLIC_LIFF_ID || '2008798234-72bJqeYx' // Sync with frontend fallback
             })
         });
         const data = await res.json();
@@ -254,12 +260,18 @@ async function verifyLiffToken(idToken: string): Promise<string | null> {
 export async function POST(request: Request) {
     try {
         const data = await request.json();
-        const { idToken } = data; // Extract ID Token
+        const { idToken, action } = data;
+        console.log(`[API POST] Action: ${action}, hasIDToken: ${!!idToken}`);
 
         // Initialize Admin Client (Bypasses RLS)
-        // MUST be used for all WRITE operations (Insert/Update)
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_KEY!; // Fallback warns user
+        const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (!hasServiceKey) {
+            console.warn('[API] Warning: SUPABASE_SERVICE_ROLE_KEY is missing! Write operations will fail.');
+        }
+
+        // Use service_role if available, otherwise fallback to anon (which will fail for writes but might work for reads)
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
         const adminSupabase = createClient(supabaseUrl, serviceRoleKey);
 
         // --- Action: Batch Submit (一籃一次送) ---

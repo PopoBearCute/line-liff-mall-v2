@@ -211,7 +211,7 @@ export default function GroupBuyPage() {
           try {
             await fetch(GAS_URL, {
               method: 'POST',
-              headers: { 'Content-Type': 'text/plain' },
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 action: 'auto_register_leader',
                 wave: mainWave,
@@ -280,7 +280,7 @@ export default function GroupBuyPage() {
 
       await fetch(GAS_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Content-Type for Next.js API
+        headers: { 'Content-Type': 'application/json' }, // Content-Type for Next.js API
         body: JSON.stringify(payload)
       });
 
@@ -361,7 +361,7 @@ export default function GroupBuyPage() {
 
       await fetch(GAS_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
@@ -387,7 +387,7 @@ export default function GroupBuyPage() {
     try {
       await fetch(GAS_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'submit_batch_intent',
           wave: activeWaves[0]?.wave,
