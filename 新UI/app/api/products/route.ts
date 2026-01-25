@@ -260,8 +260,10 @@ async function verifyLiffToken(idToken: string): Promise<string | null> {
 export async function POST(request: Request) {
     try {
         const data = await request.json();
-        const { idToken, action } = data;
-        console.log(`[API POST] Action: ${action}, hasIDToken: ${!!idToken}`);
+        const { idToken, action, leaderId, userId } = data;
+        const cleanLeaderId = String(leaderId || "").replace(/^\?leaderId=/, "").trim();
+        const cleanUserId = String(userId || "").trim();
+        console.log(`[API POST] Action: ${action}, leaderId: ${cleanLeaderId}, userId: ${cleanUserId}`);
 
         // Initialize Admin Client (Bypasses RLS)
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
