@@ -297,21 +297,7 @@ export default function GroupBuyPage() {
     }
   };
 
-  const handleShare = () => {
-    if (typeof window !== 'undefined' && window.liff) {
-      if (!isLeader) {
-        // Share to friend
-        window.liff.shareTargetPicker([
-          {
-            type: "text",
-            text: "這團購超讚！快來看看！"
-          }
-        ]);
-      } else {
-        // Leader share link (Not implemented button currently)
-      }
-    }
-  };
+
 
 
 
