@@ -130,14 +130,14 @@ export async function GET(request: Request) {
         let leaderName = '團購主';
 
         if (leaderId) {
-            // leaderbinding columns based on GAS logic: 
-            // LeaderId (Key), LeaderId (Value), LeaderName, EnabledProducts
+            // leaderbinding columns: 
+            // 團主 ID (LeaderId), 團主名稱 (LeaderName)
             const matches = bindingData.filter((r: any) =>
-                String(r['團主 ID'] || r.leader_id || r.LeaderId) === String(leaderId)
+                String(r['團主 ID']) === String(leaderId)
             );
             if (matches.length > 0) {
                 const lastMatch = matches[matches.length - 1];
-                leaderName = lastMatch['團主名稱'] || lastMatch.leader_name || lastMatch.LeaderName || leaderName;
+                leaderName = lastMatch['團主名稱'] || leaderName;
             }
         }
 
@@ -148,30 +148,31 @@ export async function GET(request: Request) {
         const enabledProductsMap: Record<string, string[]> = {};
 
         bindingData.forEach((row: any) => {
-            const bWave = String(row['波段'] || row.wave || row.Wave).trim();
-            const bLeader = String(row['團主 ID'] || row.leader_id || row.LeaderId).trim();
+            // Schema: 所屬波段, 團主 ID, 已啟用商品名單
+            const bWave = String(row['所屬波段'] || "").trim();
+            const bLeader = String(row['團主 ID'] || "").trim();
             if (bLeader === String(leaderId || '').trim()) {
-                const rawProds = row['已啟用商品'] || row.enabled_products || row.EnabledProducts || "";
+                const rawProds = row['已啟用商品名單'] || "";
                 enabledProductsMap[bWave] = String(rawProds).split(',').map(s => s.trim()).filter(s => s !== "");
             }
         });
 
         intentData.forEach((row: any) => {
-            const rowWave = String(row['波段'] || row.wave || row.Wave);
-            const rowLeader = String(row['團主 ID'] || row.leader_id || row.LeaderId);
+            const rowWave = String(row['波段'] || "");
+            const rowLeader = String(row['團主 ID'] || "");
             if (activeWaves.some((w: any) => w.wave === rowWave) && rowLeader === String(leaderId || '')) {
-                const prodName = row['商品名稱'] || row.prod_name || row.ProdName;
+                const prodName = row['商品名稱'] || "";
                 const normalizedName = superNormalize(prodName);
-                const qty = Number(row['數量'] || row.qty || row.Qty);
+                const qty = Number(row['數量'] || 0);
                 if (qty > 0) {
                     progressMap[normalizedName] = (progressMap[normalizedName] || 0) + qty;
                     if (!votersMap[normalizedName]) votersMap[normalizedName] = [];
                     votersMap[normalizedName].push({
-                        name: row['團員暱稱'] || row.user_name || "匿名",
+                        name: row['團員暱稱'] || "匿名",
                         qty: qty,
-                        userId: row['團員 ID'] || row.user_id
+                        userId: row['團員 ID']
                     });
-                    const avatar = row.picurl || row.user_avatar;
+                    const avatar = row.picurl;
                     if (avatar && !prodAvatarsMap[normalizedName]) prodAvatarsMap[normalizedName] = [];
                     if (avatar && !prodAvatarsMap[normalizedName].includes(avatar)) prodAvatarsMap[normalizedName].push(avatar);
                 }
@@ -221,22 +222,22 @@ export async function POST(request: Request) {
             const { wave, leaderId, userId, userName, userAvatar, items } = data;
 
             // 1. Auto Binding Check (Ensure LeaderBinding exists)
-            const bindingKey = `${String(leaderId || '').trim()}_${String(wave).trim()}`;
-
+            // Schema: 所屬波段, 團主 ID
             const { data: existingBinding } = await supabase
                 .from('leaderbinding')
                 .select('*')
                 .eq('團主 ID', String(leaderId))
-                .eq('波段', String(wave))
+                .eq('所屬波段', Number(wave)) // Schema says bigint
                 .maybeSingle();
 
             if (!existingBinding && leaderId) {
                 // Insert new binding
                 await supabase.from('leaderbinding').insert({
-                    '波段': String(wave),
+                    '所屬波段': Number(wave),
                     '團主 ID': String(leaderId),
                     '團主名稱': data.leaderName || '團購主',
-                    '更新時間': getLegacyTimeStr()
+                    '綁定時間': new Date().toISOString(), // Schema says timestamp with time zone
+                    '已啟用商品名單': '' // Initialize
                 });
             }
 
@@ -277,12 +278,12 @@ export async function POST(request: Request) {
                             .from('intentdb')
                             .insert({
                                 '唯一金鑰': uniqueKey,
-                                '波段': String(wave),
+                                '波段': Number(wave), // intentdb uses '波段' (bigint)
                                 '團主 ID': String(leaderId),
                                 '團員 ID': String(userId),
                                 '商品名稱': prodName,
                                 '數量': initialQty,
-                                '更新時間': getLegacyTimeStr(),
+                                '更新時間': getLegacyTimeStr(), // intentdb uses '更新時間' (text)
                                 '團員暱稱': userName,
                                 'picurl': userAvatar || ""
                             });
@@ -296,7 +297,7 @@ export async function POST(request: Request) {
         if (data.action === 'enable_product') {
             const { wave, leaderId, prodName, isEnabled } = data;
             const targetLeaderId = String(leaderId).trim();
-            const targetWave = String(wave).trim();
+            const targetWave = Number(wave); // bigint
             const targetName = String(prodName || "").trim();
             const shouldEnable = (isEnabled === true || String(isEnabled).toLowerCase() === 'true' || isEnabled === 1);
             const targetNormalized = superNormalize(targetName);
@@ -306,11 +307,11 @@ export async function POST(request: Request) {
                 .from('leaderbinding')
                 .select('*')
                 .eq('團主 ID', targetLeaderId)
-                .eq('波段', targetWave)
+                .eq('所屬波段', targetWave)
                 .maybeSingle();
 
             if (bindingRow) {
-                let currentEnabled = String(bindingRow['已啟用商品'] || '');
+                let currentEnabled = String(bindingRow['已啟用商品名單'] || '');
                 let list = currentEnabled ? currentEnabled.split(',').map(s => s.trim()).filter(s => s !== "") : [];
 
                 if (shouldEnable) {
@@ -324,19 +325,19 @@ export async function POST(request: Request) {
                 // Update
                 await supabase
                     .from('leaderbinding')
-                    .update({ '已啟用商品': list.join(',') })
+                    .update({ '已啟用商品名單': list.join(',') })
                     .eq('團主 ID', targetLeaderId)
-                    .eq('波段', targetWave);
+                    .eq('所屬波段', targetWave);
 
                 return NextResponse.json({ success: true, debug: { found: true } });
             } else if (shouldEnable) {
                 // Not found, create new
                 await supabase.from('leaderbinding').insert({
-                    '波段': targetWave,
+                    '所屬波段': targetWave,
                     '團主 ID': targetLeaderId,
                     '團主名稱': data.leaderName || '團購主',
-                    '更新時間': getLegacyTimeStr(),
-                    '已啟用商品': targetName
+                    '綁定時間': new Date().toISOString(),
+                    '已啟用商品名單': targetName
                 });
                 return NextResponse.json({ success: true, debug: { created: true } });
             } else {
@@ -348,22 +349,22 @@ export async function POST(request: Request) {
         if (data.action === 'auto_register_leader') {
             const { wave, leaderId, leaderName } = data;
             const targetLeaderId = String(leaderId).trim();
-            const targetWave = String(wave).trim();
+            const targetWave = Number(wave);
 
             const { data: exists } = await supabase
                 .from('leaderbinding')
                 .select('*')
                 .eq('團主 ID', targetLeaderId)
-                .eq('波段', targetWave)
+                .eq('所屬波段', targetWave)
                 .maybeSingle();
 
             if (!exists && leaderId) {
                 await supabase.from('leaderbinding').insert({
-                    '波段': targetWave,
+                    '所屬波段': targetWave,
                     '團主 ID': targetLeaderId,
                     '團主名稱': leaderName || '團購主',
-                    '更新時間': getLegacyTimeStr(),
-                    '已啟用商品': ""
+                    '綁定時間': new Date().toISOString(),
+                    '已啟用商品名單': ""
                 });
             }
             return NextResponse.json({ success: true });
