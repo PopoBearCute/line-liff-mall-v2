@@ -416,7 +416,8 @@ export default function GroupBuyPage() {
       }
 
       const cleanName = (p.name || "熱門商品").replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, 30);
-      const shareUrl = `${window.location.origin}${window.location.pathname}?leaderId=${leaderId || ""}`;
+      // [Fix] Unified Share Link: Use LIFF URL to ensure it opens in LINE internal browser
+      const shareUrl = `https://liff.line.me/${LIFF_ID}?leaderId=${leaderId || ""}`;
 
       console.log("[Share] Prepared data:", { cleanName, displayImg, shareUrl });
 
