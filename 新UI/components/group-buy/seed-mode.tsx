@@ -1,6 +1,7 @@
 "use client";
 
 import { Share2, Rocket, Sparkles } from "lucide-react";
+import { useState } from "react";
 
 interface SeedModeProps {
   onShare: () => void;
@@ -8,6 +9,11 @@ interface SeedModeProps {
 }
 
 export function SeedMode({ onShare, wave }: SeedModeProps) {
+  // Secret Admin Trigger State
+  const [clickCount, setClickCount] = useState(0);
+  const [lastClickTime, setLastClickTime] = useState(0);
+  const [showAdmin, setShowAdmin] = useState(false);
+
   return (
     <section className="flex flex-col items-center justify-center px-6 py-12">
       <div className="mb-4">
@@ -15,8 +21,26 @@ export function SeedMode({ onShare, wave }: SeedModeProps) {
       </div>
 
       <div className="glass-card-featured card-hover flex w-full max-w-sm flex-col items-center rounded-3xl p-8 text-center">
-        {/* Animated Icon */}
-        <div className="relative mb-6">
+        {/* Animated Icon - Secret Admin Trigger */}
+        <div
+          className="relative mb-6 cursor-pointer active:scale-95 transition-transform"
+          onClick={() => {
+            const now = Date.now();
+            // Reset count if too slow (more than 1s between clicks)
+            if (now - lastClickTime > 1000) {
+              setClickCount(1);
+            } else {
+              setClickCount(prev => prev + 1);
+            }
+            setLastClickTime(now);
+
+            // Trigger on 5th click
+            if (clickCount + 1 >= 5) {
+              setShowAdmin(true);
+              setClickCount(0);
+            }
+          }}
+        >
           <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-primary/20 to-secondary/20">
             <Rocket className="h-10 w-10 text-primary" />
           </div>
@@ -33,6 +57,15 @@ export function SeedMode({ onShare, wave }: SeedModeProps) {
           讓團員許願，自動加總、輕鬆統計<br />
           看到「可成團」即可準備開團！
         </p>
+
+        {showAdmin && (
+          <button
+            onClick={() => window.location.href = '/admin'}
+            className="mb-4 text-xs font-bold text-gray-400 border border-gray-200 px-3 py-1 rounded-full hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          >
+            🔧 進入管理後台
+          </button>
+        )}
 
         <button
           id="btn-share"
