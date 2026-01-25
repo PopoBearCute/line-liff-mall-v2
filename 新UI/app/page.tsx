@@ -110,6 +110,7 @@ export default function GroupBuyPage() {
           displayName: '本地測試團主',
           pictureUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Leader',
         });
+        setLeaderName('本地測試團主'); // Ensure state is set for immediate UI update
         setViewMode('main');
         loadData(lId, lId, '本地測試團主', true);
       }
@@ -178,8 +179,13 @@ export default function GroupBuyPage() {
         // 只有在 GAS 回傳的是有效名稱且目前沒名字，或 GAS 回傳的不是預設值時才更新
         if (data.leaderName && data.leaderName !== '團購主') {
           setLeaderName(data.leaderName);
-        } else if (!leaderName) {
-          setLeaderName('團購主');
+        } else if (!leaderName || leaderName === '團購主') {
+          // If we are the leader, use our own name as fallback
+          if (data.isLeader && displayName) {
+            setLeaderName(displayName);
+          } else {
+            setLeaderName('團購主');
+          }
         }
 
         setLeaderId(data.leaderId);
