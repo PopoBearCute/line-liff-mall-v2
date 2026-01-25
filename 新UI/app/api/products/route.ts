@@ -236,13 +236,17 @@ async function verifyLiffToken(idToken: string): Promise<string | null> {
         return 'MOCK_ID_WILD_CARD';
     }
 
+    // Trim LIFF ID to prevent "wrong format" errors from accidental spaces
+    const envLiffId = (process.env.NEXT_PUBLIC_LIFF_ID || '').trim();
+    const liffId = envLiffId || '2008798234-72bJqeYx';
+
     try {
         const res = await fetch('https://api.line.me/oauth2/v2.1/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
                 id_token: idToken,
-                client_id: process.env.NEXT_PUBLIC_LIFF_ID || '2008798234-72bJqeYx' // Sync with frontend fallback
+                client_id: liffId
             })
         });
         const data = await res.json();
