@@ -151,7 +151,12 @@ export default function GroupBuyPage() {
           setLeaderName(profile.displayName);
         }
         setViewMode('main');
-        loadData(lId, profile.userId, profile.displayName, true);
+        // Get token
+        let tok = "";
+        if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
+          tok = window.liff.getIDToken() || "";
+        }
+        loadData(lId, profile.userId, profile.displayName, true, tok);
       }
     } catch (error) {
       console.error('LIFF initialization failed:', error);
@@ -164,7 +169,8 @@ export default function GroupBuyPage() {
     targetLeaderId: string,
     userId: string,
     displayName: string,
-    showLoader: boolean = false
+    showLoader: boolean = false,
+    idToken: string = ""
   ) => {
     if (showLoader) setIsLoading(true);
     try {
@@ -216,7 +222,9 @@ export default function GroupBuyPage() {
                 action: 'auto_register_leader',
                 wave: mainWave,
                 leaderId: data.leaderId,
-                leaderName: displayName
+                userId: userId, // Added userId
+                leaderName: displayName,
+                idToken: idToken || "mock_token" // Added token
               })
             });
           } catch (error) {
@@ -272,6 +280,7 @@ export default function GroupBuyPage() {
         action: 'enable_product',
         wave: targetWave,
         leaderId: leaderId || userProfile?.userId,
+        userId: userProfile?.userId, // Added userId
         leaderName: leaderName,
         prodName: productName,
         isEnabled: !currentEnabled,
@@ -289,7 +298,7 @@ export default function GroupBuyPage() {
 
       // Reload to reflect changes
       if (leaderId && userProfile) {
-        await loadData(leaderId, userProfile.userId, userProfile.displayName, true);
+        await loadData(leaderId, userProfile.userId, userProfile.displayName, true, idToken);
       }
       toast.success(currentEnabled ? "已關閉購買" : "已開放購買");
     } catch (e) {
@@ -375,7 +384,7 @@ export default function GroupBuyPage() {
       setCart({}); // Clear Cart
 
       // Auto-refresh
-      await loadData(leaderId || userProfile.userId, userProfile.userId, userProfile.displayName, isLeader);
+      await loadData(leaderId || userProfile.userId, userProfile.userId, userProfile.displayName, isLeader, idToken);
 
     } catch (e) {
       console.error(e);
@@ -405,7 +414,12 @@ export default function GroupBuyPage() {
       });
 
       toast.success("已移除紀錄");
-      await loadData(leaderId, userProfile.userId, userProfile.displayName, false);
+      // Get current token for refresh
+      let tok = "";
+      if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
+        tok = window.liff.getIDToken() || "";
+      }
+      await loadData(leaderId, userProfile.userId, userProfile.displayName, false, tok);
     } catch (error) {
       toast.error("移除失敗");
     }
