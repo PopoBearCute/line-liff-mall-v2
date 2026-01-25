@@ -176,11 +176,12 @@ export default function GroupBuyPage() {
         setActiveWaves(data.activeWaves || []);
         setIsLeader(previewMode === 'consumer' ? false : (data.isLeader || false));
 
-        // 只有在 GAS 回傳的是有效名稱且目前沒名字，或 GAS 回傳的不是預設值時才更新
+        // 如果 GAS 回傳了名字，直接用
         if (data.leaderName && data.leaderName !== '團購主') {
           setLeaderName(data.leaderName);
-        } else if (!leaderName || leaderName === '團購主') {
-          // If we are the leader, use our own name as fallback
+        }
+        // 否則，如果目前沒名字或者還是預設值，嘗試用 profile 備份
+        else if (!leaderName || leaderName === '團購主') {
           if (data.isLeader && displayName) {
             setLeaderName(displayName);
           } else {

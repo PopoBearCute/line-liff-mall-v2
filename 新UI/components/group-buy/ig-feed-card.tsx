@@ -129,7 +129,7 @@ export function IGFeedCard({
                     <div className="w-8 h-8 rounded-full p-[1.5px] bg-gradient-to-tr from-yellow-400 to-pink-600">
                         <div className="w-full h-full rounded-full bg-white dark:bg-black p-[1.5px] overflow-hidden">
                             <Image
-                                src="/ball-logo.png"
+                                src="/mall-icon.png"
                                 alt={leaderName || "Mall"}
                                 width={32}
                                 height={32}
