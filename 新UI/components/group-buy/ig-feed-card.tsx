@@ -96,7 +96,7 @@ export function IGFeedCard({
         collecting: {
             headerLabel: "集單中",
             headerIcon: null,
-            btnColor: "bg-primary-blue hover:bg-blue-600",
+            btnColor: "bg-primary-blue hover:bg-blue-600 btn-gemstone",
             btnText: "跟團登記",
             progressColor: "bg-gradient-to-r from-primary-green to-teal-400",
             statusText: `已達 ${totalVotes} / 目標 ${product.moq}`,
@@ -328,7 +328,7 @@ export function IGFeedCard({
                                 disabled={isToggling}
                                 className={`text-xs font-bold px-4 py-2 rounded-full transition-all active:scale-95 whitespace-nowrap flex items-center gap-1.5 ${isEnabled
                                     ? 'bg-red-500 hover:bg-red-600 text-white'
-                                    : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                                    : 'bg-emerald-500 hover:bg-emerald-600 text-white btn-gemstone'
                                     } ${isToggling ? 'opacity-50 cursor-wait' : ''}`}
                             >
                                 {isToggling && <Loader2 className="w-3 h-3 animate-spin" />}
