@@ -48,17 +48,31 @@ export default function AdminPage() {
     const [originalKey, setOriginalKey] = useState<{ wave: number, name: string } | null>(null);
 
     // 1. PIN Auth
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (pin === "0920401419") {
-            setIsAuthenticated(true);
-            fetchProducts();
-        } else {
-            toast.error("密碼錯誤");
+        try {
+            const res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'login', pin }),
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                setIsAuthenticated(true);
+                fetchProducts();
+            } else {
+                toast.error(data.error || "密碼錯誤");
+            }
+        } catch (err) {
+            toast.error("驗證失敗");
         }
     };
 
-    // 2. Fetch Products
+    // 2. Fetch Products (Read is still public for now, which is fine for Mall, but ideally also secured? 
+    // Mall needs public read. Admin needs write. So direct read is OK for now to keep it simple, 
+    // or we can move read to API too. Let's keep read direct for performance/simplicity as per plan 
+    // "Remove WRITE permissions from frontend")
     const fetchProducts = async () => {
         setIsLoading(true);
         // Changed ordering to WaveID since 'id' does not exist
@@ -93,9 +107,19 @@ export default function AdminPage() {
                 "選品結束時間": new Date(Date.now() + 7 * 86400000).toISOString() // Default +7 days
             }));
 
-            const { error } = await supabase.from('products').insert(rows);
+            // API Call
+            const res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'batch_insert',
+                    pin,
+                    payload: { rows }
+                }),
+            });
+            const resData = await res.json();
 
-            if (error) throw error;
+            if (!resData.success) throw new Error(resData.error);
 
             toast.success(`成功匯入 ${rows.length} 筆商品！`);
             setMode('list');
@@ -111,18 +135,24 @@ export default function AdminPage() {
     const handleDelete = async (waveId: number, name: string) => {
         if (!confirm(`確定要刪除 [${name}] 嗎？`)) return;
 
-        // Use Composite Key (WaveID + Name) for deletion
-        const { error } = await supabase
-            .from('products')
-            .delete()
-            .eq('WaveID', waveId)
-            .eq('商品名稱', name);
+        try {
+            const res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'delete',
+                    pin,
+                    payload: { filter: { 'WaveID': waveId, '商品名稱': name } }
+                }),
+            });
+            const data = await res.json();
 
-        if (error) {
-            toast.error("刪除失敗");
-        } else {
+            if (!data.success) throw new Error(data.error);
+
             toast.success("已刪除");
             setProducts(prev => prev.filter(p => !(p.WaveID === waveId && p["商品名稱"] === name)));
+        } catch (err: any) {
+            toast.error("刪除失敗: " + err.message);
         }
     };
 
@@ -162,38 +192,58 @@ export default function AdminPage() {
         try {
             if (originalKey) {
                 // UPDATE
-                // Since PK allows update on non-key columns, but if rename happens we need careful update.
-                // Assuming WaveID+Name is PK, we can't 'update' the PK easily.
-                // Strategy: Delete Old -> Insert New (Safest for composite key changes without proper PK ID support)
-                // Wait, if only other fields changed, we use update.
                 const keyChanged = (originalKey.wave !== payload.WaveID || originalKey.name !== payload["商品名稱"]);
 
                 if (keyChanged) {
-                    // Key changed: Delete old, Insert new
-                    const { error: delErr } = await supabase.from('products')
-                        .delete()
-                        .eq('WaveID', originalKey.wave)
-                        .eq('商品名稱', originalKey.name);
-                    if (delErr) throw delErr;
-
-                    const { error: insErr } = await supabase.from('products').insert([payload]);
-                    if (insErr) throw insErr;
+                    // Key changed: Calls 'replace' action
+                    const res = await fetch('/api/admin', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'replace',
+                            pin,
+                            payload: {
+                                oldFilter: { 'WaveID': originalKey.wave, '商品名稱': originalKey.name },
+                                newData: payload
+                            }
+                        }),
+                    });
+                    const data = await res.json();
+                    if (!data.success) throw new Error(data.error);
 
                 } else {
                     // Key same: Simple update
-                    const { error } = await supabase
-                        .from('products')
-                        .update(payload)
-                        .eq('WaveID', originalKey.wave)
-                        .eq('商品名稱', originalKey.name);
-                    if (error) throw error;
+                    const res = await fetch('/api/admin', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'update',
+                            pin,
+                            payload: {
+                                filter: { 'WaveID': originalKey.wave, '商品名稱': originalKey.name },
+                                data: payload
+                            }
+                        }),
+                    });
+                    const data = await res.json();
+                    if (!data.success) throw new Error(data.error);
                 }
                 toast.success("更新成功");
 
             } else {
                 // CREATE
-                const { error } = await supabase.from('products').insert([payload]);
-                if (error) throw error;
+                const res = await fetch('/api/admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'create',
+                        pin,
+                        payload: payload
+                    }),
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+
                 toast.success("新增成功");
             }
 
