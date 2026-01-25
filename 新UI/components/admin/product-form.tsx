@@ -15,6 +15,10 @@ interface ProductFormData {
     "圖片網址": string;
     "商品描述": string;
     "商城連結": string;
+    "選品開始時間"?: string;
+    "選品結束時間"?: string;
+    "販售開始時間"?: string;
+    "販售結束時間"?: string;
 }
 
 interface ProductFormProps {
@@ -33,6 +37,10 @@ export function ProductForm({ initialData, onSave, onCancel }: ProductFormProps)
         "圖片網址": "",
         "商品描述": "",
         "商城連結": "",
+        "選品開始時間": "",
+        "選品結束時間": "",
+        "販售開始時間": "",
+        "販售結束時間": "",
     });
 
     useEffect(() => {
@@ -137,6 +145,46 @@ export function ProductForm({ initialData, onSave, onCancel }: ProductFormProps)
                     onChange={e => handleChange("商品描述", e.target.value)}
                     rows={3}
                 />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 border-t pt-4">
+                <div className="col-span-2 text-sm font-semibold text-gray-500">檔期設定 (選品/許願階段)</div>
+                <div className="space-y-2">
+                    <Label>選品開始時間</Label>
+                    <Input
+                        type="datetime-local"
+                        value={formData["選品開始時間"]?.slice(0, 16) || ""}
+                        onChange={e => handleChange("選品開始時間", e.target.value)}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label>選品結束時間</Label>
+                    <Input
+                        type="datetime-local"
+                        value={formData["選品結束時間"]?.slice(0, 16) || ""}
+                        onChange={e => handleChange("選品結束時間", e.target.value)}
+                    />
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 border-t pt-4">
+                <div className="col-span-2 text-sm font-semibold text-gray-500">檔期設定 (販售/開團階段)</div>
+                <div className="space-y-2">
+                    <Label>販售開始時間</Label>
+                    <Input
+                        type="datetime-local"
+                        value={formData["販售開始時間"]?.slice(0, 16) || ""}
+                        onChange={e => handleChange("販售開始時間", e.target.value)}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label>販售結束時間</Label>
+                    <Input
+                        type="datetime-local"
+                        value={formData["販售結束時間"]?.slice(0, 16) || ""}
+                        onChange={e => handleChange("販售結束時間", e.target.value)}
+                    />
+                </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-4">

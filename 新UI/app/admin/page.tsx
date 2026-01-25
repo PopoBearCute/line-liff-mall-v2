@@ -152,10 +152,11 @@ export default function AdminPage() {
             "圖片網址": formData["圖片網址"],
             "商品描述": formData["商品描述"],
             "商城連結": formData["商城連結"],
-            // Ensure dates exist if inserting, or keep existing? 
-            // New items get default dates
-            "選品開始時間": editingProduct ? editingProduct["販售開始時間"] : new Date().toISOString(),
-            "選品結束時間": editingProduct ? editingProduct["販售結束時間"] : new Date(Date.now() + 7 * 86400000).toISOString(),
+            // Use form data dates if present, otherwise fallback (or empty if user cleared them)
+            "選品開始時間": formData["選品開始時間"] ? new Date(formData["選品開始時間"]).toISOString() : null,
+            "選品結束時間": formData["選品結束時間"] ? new Date(formData["選品結束時間"]).toISOString() : null,
+            "販售開始時間": formData["販售開始時間"] ? new Date(formData["販售開始時間"]).toISOString() : null,
+            "販售結束時間": formData["販售結束時間"] ? new Date(formData["販售結束時間"]).toISOString() : null,
         };
 
         try {
