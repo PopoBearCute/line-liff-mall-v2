@@ -287,6 +287,8 @@ export default function GroupBuyPage() {
         idToken: idToken // Secure Token
       };
 
+      console.log("🚀 [Client] Submitting Payload:", payload);
+
       const res = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }, // Content-Type for Next.js API

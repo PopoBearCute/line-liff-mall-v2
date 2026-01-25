@@ -263,8 +263,8 @@ export async function POST(request: Request) {
         const { idToken, action, leaderId, userId } = data;
         const cleanLeaderId = String(leaderId || "").replace(/^\?leaderId=/, "").trim();
         const cleanUserId = String(userId || "").trim();
-        console.log(`[API POST] Action: ${action}, leaderId: ${cleanLeaderId}, userId: ${cleanUserId}`);
-        console.log(`[API POST] Raw Payload: ${JSON.stringify(data)}`);
+        console.log(`[API POST] Action: ${action}, Leader: ${cleanLeaderId}, User: ${cleanUserId}`);
+        console.log(`[API POST] Payload: ${JSON.stringify(data)}`);
 
         // Initialize Admin Client (Bypasses RLS)
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -286,11 +286,11 @@ export async function POST(request: Request) {
 
             // Security Check: Verify User Identity
             const verifiedUserId = await verifyLiffToken(idToken);
-            const isAuthValid = (verifiedUserId === 'MOCK_ID_WILD_CARD') || (verifiedUserId === String(userId).trim());
+            const isAuthValid = (verifiedUserId === 'MOCK_ID_WILD_CARD') || (verifiedUserId === cleanUserId);
 
             if (!isAuthValid) {
-                console.error(`[API Auth] 驗證失敗. Verified: ${verifiedUserId}, Provided: ${userId}`);
-                return NextResponse.json({ success: false, error: "身分驗證失敗，請重新登入" }, { status: 403 });
+                console.error(`[API Auth] 驗證失敗. Verified: ${verifiedUserId}, Provided: ${cleanUserId}`);
+                return NextResponse.json({ success: false, error: "身分驗證失敗，請嘗試在本機重新整理或在手機重新登入" }, { status: 403 });
             }
 
             const targetWave = Number(wave);
@@ -386,7 +386,7 @@ export async function POST(request: Request) {
 
             if (!isLeaderAuthValid) {
                 console.error(`[API Auth] 團主驗證失敗. Verified: ${verifiedUserId}, Expected Leader: ${cleanLeaderId}`);
-                return NextResponse.json({ success: false, error: "權限不足：您不是本團團主" }, { status: 403 });
+                return NextResponse.json({ success: false, error: "權限不足：您的身分不符 (Leader Auth Mismatch)" }, { status: 403 });
             }
 
             const targetLeaderId = cleanLeaderId;
@@ -447,13 +447,14 @@ export async function POST(request: Request) {
 
         // --- Action: Auto Register Leader ---
         if (data.action === 'auto_register_leader') {
-            const { wave, leaderId, leaderName, userId } = data;
+            const { wave, leaderId, leaderName, userId: providedUserId } = data;
 
             // Security Check: Verify Identity
             const verifiedUserId = await verifyLiffToken(idToken);
-            const isAutoAuthValid = (verifiedUserId === 'MOCK_ID_WILD_CARD') || (verifiedUserId === cleanLeaderId);
+            const isAutoAuthValid = (verifiedUserId === 'MOCK_ID_WILD_CARD') || (verifiedUserId === cleanLeaderId) || (verifiedUserId === cleanUserId);
 
             if (!isAutoAuthValid) {
+                console.error(`[API Auth] 自動註冊驗證失敗. Verified: ${verifiedUserId}, Leader: ${cleanLeaderId}, User: ${cleanUserId}`);
                 return NextResponse.json({ success: false, error: "自動註冊失敗：身分驗證不符" }, { status: 403 });
             }
 
