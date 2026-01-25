@@ -238,7 +238,15 @@ async function verifyLiffToken(idToken: string): Promise<string | null> {
 
     // Trim LIFF ID to prevent "wrong format" errors from accidental spaces
     const envLiffId = (process.env.NEXT_PUBLIC_LIFF_ID || '').trim();
-    const liffId = envLiffId || '2008798234-72bJqeYx';
+    // LINE Verification requires Channel ID, not LIFF ID
+    const envChannelId = (process.env.LINE_CHANNEL_ID || '').trim();
+
+    // Prioritize Channel ID, fallback to LIFF ID (which usually fails, but good for backward compat if ID is same)
+    const verificationClientId = envChannelId || envLiffId || '2008798234-72bJqeYx';
+
+    if (!envChannelId) {
+        console.warn("[LIFF Verify] Warning: LINE_CHANNEL_ID is missing. Falling back to LIFF_ID, which may fail verification.");
+    }
 
     try {
         const res = await fetch('https://api.line.me/oauth2/v2.1/verify', {
@@ -246,7 +254,7 @@ async function verifyLiffToken(idToken: string): Promise<string | null> {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
                 id_token: idToken,
-                client_id: liffId
+                client_id: verificationClientId
             })
         });
         const data = await res.json();
