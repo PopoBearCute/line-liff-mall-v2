@@ -308,7 +308,7 @@ export default function GroupBuyPage() {
 
     // Validate
     const productsToSubmit = singleProductName
-      ? [{ name: singleProductName, qty: cart[singleProductName] || (mode === 'active' ? 1 : 0) }]
+      ? [{ name: singleProductName, qty: cart[singleProductName] || 1 }]
       : Object.entries(cart).map(([name, qty]) => ({ name, qty }));
 
     const validItems = productsToSubmit.filter(i => i.qty !== 0);
@@ -651,6 +651,7 @@ export default function GroupBuyPage() {
       onEnterShop={() => setViewMode('main')}
       onShareCollecting={() => handleShare('collecting')}
       onShareActive={() => handleShare('active')}
+      userName={userProfile?.displayName || leaderName}
     />
   );
 

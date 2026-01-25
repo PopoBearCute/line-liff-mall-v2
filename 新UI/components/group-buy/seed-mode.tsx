@@ -7,9 +7,10 @@ interface SeedModeProps {
   onEnterShop: () => void;
   onShareCollecting: () => void;
   onShareActive: () => void;
+  userName?: string;
 }
 
-export function SeedMode({ onEnterShop, onShareCollecting, onShareActive }: SeedModeProps) {
+export function SeedMode({ onEnterShop, onShareCollecting, onShareActive, userName }: SeedModeProps) {
   // Secret Admin Trigger State
   const [clickCount, setClickCount] = useState(0);
   const [lastClickTime, setLastClickTime] = useState(0);
@@ -71,7 +72,13 @@ export function SeedMode({ onEnterShop, onShareCollecting, onShareActive }: Seed
           className="btn-tactile w-full flex items-center justify-center gap-2 rounded-2xl bg-gray-900 text-white py-4 text-lg font-bold shadow-lg shadow-gray-300 hover:bg-black transition-all active:scale-95 mb-4"
         >
           <span>🏪</span>
-          進入我的商店
+          <span className="flex items-center gap-1">
+            進入
+            <span className="bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-300 bg-clip-text text-transparent drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] font-black italic px-1">
+              {userName || '我'}
+            </span>
+            的商店
+          </span>
         </button>
 
         <div className="w-full h-[1px] bg-gray-200 my-4"></div>
