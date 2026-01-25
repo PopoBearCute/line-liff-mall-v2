@@ -11,6 +11,7 @@ import { SeedMode } from "@/components/group-buy/seed-mode";
 import Loading from "./loading";
 import { toast } from "sonner";
 import { GolfBallLoader } from "@/components/ui/golf-loader";
+import Image from "next/image";
 
 const GAS_URL = "/api/products";
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2008798234-72bJqeYx";
@@ -103,8 +104,14 @@ export default function GroupBuyPage() {
         loadData(mockUserId, mockUserId, 'Dev Tester', false);
       } else {
         setLeaderId(lId);
+        // [Local Fix] Treat the provided leaderId as the current user to enable "Leader View" locally
+        setUserProfile({
+          userId: lId,
+          displayName: '本地測試團主',
+          pictureUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Leader',
+        });
         setViewMode('main');
-        loadData(lId, mockUserId, 'Dev Tester', true);
+        loadData(lId, lId, '本地測試團主', true);
       }
       return;
     }
@@ -672,6 +679,20 @@ export default function GroupBuyPage() {
           wave={activeWaves[0]?.wave || ""}
           leaderName={leaderName}
         />
+
+        {/* Mall Branding & Logo */}
+        <div className="flex flex-col items-center pt-8 pb-2">
+          <div className="relative w-16 h-16 mb-2">
+            <Image
+              src="/ball-logo.png"
+              alt="中油PAY行動商城 Logo"
+              fill
+              className="object-contain animate-float"
+            />
+          </div>
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight">中油PAY行動商城</h1>
+          <p className="text-[10px] text-gray-500 font-medium">官方正品 · 團購優惠</p>
+        </div>
 
         {/* Stories Bar */}
         <div className="pt-3">
