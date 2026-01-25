@@ -702,7 +702,10 @@ export default function GroupBuyPage() {
         {/* Stories Bar */}
         <div className="pt-3">
           <StoriesBar
-            leaderAvatar={leaderAvatar || userProfile?.pictureUrl || undefined}
+            // Logic: If I am the leader, show MY current profile avatar (most up to date). 
+            // If I am a guest, show the fetched 'leaderAvatar'. If missing, let component show default icon.
+            // NEVER show guest's avatar as the leader.
+            leaderAvatar={isLeader ? (userProfile?.pictureUrl || leaderAvatar) : leaderAvatar}
             leaderName={leaderName}
             products={storiesProducts}
             onProductClick={(name: string) => {
