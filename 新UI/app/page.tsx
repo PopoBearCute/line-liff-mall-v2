@@ -280,8 +280,7 @@ export default function GroupBuyPage() {
       const data = await response.json();
       if (data.success) {
         // Show detailed debug info from backend
-        const debugInfo = data.debug ? `(Row: ${data.debug.rows?.join(',') || 'New'}, Found: ${data.debug.found})` : '';
-        toast.success(newEnabledState ? `已開放 ${productName} ${debugInfo}` : `已關閉 ${productName} ${debugInfo}`, {
+        toast.success(newEnabledState ? `已開放 ${productName}` : `已關閉 ${productName}`, {
           duration: 5000
         });
         await loadData(leaderId, userProfile?.userId || leaderId, userProfile?.displayName || '團購主', false);
