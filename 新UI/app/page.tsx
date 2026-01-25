@@ -313,26 +313,7 @@ export default function GroupBuyPage() {
     }
   };
 
-  const handleShareProduct = (product: Product) => {
-    if (typeof window !== 'undefined' && window.liff) {
-      const shareUrl = `${window.location.origin}${window.location.pathname}?leaderId=${leaderId || userProfile?.userId}`;
-      const msg = `🔥 ${product.name}\n\n${product.description.slice(0, 50)}...\n\n👉 快來下單：${shareUrl}`;
 
-      if (window.liff.isApiAvailable('shareTargetPicker')) {
-        window.liff.shareTargetPicker([
-          {
-            type: "text",
-            text: msg
-          }
-        ]).then(() => toast.success("已分享"))
-          .catch(() => toast.error("分享取消"));
-      } else {
-        // Fallback Copy
-        navigator.clipboard.writeText(msg);
-        toast.success("連結已複製 (請手動貼上)");
-      }
-    }
-  };
 
 
   // --- Submit Handler ---
