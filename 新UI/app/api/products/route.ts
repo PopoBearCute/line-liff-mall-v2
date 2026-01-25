@@ -313,18 +313,20 @@ export async function POST(request: Request) {
                 const uniqueKey = `${String(leaderId).trim()}_${String(wave).trim()}_${String(userId).trim()}_${normalizedProdName}`;
 
                 // Check if exists
-                const { data: existingIntent } = await adminSupabase
+                const { data: existingIntent, error: selectError } = await adminSupabase
                     .from('intentdb')
                     .select('*')
                     .eq('唯一金鑰', uniqueKey)
                     .maybeSingle();
+
+                if (selectError) throw new Error(`Select Intent Error: ${selectError.message}`);
 
                 if (existingIntent) {
                     const currentQty = Number(existingIntent['數量'] || 0);
                     let newQty = currentQty + Number(qty);
                     if (newQty < 0) newQty = 0;
 
-                    await adminSupabase
+                    const { error: updateError } = await adminSupabase
                         .from('intentdb')
                         .update({
                             '數量': newQty,
@@ -333,11 +335,13 @@ export async function POST(request: Request) {
                             'picurl': userAvatar || ""
                         })
                         .eq('唯一金鑰', uniqueKey);
+
+                    if (updateError) throw new Error(`Update Intent Error: ${updateError.message}`);
                 } else {
                     let initialQty = Number(qty);
                     if (initialQty < 0) initialQty = 0;
                     if (initialQty > 0) {
-                        await adminSupabase
+                        const { error: insertError } = await adminSupabase
                             .from('intentdb')
                             .insert({
                                 '唯一金鑰': uniqueKey,
@@ -350,6 +354,8 @@ export async function POST(request: Request) {
                                 '團員暱稱': userName,
                                 'picurl': userAvatar || ""
                             });
+
+                        if (insertError) throw new Error(`Insert Intent Error: ${insertError.message}`);
                     }
                 }
             }
@@ -374,12 +380,14 @@ export async function POST(request: Request) {
             const targetNormalized = superNormalize(targetName);
 
             // Find Binding
-            const { data: bindingRow } = await adminSupabase
+            const { data: bindingRow, error: selectBindingError } = await adminSupabase
                 .from('leaderbinding')
                 .select('*')
                 .eq('團主 ID', targetLeaderId)
                 .eq('所屬波段', targetWave)
                 .maybeSingle();
+
+            if (selectBindingError) throw new Error(`Select Binding Error: ${selectBindingError.message}`);
 
             if (bindingRow) {
                 let currentEnabled = String(bindingRow['已啟用商品名單'] || '');
@@ -394,25 +402,30 @@ export async function POST(request: Request) {
                 }
 
                 // Update
-                await adminSupabase
+                const { error: updateError } = await adminSupabase
                     .from('leaderbinding')
                     .update({ '已啟用商品名單': list.join(',') })
                     .eq('團主 ID', targetLeaderId)
                     .eq('所屬波段', targetWave);
 
+                if (updateError) throw new Error(`Update Binding Error: ${updateError.message}`);
+
                 return NextResponse.json({ success: true, debug: { found: true } });
             } else if (shouldEnable) {
                 // Not found, create new
-                await adminSupabase.from('leaderbinding').insert({
+                const { error: insertError } = await adminSupabase.from('leaderbinding').insert({
                     '所屬波段': targetWave,
                     '團主 ID': targetLeaderId,
                     '團主名稱': data.leaderName || '團購主',
                     '綁定時間': new Date().toISOString(),
                     '已啟用商品名單': targetName
                 });
+
+                if (insertError) throw new Error(`Insert Binding Error: ${insertError.message}`);
+
                 return NextResponse.json({ success: true, debug: { created: true } });
             } else {
-                return NextResponse.json({ success: false, error: "此團購波段尚未建立綁定資料，無法關閉商品。" });
+                return NextResponse.json({ success: false, error: "此團購波段尚未建立綁定資料，無法關閉商品。" }, { status: 400 });
             }
         }
 
