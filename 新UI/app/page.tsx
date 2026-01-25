@@ -738,7 +738,6 @@ export default function GroupBuyPage() {
         <Header
           roleTag={isLeader ? "您是本團負責人" : "你是團員"}
           isLeader={isLeader}
-          onShare={handleShare}
           wave={activeWaves[0]?.wave || ""}
           leaderName={leaderName}
         />
