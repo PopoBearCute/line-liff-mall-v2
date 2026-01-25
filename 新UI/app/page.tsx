@@ -316,7 +316,10 @@ export default function GroupBuyPage() {
 
   // --- Submit Handler ---
   const handleSubmit = async (singleProductName?: string) => {
-    if (!userProfile) return;
+    if (!userProfile) {
+      toast.error("請先等待身分驗證完成...");
+      return;
+    }
 
     // Validate
     const productsToSubmit = singleProductName
