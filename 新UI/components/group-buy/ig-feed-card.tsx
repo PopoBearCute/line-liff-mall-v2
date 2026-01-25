@@ -99,7 +99,7 @@ export function IGFeedCard({
             btnColor: "bg-primary-blue hover:bg-blue-600",
             btnText: "跟團登記",
             progressColor: "bg-gradient-to-r from-primary-green to-teal-400",
-            statusText: `目標 ${product.moq} / 已達 ${totalVotes}`,
+            statusText: `已達 ${totalVotes} / 目標 ${product.moq}`,
             action: onJoin, // This will toggle the quantity selector
             priceColor: "text-black dark:text-white"
         },
@@ -230,7 +230,7 @@ export function IGFeedCard({
                         {/* Bottom Layer: Target Info | Avatar Stack */}
                         <div className="flex justify-between items-center">
                             <span className="text-[11px] text-gray-500 font-medium tracking-tight">
-                                目標 {product.moq} 份 / 已達 {product.currentQty || 0} 份
+                                已達 {product.currentQty || 0} 份 / 目標 {product.moq} 份
                             </span>
 
                             {/* Avatar Stack moved here */}
