@@ -558,9 +558,12 @@ export default function GroupBuyPage() {
         }
       };
 
+      const nameToUse = (isLeader && userProfile?.displayName) ? userProfile.displayName : (leaderName || '團購主');
+      const safeLeaderName = nameToUse.replace(/[^\w\u4e00-\u9fa5\s]/g, '').slice(0, 10);
+
       const result = await window.liff.shareTargetPicker([{
         type: "flex",
-        altText: `分享商品：${cleanName}`,
+        altText: `${safeLeaderName} 邀請您參加團購：${cleanName}`,
         contents: bubble
       }]);
 
