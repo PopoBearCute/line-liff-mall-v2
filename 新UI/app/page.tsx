@@ -305,11 +305,22 @@ export default function GroupBuyPage() {
     if (isLocalDev && !idToken) idToken = "mock_token";
 
 
-    setIsEnabling(true);
-    // Optimistic UI handled by re-fetch or parent state update? 
-    // Ideally we update local state, but Product list is from API. 
-    // Let's just wait for API then reload or let revalidation happen.
-    // Actually, IGFeedCard might want to toggle visual state.
+    // [Optimistic UI] 1. Store previous state for rollback
+    const previousWaves = [...activeWaves];
+
+    // [Optimistic UI] 2. Update local state immediately
+    const optimisticWaves = activeWaves.map((wave: ActiveWave) => ({
+      ...wave,
+      products: wave.products.map((p: Product) =>
+        p.name === productName
+          ? { ...p, isEnabled: !currentEnabled }
+          : p
+      )
+    }));
+    setActiveWaves(optimisticWaves);
+
+    // [Stability] Snapshot is ALREADY protecting the sort order (handled in useEffect), 
+    // so this state change won't cause a jump.
 
     try {
       const targetWave = activeWaves.length > 0 ? activeWaves[0].wave : "1";
@@ -335,14 +346,17 @@ export default function GroupBuyPage() {
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error || "設定失敗");
 
-      // Reload to reflect changes, but keep sort order STABLE
+      // [Optimistic UI] 3. Success - Sync with server silently (no loader)
+      // We pass refreshSnapshot=false to strictly maintain the current order until page refresh or tab switch
       if (leaderId && userProfile) {
-        await loadData(leaderId, userProfile.userId, userProfile.displayName, true, idToken, false);
+        await loadData(leaderId, userProfile.userId, userProfile.displayName, false, idToken, false);
       }
       toast.success(currentEnabled ? "已關閉購買" : "已開放購買");
     } catch (e) {
       console.error(e);
-      toast.error("設定失敗");
+      toast.error("設定失敗，正在還原...");
+      // [Optimistic UI] 4. Error - Revert state
+      setActiveWaves(previousWaves);
     } finally {
       setIsEnabling(false);
     }
