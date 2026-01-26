@@ -778,6 +778,7 @@ export default function GroupBuyPage() {
       userName={userProfile?.displayName || leaderName}
       collectingCount={collectingProducts.length}
       activeCount={activeProducts.length}
+      products={[...activeProducts, ...collectingProducts]}
     />
   );
 

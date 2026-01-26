@@ -1,7 +1,8 @@
 "use client";
 
-import { Share2, Rocket, Sparkles } from "lucide-react";
+import { Share2, Rocket, Sparkles, BarChart3 } from "lucide-react";
 import { useState } from "react";
+import { OrderSummaryDrawer } from "./order-summary-drawer";
 
 interface SeedModeProps {
   onEnterShop: () => void;
@@ -10,20 +11,24 @@ interface SeedModeProps {
   userName?: string;
   collectingCount?: number;
   activeCount?: number;
+  products?: any[]; // Passed for summary report
 }
 
 export function SeedMode({
   onEnterShop,
   onShareCollecting,
   onShareActive,
+  onShareActive,
   userName,
   collectingCount = 0,
-  activeCount = 0
+  activeCount = 0,
+  products = []
 }: SeedModeProps) {
   // Secret Admin Trigger State
   const [clickCount, setClickCount] = useState(0);
   const [lastClickTime, setLastClickTime] = useState(0);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showStats, setShowStats] = useState(false); // New state for Stats Drawer
 
   const isCollectingDisabled = collectingCount === 0;
   const isActiveDisabled = activeCount === 0;
@@ -122,11 +127,29 @@ export function SeedMode({
           </button>
         </div>
 
+        {/* 3. New Feature: Stats Button */}
+        <div className="w-full mt-3">
+          <button
+            onClick={() => setShowStats(true)}
+            className="w-full flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-sm font-bold text-emerald-700 shadow-sm transition-all active:scale-95 hover:bg-emerald-100"
+          >
+            <BarChart3 className="h-4 w-4" />
+            查看團購統計與明細
+          </button>
+        </div>
+
       </div>
 
       <p className="mt-8 text-xs text-gray-400 font-medium">
         Powered by 多角化室
       </p>
+
+      {/* Stats Drawer */}
+      <OrderSummaryDrawer
+        open={showStats}
+        onOpenChange={setShowStats}
+        products={products}
+      />
     </section>
   );
 }
