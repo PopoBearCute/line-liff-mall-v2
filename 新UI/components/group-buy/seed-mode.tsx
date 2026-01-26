@@ -8,13 +8,25 @@ interface SeedModeProps {
   onShareCollecting: () => void;
   onShareActive: () => void;
   userName?: string;
+  collectingCount?: number;
+  activeCount?: number;
 }
 
-export function SeedMode({ onEnterShop, onShareCollecting, onShareActive, userName }: SeedModeProps) {
+export function SeedMode({
+  onEnterShop,
+  onShareCollecting,
+  onShareActive,
+  userName,
+  collectingCount = 0,
+  activeCount = 0
+}: SeedModeProps) {
   // Secret Admin Trigger State
   const [clickCount, setClickCount] = useState(0);
   const [lastClickTime, setLastClickTime] = useState(0);
   const [showAdmin, setShowAdmin] = useState(false);
+
+  const isCollectingDisabled = collectingCount === 0;
+  const isActiveDisabled = activeCount === 0;
 
   return (
     <section className="flex flex-col items-center justify-center min-h-screen px-6 py-12 bg-gradient-to-b from-blue-50 to-white">
@@ -87,18 +99,26 @@ export function SeedMode({ onEnterShop, onShareCollecting, onShareActive, userNa
         <div className="w-full space-y-3">
           <button
             onClick={onShareCollecting}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 text-gray-700 py-3 text-sm font-bold shadow-sm hover:bg-gray-50 transition-all active:scale-95"
+            disabled={isCollectingDisabled}
+            className={`w-full flex items-center justify-center gap-2 rounded-xl border py-3 text-sm font-bold shadow-sm transition-all active:scale-95 
+              ${isCollectingDisabled
+                ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
           >
-            <Share2 className="h-4 w-4 text-blue-500" />
-            分享「集單中」商品圖卡
+            <Share2 className={`h-4 w-4 ${isCollectingDisabled ? 'text-gray-200' : 'text-blue-500'}`} />
+            {isCollectingDisabled ? '暫無集單中商品' : '分享「集單中」商品圖卡'}
           </button>
 
           <button
             onClick={onShareActive}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 text-gray-700 py-3 text-sm font-bold shadow-sm hover:bg-gray-50 transition-all active:scale-95"
+            disabled={isActiveDisabled}
+            className={`w-full flex items-center justify-center gap-2 rounded-xl border py-3 text-sm font-bold shadow-sm transition-all active:scale-95 
+              ${isActiveDisabled
+                ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
           >
-            <Share2 className="h-4 w-4 text-red-500" />
-            分享「上架中」商品圖卡
+            <Share2 className={`h-4 w-4 ${isActiveDisabled ? 'text-gray-200' : 'text-red-500'}`} />
+            {isActiveDisabled ? '暫無上架中商品' : '分享「上架中」商品圖卡'}
           </button>
         </div>
 

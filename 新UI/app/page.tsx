@@ -582,9 +582,10 @@ export default function GroupBuyPage() {
         candidateProducts = [...collectingProds, ...activeProds];
       }
 
-      // 保底邏輯
+      // 移除原有的保底邏輯，若該分類無商品則直接回傳錯誤
       if (candidateProducts.length === 0) {
-        candidateProducts = activeWaves.flatMap(w => w.products);
+        toast.error(`目前沒有「${mode === 'collecting' ? '集單中' : (mode === 'active' ? '上架中' : '可分享')}」的商品`);
+        return;
       }
 
       // 限額 9 名
@@ -683,16 +684,6 @@ export default function GroupBuyPage() {
     }
   };
 
-  if (viewMode === 'loading') return <Loading />;
-  if (viewMode === 'seed') return (
-    <SeedMode
-      onEnterShop={() => setViewMode('main')}
-      onShareCollecting={() => handleShare('collecting')}
-      onShareActive={() => handleShare('active')}
-      userName={userProfile?.displayName || leaderName}
-    />
-  );
-
   // 1. activeProducts: Phase=active
   // Logic: 
   // - Leader: sees ALL active products
@@ -727,6 +718,18 @@ export default function GroupBuyPage() {
       const rateB = (b.currentQty || 0) / Math.max(b.moq || 1, 1);
       return rateB - rateA;
     });
+
+  if (viewMode === 'loading') return <Loading />;
+  if (viewMode === 'seed') return (
+    <SeedMode
+      onEnterShop={() => setViewMode('main')}
+      onShareCollecting={() => handleShare('collecting')}
+      onShareActive={() => handleShare('active')}
+      userName={userProfile?.displayName || leaderName}
+      collectingCount={collectingProducts.length}
+      activeCount={activeProducts.length}
+    />
+  );
 
   // 3. preparingProducts: REMOVED (Merged into collecting)
 
