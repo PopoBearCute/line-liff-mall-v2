@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Removed 'output: export' for Vercel deployment (enables API routes)
+  output: 'standalone', // Required for Cloud Run Docker deployment
   typescript: {
     ignoreBuildErrors: true,
   },
