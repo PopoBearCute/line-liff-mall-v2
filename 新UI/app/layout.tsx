@@ -9,11 +9,11 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: '中油PAY行動商城',
-  description: '📊 專屬揪團中！點擊進入查看本波熱門商品與集單進度，快來進來湊個單！',
+  title: '團購主管理工具',
+  description: '專業團購管理助手：輕鬆管理商品進度、一鍵分享圖卡，讓您的開團操作更直覺、高效！',
   openGraph: {
-    title: '中油PAY行動商城',
-    description: '📊 專屬揪團中！點擊進入查看本波熱門商品與集單進度，快來進來湊個單！',
+    title: '團購主管理工具',
+    description: '專業團購管理助手：輕鬆管理商品進度、一鍵分享圖卡，讓您的開團操作更直覺、高效！',
     images: [
       {
         url: 'https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png', // Temporary placeholder for reliable display
