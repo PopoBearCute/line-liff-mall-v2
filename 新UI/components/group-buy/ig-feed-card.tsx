@@ -197,7 +197,7 @@ export function IGFeedCard({
                 {isLeader && mode === 'active' && !isEnabled && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
                         <span className="bg-gray-700/90 text-white px-4 py-1.5 rounded-full text-xs font-medium backdrop-blur-md border border-white/10">
-                            前台不顯示
+                            團員不會看見這隻商品
                         </span>
                     </div>
                 )}
