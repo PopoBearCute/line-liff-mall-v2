@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  output: 'export',
   // basePath: '/line-liff-mall-v2',
   // assetPrefix: '/line-liff-mall-v2',
   typescript: {
