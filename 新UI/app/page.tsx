@@ -75,6 +75,7 @@ export default function GroupBuyPage() {
   const [isLoading, setIsLoading] = useState(!!leaderIdFromUrl);
   const [isEnabling, setIsEnabling] = useState(false);
   const [submittingProduct, setSubmittingProduct] = useState<string | null>(null);
+  const [enabledStatusSnapshot, setEnabledStatusSnapshot] = useState<Record<string, boolean>>({});
 
   // IG-Style Tabs State
   const [activeTab, setActiveTab] = useState(0);
@@ -208,6 +209,16 @@ export default function GroupBuyPage() {
           });
           return newCart;
         });
+
+        // [Stability Fix] Capture a snapshot of isEnabled status for stable sorting
+        const newSnapshot: Record<string, boolean> = {};
+        data.activeWaves?.forEach((wave: ActiveWave) => {
+          wave.products.forEach(p => {
+            const isEnabled = p.isEnabled === true || String(p.isEnabled).toLowerCase() === 'true' || Number(p.isEnabled) === 1;
+            newSnapshot[p.name] = isEnabled;
+          });
+        });
+        setEnabledStatusSnapshot(newSnapshot);
 
         setIsLoading(false);
 
@@ -696,8 +707,9 @@ export default function GroupBuyPage() {
     }))
     .sort((a, b) => {
       if (isLeader) {
-        const aEnabled = a.isEnabled === true || String(a.isEnabled).toLowerCase() === 'true' || Number(a.isEnabled) === 1;
-        const bEnabled = b.isEnabled === true || String(b.isEnabled).toLowerCase() === 'true' || Number(b.isEnabled) === 1;
+        // [Stability Fix] Use snapshot for sorting isEnabled to prevent jumping
+        const aEnabled = !!enabledStatusSnapshot[a.name];
+        const bEnabled = !!enabledStatusSnapshot[b.name];
         if (aEnabled !== bEnabled) return aEnabled ? -1 : 1;
       }
       const rateA = (a.currentQty || 0) / Math.max(a.moq || 1, 1);
