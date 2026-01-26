@@ -622,7 +622,7 @@ export default function GroupBuyPage() {
             "layout": "vertical",
             "contents": [
               { "type": "text", "text": cleanName, "weight": "bold", "size": "md", "wrap": true, "maxLines": 2 },
-              { "type": "text", "text": "進來湊個單 團主就開團 🔥", "size": "xs", "color": "#E63946", "margin": "sm" }
+              { "type": "text", "text": `進來湊個單 ${nameToUse} 就開團 🔥`, "size": "xs", "color": "#E63946", "margin": "sm" }
             ]
           },
           "footer": {
