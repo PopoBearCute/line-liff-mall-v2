@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-  // basePath: '/line-liff-mall-v2',
-  // assetPrefix: '/line-liff-mall-v2',
+  // Removed 'output: export' for Vercel deployment (enables API routes)
   typescript: {
     ignoreBuildErrors: true,
   },
