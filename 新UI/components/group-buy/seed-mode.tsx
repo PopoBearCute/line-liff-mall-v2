@@ -18,7 +18,6 @@ export function SeedMode({
   onEnterShop,
   onShareCollecting,
   onShareActive,
-  onShareActive,
   userName,
   collectingCount = 0,
   activeCount = 0,
