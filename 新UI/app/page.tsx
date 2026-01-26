@@ -171,7 +171,8 @@ export default function GroupBuyPage() {
     userId: string,
     displayName: string,
     showLoader: boolean = false,
-    idToken: string = ""
+    idToken: string = "",
+    refreshSnapshot: boolean = true
   ) => {
     if (showLoader) setIsLoading(true);
     try {
@@ -210,15 +211,16 @@ export default function GroupBuyPage() {
           return newCart;
         });
 
-        // [Stability Fix] Capture a snapshot of isEnabled status for stable sorting
-        const newSnapshot: Record<string, boolean> = {};
-        data.activeWaves?.forEach((wave: ActiveWave) => {
-          wave.products.forEach(p => {
-            const isEnabled = p.isEnabled === true || String(p.isEnabled).toLowerCase() === 'true' || Number(p.isEnabled) === 1;
-            newSnapshot[p.name] = isEnabled;
+        if (refreshSnapshot) {
+          const newSnapshot: Record<string, boolean> = {};
+          data.activeWaves?.forEach((wave: ActiveWave) => {
+            wave.products.forEach(p => {
+              const isEnabled = p.isEnabled === true || String(p.isEnabled).toLowerCase() === 'true' || Number(p.isEnabled) === 1;
+              newSnapshot[p.name] = isEnabled;
+            });
           });
-        });
-        setEnabledStatusSnapshot(newSnapshot);
+          setEnabledStatusSnapshot(newSnapshot);
+        }
 
         setIsLoading(false);
 
@@ -258,6 +260,20 @@ export default function GroupBuyPage() {
       return [];
     }
   };
+
+  // [Stability Fix] Refresh snapshot when switching tabs to allow order updates
+  useEffect(() => {
+    if (activeWaves.length > 0) {
+      const newSnapshot: Record<string, boolean> = {};
+      activeWaves.forEach((wave) => {
+        wave.products.forEach(p => {
+          const isEnabled = p.isEnabled === true || String(p.isEnabled).toLowerCase() === 'true' || Number(p.isEnabled) === 1;
+          newSnapshot[p.name] = isEnabled;
+        });
+      });
+      setEnabledStatusSnapshot(newSnapshot);
+    }
+  }, [activeTab]);
 
   const handleQuantityChange = (productName: string, delta: number) => {
     setCart((prev) => ({
@@ -309,9 +325,9 @@ export default function GroupBuyPage() {
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error || "設定失敗");
 
-      // Reload to reflect changes
+      // Reload to reflect changes, but keep sort order STABLE
       if (leaderId && userProfile) {
-        await loadData(leaderId, userProfile.userId, userProfile.displayName, true, idToken);
+        await loadData(leaderId, userProfile.userId, userProfile.displayName, true, idToken, false);
       }
       toast.success(currentEnabled ? "已關閉購買" : "已開放購買");
     } catch (e) {
