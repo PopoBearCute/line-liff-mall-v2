@@ -51,9 +51,19 @@ interface UserProfile {
 }
 
 // Declare LIFF on window
+interface Liff {
+  init: (config: { liffId: string }) => Promise<void>;
+  isLoggedIn: () => boolean;
+  login: () => void;
+  getProfile: () => Promise<{ userId: string; displayName: string; pictureUrl?: string }>;
+  getIDToken: () => string | null;
+  isApiAvailable: (name: string) => boolean;
+  shareTargetPicker: (messages: any[]) => Promise<any>;
+}
+
 declare global {
   interface Window {
-    liff: any;
+    liff: Liff;
   }
 }
 
@@ -201,10 +211,10 @@ export default function GroupBuyPage() {
 
         setLeaderId(data.leaderId);
 
-        setCart(prev => {
+        setCart((prev: Record<string, number>) => {
           const newCart = { ...prev };
           data.activeWaves?.forEach((wave: ActiveWave) => {
-            wave.products.forEach(p => {
+            wave.products.forEach((p: Product) => {
               if (newCart[p.name] === undefined) newCart[p.name] = 0;
             });
           });
@@ -265,8 +275,8 @@ export default function GroupBuyPage() {
   useEffect(() => {
     if (activeWaves.length > 0) {
       const newSnapshot: Record<string, boolean> = {};
-      activeWaves.forEach((wave) => {
-        wave.products.forEach(p => {
+      activeWaves.forEach((wave: ActiveWave) => {
+        wave.products.forEach((p: Product) => {
           const isEnabled = p.isEnabled === true || String(p.isEnabled).toLowerCase() === 'true' || Number(p.isEnabled) === 1;
           newSnapshot[p.name] = isEnabled;
         });
@@ -276,7 +286,7 @@ export default function GroupBuyPage() {
   }, [activeTab]);
 
   const handleQuantityChange = (productName: string, delta: number) => {
-    setCart((prev) => ({
+    setCart((prev: Record<string, number>) => ({
       ...prev,
       [productName]: (prev[productName] || 0) + delta
     }));
@@ -492,6 +502,11 @@ export default function GroupBuyPage() {
 
       console.log("[Share] Prepared data:", { cleanName, displayImg, shareUrl });
 
+      // [Fix] Label Unification based on Phase
+      const parentWave = activeWaves.find((w: ActiveWave) => w.products.some((prod: Product) => prod.name === p.name));
+      const isActivePhase = parentWave?.phase === 'active';
+      const buttonLabel = isActivePhase ? "來去下單" : "來去跟團";
+
       const bubble = {
         "type": "bubble",
         "size": "mega",
@@ -507,7 +522,7 @@ export default function GroupBuyPage() {
           "layout": "vertical",
           "contents": [
             { "type": "text", "text": cleanName, "weight": "bold", "size": "md", "wrap": true, "maxLines": 2 },
-            { "type": "text", "text": `進來湊個單 ${userProfile?.displayName || leaderName || '團主'} 就開團 🔥`, "size": "xs", "color": "#E63946", "margin": "sm" }
+            { "type": "text", "text": isActivePhase ? "成功開團了，我也要上車!" : `進來湊個單 ${userProfile?.displayName || leaderName || '團主'} 就開團 🔥`, "size": "xs", "color": "#E63946", "margin": "sm" }
           ]
         },
         "footer": {
@@ -521,8 +536,8 @@ export default function GroupBuyPage() {
               "color": "#E63946",
               "action": {
                 "type": "uri",
-                "label": "來去看看",
-                "uri": shareUrl
+                "label": buttonLabel,
+                "uri": (isActivePhase && p.link) ? p.link : shareUrl
               }
             }
           ]
@@ -545,10 +560,10 @@ export default function GroupBuyPage() {
         // User closed the picker without sharing, or sharing succeeded (older behavior)
         toast.info("分享完成");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("[Share] Error:", error);
       // Only show error if it's truly an error, not cancellation
-      const errorStr = error?.message || error?.toString() || "";
+      const errorStr = (error instanceof Error ? error.message : String(error)) || "";
       if (errorStr.toLowerCase().includes('cancel')) {
         toast.info("已取消分享");
       } else {
@@ -579,10 +594,10 @@ export default function GroupBuyPage() {
       // Use user's own name if they are the leader (Seed Mode or Owner)
       const nameToUse = (isLeader && userProfile?.displayName) ? userProfile.displayName : (leaderName || '團購主');
       const safeLeaderName = nameToUse.replace(/[^\w\u4e00-\u9fa5\s]/g, '').slice(0, 10);
-      const validWaves = activeWaves.filter(w => w.phase !== 'closed');
+      const validWaves = activeWaves.filter((w: ActiveWave) => w.phase !== 'closed');
 
-      const collectingProds = validWaves.filter(w => w.phase === 'collecting').flatMap(w => w.products);
-      const activeProds = validWaves.filter(w => w.phase === 'active').flatMap(w => w.products);
+      const collectingProds = validWaves.filter((w: ActiveWave) => w.phase === 'collecting').flatMap((w: ActiveWave) => w.products);
+      const activeProds = validWaves.filter((w: ActiveWave) => w.phase === 'active').flatMap((w: ActiveWave) => w.products);
 
       let candidateProducts: Product[] = [];
 
@@ -612,7 +627,7 @@ export default function GroupBuyPage() {
         return;
       }
 
-      const productBubbles = candidateProducts.map(p => {
+      const productBubbles = candidateProducts.map((p: Product) => {
         // 处理图片网址 (如果是 Google Drive 则转换)
         let displayImg = p.img || "https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=600&auto=format&fit=crop";
         if (displayImg.includes('drive.google.com')) {
@@ -622,6 +637,11 @@ export default function GroupBuyPage() {
 
         // 修正团主名称显示问题
         const cleanName = (p.name || "熱門商品").replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, 30);
+
+        // 選取正確按鈕文字
+        // [Fix] Label Unification based on Phase
+        const isActivePhase = activeProds.some((ap: Product) => ap.name === p.name);
+        const buttonLabel = isActivePhase ? "來去下單" : "來去跟團";
 
         return {
           "type": "bubble",
@@ -638,14 +658,14 @@ export default function GroupBuyPage() {
             "layout": "vertical",
             "contents": [
               { "type": "text", "text": cleanName, "weight": "bold", "size": "md", "wrap": true, "maxLines": 2 },
-              { "type": "text", "text": `進來湊個單 ${nameToUse} 就開團 🔥`, "size": "xs", "color": "#E63946", "margin": "sm" }
+              { "type": "text", "text": isActivePhase ? "成功開團了，我也要上車!" : `進來湊個單 ${nameToUse} 就開團 🔥`, "size": "xs", "color": "#E63946", "margin": "sm" }
             ]
           },
           "footer": {
             "type": "box",
             "layout": "vertical",
             "contents": [
-              { "type": "button", "height": "sm", "style": "primary", "color": "#E63946", "action": { "type": "uri", "label": "來去許願", "uri": shareUrl } }
+              { "type": "button", "height": "sm", "style": "primary", "color": "#E63946", "action": { "type": "uri", "label": buttonLabel, "uri": (isActivePhase && p.link) ? p.link : shareUrl } }
             ]
           }
         };
@@ -692,7 +712,7 @@ export default function GroupBuyPage() {
         toast.info("已取消分享");
       }
 
-    } catch (err: any) {
+    } catch (err) {
       console.error("Share Error:", err);
       // Fallback
       navigator.clipboard.writeText(shareUrl);
@@ -706,13 +726,13 @@ export default function GroupBuyPage() {
   // - Member: sees only isEnabled active products
   // - Sort: isEnabled first, then by achievement rate descending
   const activeProducts = activeWaves
-    .filter(w => w.phase === 'active')
-    .flatMap(w => w.products.filter(p => {
+    .filter((w: ActiveWave) => w.phase === 'active')
+    .flatMap((w: ActiveWave) => w.products.filter((p: Product) => {
       if (isLeader) return true;
       const isEnabled = p.isEnabled === true || String(p.isEnabled).toLowerCase() === 'true' || Number(p.isEnabled) === 1;
       return isEnabled;
     }))
-    .sort((a, b) => {
+    .sort((a: Product, b: Product) => {
       if (isLeader) {
         // [Stability Fix] Use snapshot for sorting isEnabled to prevent jumping
         const aEnabled = !!enabledStatusSnapshot[a.name];
@@ -727,9 +747,9 @@ export default function GroupBuyPage() {
   // 2. collectingProducts: Phase=collecting OR Phase=preparing
   // Show ALL products in these phases, sorted by achievement rate descending
   const collectingProducts = activeWaves
-    .filter(w => w.phase === 'collecting' || w.phase === 'preparing')
-    .flatMap(w => w.products)
-    .sort((a, b) => {
+    .filter((w: ActiveWave) => w.phase === 'collecting' || w.phase === 'preparing')
+    .flatMap((w: ActiveWave) => w.products)
+    .sort((a: Product, b: Product) => {
       const rateA = (a.currentQty || 0) / Math.max(a.moq || 1, 1);
       const rateB = (b.currentQty || 0) / Math.max(b.moq || 1, 1);
       return rateB - rateA;
@@ -752,14 +772,14 @@ export default function GroupBuyPage() {
   const allDisplayProducts = activeProducts;
 
   // --- Derived State for Voters Map ---
-  const activeVotersMap = Object.fromEntries(activeProducts.map(p => [p.name, p.voters || []]));
-  const collectingVotersMap = Object.fromEntries(collectingProducts.map(p => [p.name, p.voters || []]));
+  const activeVotersMap = Object.fromEntries(activeProducts.map((p: Product) => [p.name, p.voters || []]));
+  const collectingVotersMap = Object.fromEntries(collectingProducts.map((p: Product) => [p.name, p.voters || []]));
 
 
   // [Phase 16 Refinement] StoriesBar: Merge Active & Collecting, Sort by Popularity (Qty)
   // "只論登記數量 不論標籤頁別"
   const storiesProducts = [...activeProducts, ...collectingProducts]
-    .sort((a, b) => (b.currentQty || 0) - (a.currentQty || 0));
+    .sort((a: Product, b: Product) => (b.currentQty || 0) - (a.currentQty || 0));
 
   return (
     <Suspense fallback={<Loading />}>
@@ -785,8 +805,8 @@ export default function GroupBuyPage() {
             products={storiesProducts}
             onProductClick={(name: string) => {
               // Confirm which tab the product belongs to
-              const isActive = activeProducts.some(p => p.name === name);
-              const isCollecting = collectingProducts.some(p => p.name === name);
+              const isActive = activeProducts.some((p: Product) => p.name === name);
+              const isCollecting = collectingProducts.some((p: Product) => p.name === name);
 
               let targetTab = activeTab;
               if (isActive) targetTab = 0; // Hot Sale Tab

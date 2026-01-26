@@ -84,13 +84,13 @@ export default function AdminPage() {
         if (error) {
             toast.error("讀取失敗: " + error.message);
         } else {
-            setProducts((data as any[]) || []);
+            setProducts((data as Product[]) || []);
         }
         setIsLoading(false);
     };
 
     // 3. Batch Import
-    const handleBatchImport = async (parsedItems: any[]) => {
+    const handleBatchImport = async (parsedItems: { wave: number; name: string; origPrice: number; price: number; moq: number; img: string; desc: string; link: string }[]) => {
         setIsLoading(true);
         try {
             // Transform to Supabase Schema
@@ -250,9 +250,10 @@ export default function AdminPage() {
             setIsDialogOpen(false);
             fetchProducts(); // Refresh
 
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
-            toast.error("儲存失敗: " + err.message);
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            toast.error("儲存失敗: " + errorMsg);
         }
     };
 

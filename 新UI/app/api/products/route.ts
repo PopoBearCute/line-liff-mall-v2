@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'; // For private WRITE acces
 
 // --- Helper Functions to Match GAS Logic ---
 
-const superNormalize = (s: any): string => {
+const superNormalize = (s: string | null | undefined): string => {
     return String(s || "")
         .replace(/\s+/g, "")
         .replace(/[（(]/g, "(")
@@ -15,7 +15,7 @@ const superNormalize = (s: any): string => {
         .toLowerCase();
 };
 
-const parseDateSafe = (val: any): Date | null => {
+const parseDateSafe = (val: string | number | Date | null | undefined): Date | null => {
     if (!val) return null;
     const d = new Date(val);
     return isNaN(d.getTime()) ? null : d;
@@ -74,9 +74,9 @@ export async function GET(request: Request) {
 
         // 2. Process Waves Logic (Mapping Chinese Columns)
         const now = new Date();
-        const wavesMap: Record<string, any> = {};
+        const wavesMap: Record<string, { wave: string; phase: string; products: any[] }> = {};
 
-        productData.forEach((row: any) => {
+        productData.forEach((row: Record<string, any>) => {
             const waveId = String(row.WaveID || "").trim();
             if (!waveId) return;
 
@@ -207,9 +207,10 @@ export async function GET(request: Request) {
 
         return NextResponse.json({ success: true, leaderId, leaderName, leaderAvatar, isLeader, activeWaves });
 
-    } catch (err: any) {
+    } catch (err) {
         console.error('API Error:', err);
-        return NextResponse.json({ success: false, error: err.toString() }, { status: 500 });
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        return NextResponse.json({ success: false, error: errorMsg }, { status: 500 });
     }
 }
 

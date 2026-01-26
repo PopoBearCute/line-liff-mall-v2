@@ -53,7 +53,7 @@ export async function POST(request: Request) {
 
             // Apply filters
             Object.entries(filter).forEach(([key, value]) => {
-                query.eq(key, value as any);
+                query.eq(key, value as string | number | boolean);
             });
 
             const { error } = await query;
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
             const { filter } = payload;
             const query = supabase.from('products').delete();
             Object.entries(filter).forEach(([key, value]) => {
-                query.eq(key, value as any);
+                query.eq(key, value as string | number | boolean);
             });
             const { error } = await query;
             if (error) throw error;
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
             // 1. Delete
             const delQuery = supabase.from('products').delete();
             Object.entries(oldFilter).forEach(([key, value]) => {
-                delQuery.eq(key, value as any);
+                delQuery.eq(key, value as string | number | boolean);
             });
             const { error: delErr } = await delQuery;
             if (delErr) throw delErr;
@@ -100,8 +100,9 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ success: false, error: "Unknown action" }, { status: 400 });
 
-    } catch (err: any) {
+    } catch (err) {
         console.error('Admin API Error:', err);
-        return NextResponse.json({ success: false, error: err.message || err.toString() }, { status: 500 });
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        return NextResponse.json({ success: false, error: errorMsg }, { status: 500 });
     }
 }

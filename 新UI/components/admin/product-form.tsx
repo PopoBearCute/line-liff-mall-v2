@@ -49,7 +49,7 @@ export function ProductForm({ initialData, onSave, onCancel }: ProductFormProps)
         }
     }, [initialData]);
 
-    const handleChange = (field: keyof ProductFormData, value: any) => {
+    const handleChange = (field: keyof ProductFormData, value: string | number) => {
         setFormData(prev => ({
             ...prev,
             [field]: value
