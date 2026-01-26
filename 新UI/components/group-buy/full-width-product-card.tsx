@@ -83,7 +83,7 @@ export function FullWidthProductCard({
             </span>
           )}
           {isSalePhase && (
-            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold shadow-md ${product.isEnabled ? "bg-green-500 text-white" : "bg-orange-500 text-white"
+            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold shadow-md ${product.isEnabled ? "bg-green-500 text-white btn-gemstone" : "bg-orange-500 text-white"
               }`}>
               {product.isEnabled ? "✨ 開放購買" : "🔴 團主準備中"}
             </span>
@@ -190,7 +190,7 @@ export function FullWidthProductCard({
               <button
                 onClick={() => onEnableProduct?.(product.name)}
                 disabled={isEnabling}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 py-3 font-bold text-white shadow-lg active:scale-95 disabled:opacity-50 transition-all"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3 font-bold text-white shadow-lg active:scale-95 disabled:opacity-50 transition-all btn-gemstone"
               >
                 {isEnabling ? <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> : <Rocket className="h-4 w-4" />}
                 團主點此啟用購買 (啟用後無法取消)

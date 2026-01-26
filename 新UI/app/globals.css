@@ -113,7 +113,7 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  
+
   /* UI Redesign Phase 17 Tokens */
   --color-primary-green: #4ADE80;
   --color-primary-blue: #3B82F6;
@@ -126,7 +126,9 @@
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
   }
-  html, body {
+
+  html,
+  body {
     @apply bg-background text-foreground;
     width: 100%;
     margin: 0;
@@ -140,6 +142,7 @@
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom, 1rem);
   }
+
   .progress-bar-fill {
     transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -147,7 +150,7 @@
 
 /* Mesh Gradient Background */
 .mesh-gradient {
-  background: 
+  background:
     radial-gradient(ellipse at 20% 0%, oklch(0.85 0.12 145 / 0.4) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 20%, oklch(0.85 0.1 250 / 0.3) 0%, transparent 40%),
     radial-gradient(ellipse at 40% 80%, oklch(0.9 0.08 35 / 0.25) 0%, transparent 45%),
@@ -161,7 +164,7 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid oklch(1 0 0 / 0.5);
-  box-shadow: 
+  box-shadow:
     0 4px 24px -1px oklch(0 0 0 / 0.06),
     0 2px 8px -1px oklch(0 0 0 / 0.04),
     inset 0 1px 0 oklch(1 0 0 / 0.6);
@@ -172,7 +175,7 @@
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid oklch(0.55 0.2 145 / 0.3);
-  box-shadow: 
+  box-shadow:
     0 8px 32px -4px oklch(0.55 0.2 145 / 0.15),
     0 4px 16px -2px oklch(0 0 0 / 0.08),
     inset 0 1px 0 oklch(1 0 0 / 0.8);
@@ -191,10 +194,12 @@
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateY(0);
 }
+
 .btn-tactile:active {
   transform: translateY(2px) scale(0.97);
   box-shadow: none;
 }
+
 .btn-tactile:hover {
   filter: brightness(1.05);
 }
@@ -202,12 +207,14 @@
 .card-hover {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 
+  box-shadow:
     0 12px 40px -8px oklch(0 0 0 / 0.12),
     0 4px 16px -4px oklch(0 0 0 / 0.08);
 }
+
 .card-hover:active {
   transform: translateY(0);
 }
@@ -215,6 +222,7 @@
 .expand-btn {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .expand-btn:active {
   background: oklch(0.9 0.01 240);
   transform: scale(0.98);
@@ -230,31 +238,38 @@
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 8px oklch(0 0 0 / 0.08);
 }
+
 .qty-btn:active {
   transform: scale(0.92);
   box-shadow: none;
 }
+
 .qty-btn-plus {
-  box-shadow: 
+  box-shadow:
     0 4px 12px oklch(0.55 0.2 145 / 0.3),
     inset 0 1px 0 oklch(1 0 0 / 0.2);
 }
+
 .qty-btn-plus:active {
   box-shadow: inset 0 2px 4px oklch(0 0 0 / 0.1);
 }
 
 /* Shimmer animation for loading */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
+
 .skeleton-shimmer {
-  background: linear-gradient(
-    90deg,
-    oklch(0.92 0.005 240) 25%,
-    oklch(0.96 0.005 240) 50%,
-    oklch(0.92 0.005 240) 75%
-  );
+  background: linear-gradient(90deg,
+      oklch(0.92 0.005 240) 25%,
+      oklch(0.96 0.005 240) 50%,
+      oklch(0.92 0.005 240) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -269,9 +284,17 @@
 
 /* Featured badge pulse */
 @keyframes pulse-ring {
-  0% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(1.3); opacity: 0; }
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
 }
+
 .badge-pulse::before {
   content: '';
   position: absolute;
@@ -279,4 +302,45 @@
   border-radius: inherit;
   background: oklch(0.65 0.2 35 / 0.4);
   animation: pulse-ring 1.5s ease-out infinite;
+}
+
+/* 美麗的寶石發光按鈕特效 */
+@keyframes gemstone-glow {
+  0% {
+    box-shadow: 0 0 5px rgba(16, 185, 129, 0.4), 0 0 10px rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.8), 0 0 35px rgba(52, 211, 153, 0.5);
+    border-color: rgba(52, 211, 153, 0.8);
+  }
+
+  100% {
+    box-shadow: 0 0 5px rgba(16, 185, 129, 0.4), 0 0 10px rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.5);
+  }
+}
+
+.btn-gemstone {
+  animation: gemstone-glow 2.5s infinite ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-gemstone::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg,
+      transparent,
+      rgba(255, 255, 255, 0.1) 45%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0.1) 55%,
+      transparent);
+  transform: rotate(45deg);
+  animation: shimmer 4s infinite;
 }
