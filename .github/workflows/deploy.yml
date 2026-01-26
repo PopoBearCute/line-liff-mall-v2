@@ -16,26 +16,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
-          cache-dependency-path: "新UI/pnpm-lock.yaml"
+          cache: "npm"
+          cache-dependency-path: "新UI/package-lock.json"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Install dependencies
-        run: cd 新UI && pnpm install
+        run: cd 新UI && npm ci
 
       - name: Build with Next.js
-        run: cd 新UI && pnpm build
+        run: cd 新UI && npm run build
         env:
           NEXT_PUBLIC_GAS_URL: https://script.google.com/macros/s/AKfycbxdanIyr7FjmHa8_1mM9VIss_U8qdZHflOvjyGtyc3JR47z-PfT2XUJGPdwdEKkVc2k4w/exec
           NEXT_PUBLIC_LIFF_ID: 2008798234-72bJqeYx
