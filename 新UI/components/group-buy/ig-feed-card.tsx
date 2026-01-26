@@ -381,3 +381,4 @@ export function IGFeedCard({
         </article>
     );
 }
+// Force update: Ensure mall logo is used in product card header
