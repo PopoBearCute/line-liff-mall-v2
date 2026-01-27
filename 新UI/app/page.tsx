@@ -110,10 +110,16 @@ export default function GroupBuyPage() {
 
       const urlParams = new URLSearchParams(window.location.search);
       const lId = urlParams.get('leaderId');
+      const mode = urlParams.get('mode');
 
       if (!lId) {
-        setViewMode('seed');
-        loadData(mockUserId, mockUserId, 'Dev Tester', false);
+        if (mode === 'seed') {
+          setViewMode('seed');
+          loadData(mockUserId, mockUserId, 'Dev Tester', false);
+        } else {
+          setViewMode('main');
+          toast.error('請用 LINE 原生瀏覽器開啟');
+        }
       } else {
         setLeaderId(lId);
         // [Local Fix] Treat the provided leaderId as the current user to enable "Leader View" locally
@@ -151,10 +157,16 @@ export default function GroupBuyPage() {
 
       const urlParams = new URLSearchParams(window.location.search);
       const lId = urlParams.get('leaderId');
+      const mode = urlParams.get('mode');
 
       if (!lId) {
-        setViewMode('seed');
-        loadData(profile.userId, profile.userId, profile.displayName, false);
+        if (mode === 'seed') {
+          setViewMode('seed');
+          loadData(profile.userId, profile.userId, profile.displayName, false);
+        } else {
+          setViewMode('main');
+          toast.error('請用 LINE 原生瀏覽器開啟');
+        }
       } else {
         setLeaderId(lId);
         // 如果目前使用者就是團主，先用 Line 抓到的暱稱預填
