@@ -1,18 +1,33 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase Client
-// ideally use SERVICE_ROLE_KEY for admin operations if available, otherwise fallback to public key
-// preventing client-side exposure of logic is the main gain here if we don't have service key yet.
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://icrmiwopkmfzbryykwli.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_KEY || 'sb_publishable_9tQYpbr0kHS2i9kSbgedjA_mzcJIn2y';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Initialize Supabase Client - Only allow SERVICE_ROLE_KEY
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Hardcoded PIN for now (as per plan), could be moved to env later
-const ADMIN_PIN = process.env.ADMIN_PIN || "0920401419";
+// Validate required environment variables
+if (!supabaseUrl || !supabaseKey) {
+    console.error('[Admin API] Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+}
+
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+
+// ADMIN_PIN must be set in environment variables
+const ADMIN_PIN = process.env.ADMIN_PIN;
 
 export async function POST(request: Request) {
     try {
+        // Validate configuration at runtime
+        if (!ADMIN_PIN) {
+            console.error('[Admin API] ADMIN_PIN environment variable is not set');
+            return NextResponse.json({ success: false, error: "伺服器配置錯誤：缺少 ADMIN_PIN 環境變數" }, { status: 500 });
+        }
+
+        if (!supabase) {
+            console.error('[Admin API] Supabase client not initialized - missing environment variables');
+            return NextResponse.json({ success: false, error: "伺服器配置錯誤：缺少 Supabase 環境變數" }, { status: 500 });
+        }
+
         const body = await request.json();
         const { action, pin, payload } = body;
 
@@ -24,6 +39,16 @@ export async function POST(request: Request) {
         // 2. Handle Actions
         if (action === 'login') {
             return NextResponse.json({ success: true, message: "Login successful" });
+        }
+
+        if (action === 'list') {
+            const { data, error } = await supabase
+                .from('products')
+                .select('*')
+                .order('WaveID', { ascending: false });
+
+            if (error) throw error;
+            return NextResponse.json({ success: true, products: data });
         }
 
         if (action === 'create') {

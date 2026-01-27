@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -15,11 +14,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-
-// Client-side Supabase for Admin (should use env but hardcoded for now as per page.tsx)
-const supabaseUrl = 'https://icrmiwopkmfzbryykwli.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_KEY || 'sb_publishable_9tQYpbr0kHS2i9kSbgedjA_mzcJIn2y';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface Product {
     // id: number; // Removed as determined by debug script
@@ -69,22 +63,24 @@ export default function AdminPage() {
         }
     };
 
-    // 2. Fetch Products (Read is still public for now, which is fine for Mall, but ideally also secured? 
-    // Mall needs public read. Admin needs write. So direct read is OK for now to keep it simple, 
-    // or we can move read to API too. Let's keep read direct for performance/simplicity as per plan 
-    // "Remove WRITE permissions from frontend")
+    // 2. Fetch Products via API (all Supabase operations now go through /api/admin)
     const fetchProducts = async () => {
         setIsLoading(true);
-        // Changed ordering to WaveID since 'id' does not exist
-        const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .order('WaveID', { ascending: false }); // Newest first
+        try {
+            const res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'list', pin }),
+            });
+            const data = await res.json();
 
-        if (error) {
-            toast.error("讀取失敗: " + error.message);
-        } else {
-            setProducts((data as Product[]) || []);
+            if (data.success) {
+                setProducts((data.products as Product[]) || []);
+            } else {
+                toast.error("讀取失敗: " + (data.error || "未知錯誤"));
+            }
+        } catch (err) {
+            toast.error("讀取失敗");
         }
         setIsLoading(false);
     };
