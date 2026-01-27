@@ -12,6 +12,7 @@ interface SeedModeProps {
   collectingCount?: number;
   activeCount?: number;
   products?: any[]; // Passed for summary report
+  onRemoveVoter?: (productName: string, voterName: string, voterUserId?: string) => void;
 }
 
 export function SeedMode({
@@ -21,7 +22,8 @@ export function SeedMode({
   userName,
   collectingCount = 0,
   activeCount = 0,
-  products = []
+  products = [],
+  onRemoveVoter
 }: SeedModeProps) {
   // Secret Admin Trigger State
   const [clickCount, setClickCount] = useState(0);
@@ -148,6 +150,7 @@ export function SeedMode({
         open={showStats}
         onOpenChange={setShowStats}
         products={products}
+        onRemoveVoter={onRemoveVoter}
       />
     </section>
   );

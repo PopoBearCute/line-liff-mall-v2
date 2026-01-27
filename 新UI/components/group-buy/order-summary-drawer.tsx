@@ -3,7 +3,7 @@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Copy, ClipboardList, Check } from "lucide-react";
+import { Copy, ClipboardList, Check, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -23,9 +23,10 @@ interface OrderSummaryDrawerProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     products: Product[];
+    onRemoveVoter?: (productName: string, voterName: string, voterUserId?: string) => void;
 }
 
-export function OrderSummaryDrawer({ open, onOpenChange, products }: OrderSummaryDrawerProps) {
+export function OrderSummaryDrawer({ open, onOpenChange, products, onRemoveVoter }: OrderSummaryDrawerProps) {
     const [copied, setCopied] = useState(false);
 
     // Filter out products with 0 votes to keep the summary clean
@@ -36,7 +37,7 @@ export function OrderSummaryDrawer({ open, onOpenChange, products }: OrderSummar
 
     const generateText = () => {
         const date = new Date().toLocaleDateString('zh-TW');
-        let text = `【團購統計報告】\n📅 ${date}\n\n`;
+        let text = `【團購統計報告】\n${date}\n\n`;
 
         if (activeProducts.length === 0) {
             text += "目前尚無登記紀錄。";
@@ -45,8 +46,8 @@ export function OrderSummaryDrawer({ open, onOpenChange, products }: OrderSummar
 
         activeProducts.forEach(p => {
             const total = p.voters?.reduce((acc, v) => acc + (Number(v.qty) || 0), 0) || 0;
-            text += `📦 ${p.name} (總數: ${total})\n`;
-            text += `💰 單價: $${p.price}\n`;
+            text += `${p.name} (總數: ${total})\n`;
+            text += `單價: $${p.price}\n`;
             text += `------------------\n`;
 
             p.voters?.forEach(v => {
@@ -104,12 +105,24 @@ export function OrderSummaryDrawer({ open, onOpenChange, products }: OrderSummar
                                             </div>
                                             <div className="space-y-2">
                                                 {p.voters?.map((v, vIdx) => (
-                                                    <div key={vIdx} className="flex justify-between text-sm">
+                                                    <div key={vIdx} className="flex justify-between items-center text-sm">
                                                         <span className="text-gray-600 flex items-center gap-1">
                                                             <span className="w-1.5 h-1.5 rounded-full bg-gray-300 inline-block"></span>
-                                                            {v.name}
+                                                            <span className="font-medium text-gray-900">{v.name}</span>
                                                         </span>
-                                                        <span className="font-medium text-gray-900">+{v.qty}</span>
+
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="font-medium text-gray-900">+{v.qty}</span>
+                                                            {onRemoveVoter && (
+                                                                <button
+                                                                    onClick={() => onRemoveVoter(p.name, v.name, v.userId)}
+                                                                    className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                                                                    title="刪除此紀錄"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>

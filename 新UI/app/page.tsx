@@ -782,6 +782,7 @@ export default function GroupBuyPage() {
       collectingCount={collectingProducts.length}
       activeCount={activeProducts.length}
       products={[...activeProducts, ...collectingProducts]}
+      onRemoveVoter={handleRemoveVoter}
     />
   );
 
