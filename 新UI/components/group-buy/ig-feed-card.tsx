@@ -56,6 +56,7 @@ export function IGFeedCard({
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [isToggling, setIsToggling] = useState(false);
+    const [showVoters, setShowVoters] = useState(false);
     const totalVotes = Array.isArray(voters) ? voters.reduce((acc, v) => acc + (Number(v.qty) || 0), 0) : 0;
     const safeMoq = Math.max(Number(product.moq) || 1, 1);
     const achievedPercent = Math.min(Math.round((totalVotes / safeMoq) * 100), 100) || 0;
@@ -233,18 +234,48 @@ export function IGFeedCard({
                                 已達 {product.currentQty || 0} 份 / 目標 {product.moq} 份
                             </span>
 
-                            {/* Avatar Stack moved here */}
+                            {/* Avatar Stack - Press to show voters */}
                             {product.buyerAvatars && product.buyerAvatars.length > 0 && (
-                                <div className="flex items-center -space-x-1.5 translate-x-1">
-                                    {product.buyerAvatars.slice(0, 3).map((avatar, i) => (
-                                        <Avatar key={i} className="w-5 h-5 border border-white dark:border-black shadow-sm">
-                                            <AvatarImage src={avatar} />
-                                            <AvatarFallback className="text-[7px]">U</AvatarFallback>
-                                        </Avatar>
-                                    ))}
-                                    {product.buyerAvatars.length > 3 && (
-                                        <div className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[8px] border border-white dark:border-black font-bold text-gray-500 shadow-sm">
-                                            +{product.buyerAvatars.length - 3}
+                                <div className="relative">
+                                    <div
+                                        className="flex items-center -space-x-1.5 translate-x-1 cursor-pointer active:scale-95 transition-transform"
+                                        onTouchStart={() => setShowVoters(true)}
+                                        onTouchEnd={() => setShowVoters(false)}
+                                        onMouseDown={() => setShowVoters(true)}
+                                        onMouseUp={() => setShowVoters(false)}
+                                        onMouseLeave={() => setShowVoters(false)}
+                                    >
+                                        {product.buyerAvatars.slice(0, 3).map((avatar, i) => (
+                                            <Avatar key={i} className="w-5 h-5 border border-white dark:border-black shadow-sm">
+                                                <AvatarImage src={avatar} />
+                                                <AvatarFallback className="text-[7px]">U</AvatarFallback>
+                                            </Avatar>
+                                        ))}
+                                        {product.buyerAvatars.length > 3 && (
+                                            <div className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[8px] border border-white dark:border-black font-bold text-gray-500 shadow-sm">
+                                                +{product.buyerAvatars.length - 3}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Voter List Tooltip */}
+                                    {showVoters && voters && voters.length > 0 && (
+                                        <div className="absolute right-0 bottom-full mb-2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                            <div className="bg-black/80 backdrop-blur-md text-white text-xs rounded-lg px-3 py-2 shadow-xl border border-white/10 min-w-[140px] max-w-[200px]">
+                                                <div className="font-bold text-[10px] text-gray-300 mb-1.5 border-b border-white/20 pb-1">
+                                                    登記名單 ({voters.length})
+                                                </div>
+                                                <div className="space-y-1 max-h-[120px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                                                    {voters.map((v, idx) => (
+                                                        <div key={idx} className="flex justify-between items-center text-[11px]">
+                                                            <span className="truncate mr-2">{v.name}</span>
+                                                            <span className="font-medium text-emerald-300 whitespace-nowrap">+{v.qty}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            {/* Arrow */}
+                                            <div className="absolute right-3 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-black/80"></div>
                                         </div>
                                     )}
                                 </div>

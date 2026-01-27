@@ -58,7 +58,6 @@ export function OrderSummaryDrawer({ open, onOpenChange, products, onRemoveVoter
             text += `\n`; // Spacer
         });
 
-        text += `此報表由 LINE Group Buy 產生`;
         return text;
     };
 
