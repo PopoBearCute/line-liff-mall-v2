@@ -232,11 +232,6 @@ const getLegacyTimeStr = (): string => {
 async function verifyLiffToken(idToken: string): Promise<string | null> {
     if (!idToken) return null;
 
-    // Local Dev Mock: Return a special MOCK_ID string
-    if (idToken === 'mock_token') {
-        return 'MOCK_ID_WILD_CARD';
-    }
-
     // Trim LIFF ID to prevent "wrong format" errors from accidental spaces
     const envLiffId = (process.env.NEXT_PUBLIC_LIFF_ID || '').trim();
     // LINE Verification requires Channel ID, not LIFF ID
@@ -306,7 +301,7 @@ export async function POST(request: Request) {
                 return NextResponse.json({ success: false, error: `身分驗證錯誤: ${verifiedUserId.replace('ERROR:', '')}` }, { status: 401 });
             }
 
-            const isAuthValid = (verifiedUserId === 'MOCK_ID_WILD_CARD') || (verifiedUserId === cleanUserId);
+            const isAuthValid = verifiedUserId === cleanUserId;
 
             if (!isAuthValid) {
                 console.error(`[API Auth] 驗證失敗. Verified: ${verifiedUserId}, Provided: ${cleanUserId}`);
@@ -408,7 +403,7 @@ export async function POST(request: Request) {
                 return NextResponse.json({ success: false, error: `身分驗證錯誤: ${verifiedUserId.replace('ERROR:', '')}` }, { status: 401 });
             }
 
-            const isLeaderAuthValid = (verifiedUserId === 'MOCK_ID_WILD_CARD') || (verifiedUserId === cleanLeaderId);
+            const isLeaderAuthValid = verifiedUserId === cleanLeaderId;
 
             if (!isLeaderAuthValid) {
                 console.error(`[API Auth] 團主驗證失敗. Verified: ${verifiedUserId}, Expected Leader: ${cleanLeaderId}`);
@@ -483,7 +478,7 @@ export async function POST(request: Request) {
                 return NextResponse.json({ success: false, error: `身分驗證錯誤: ${verifiedUserId.replace('ERROR:', '')}` }, { status: 401 });
             }
 
-            const isAutoAuthValid = (verifiedUserId === 'MOCK_ID_WILD_CARD') || (verifiedUserId === cleanLeaderId) || (verifiedUserId === cleanUserId);
+            const isAutoAuthValid = verifiedUserId === cleanLeaderId || verifiedUserId === cleanUserId;
 
             if (!isAutoAuthValid) {
                 console.error(`[API Auth] 自動註冊驗證失敗. Verified: ${verifiedUserId}, Leader: ${cleanLeaderId}, User: ${cleanUserId}`);

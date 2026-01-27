@@ -247,7 +247,7 @@ export default function GroupBuyPage() {
                 leaderId: data.leaderId,
                 userId: userId, // Added userId
                 leaderName: displayName,
-                idToken: idToken || "mock_token" // Added token
+                idToken: idToken || "" // Added token
               })
             });
           } catch (error) {
@@ -300,9 +300,6 @@ export default function GroupBuyPage() {
     if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
       idToken = window.liff.getIDToken() || "";
     }
-    // Local Dev Mock
-    const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-    if (isLocalDev && !idToken) idToken = "mock_token";
 
 
     // [Optimistic UI] 1. Store previous state for rollback
@@ -400,8 +397,6 @@ export default function GroupBuyPage() {
     if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
       idToken = window.liff.getIDToken() || "";
     }
-    const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-    if (isLocalDev && !idToken) idToken = "mock_token";
 
     if (singleProductName) setSubmittingProduct(singleProductName);
     else setIsSubmitting(true);
