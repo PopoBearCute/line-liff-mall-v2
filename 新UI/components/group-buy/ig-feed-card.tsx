@@ -246,8 +246,13 @@ export function IGFeedCard({
                                         onMouseLeave={() => setShowVoters(false)}
                                     >
                                         {product.buyerAvatars.slice(0, 3).map((avatar, i) => (
-                                            <Avatar key={i} className="w-5 h-5 border border-white dark:border-black shadow-sm">
-                                                <AvatarImage src={avatar} />
+                                            <Avatar key={i} className="w-5 h-5 border border-white dark:border-black shadow-sm pointer-events-none select-none">
+                                                <AvatarImage 
+                                                    src={avatar}
+                                                    className="select-none"
+                                                    draggable={false}
+                                                    onContextMenu={(e) => e.preventDefault()}
+                                                />
                                                 <AvatarFallback className="text-[7px]">U</AvatarFallback>
                                             </Avatar>
                                         ))}
