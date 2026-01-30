@@ -68,8 +68,11 @@ declare global {
   }
 }
 
+const DEPLOY_TIMESTAMP = '2026-01-30T22:50:00Z'; // Cache-busting timestamp
+
 export default function GroupBuyPage() {
   const searchParams = useSearchParams();
+  console.log(`[Persistence Fix] Build Time: ${DEPLOY_TIMESTAMP}`);
   const leaderIdFromUrl = searchParams.get('leaderId');
   const previewMode = searchParams.get('mode'); // 'consumer' for testing
 
