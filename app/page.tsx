@@ -145,6 +145,19 @@ export default function GroupBuyPage() {
         throw new Error('LIFF ID 未設定或格式錯誤，請檢查環境變數 NEXT_PUBLIC_LIFF_ID');
       }
 
+      // [Pre-Initialization] Grab and persist leaderId immediately before LIFF alters URL
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentLId = urlParams.get('leaderId');
+        if (!currentLId) {
+          const match = window.location.href.match(/leaderId=([^&?#]+)/);
+          if (match) currentLId = match[1];
+        }
+        if (currentLId) {
+          sessionStorage.setItem('liff_leaderId', currentLId);
+        }
+      }
+
       await window.liff.init({ liffId: LIFF_ID });
 
       if (!window.liff.isLoggedIn()) {
@@ -159,18 +172,25 @@ export default function GroupBuyPage() {
         pictureUrl: profile.pictureUrl,
       });
 
-      // [OpenChat Support] Use a more robust way to get URL parameters
-      // Some environments mangle the URL or put parameters in different places
+      // [Extraction Stage] Get URL parameters with storage fallback
       const urlParams = new URLSearchParams(window.location.search);
       let lId = urlParams.get('leaderId');
       const mode = urlParams.get('mode');
 
-      // Fallback: Check if leaderId is somehow encoded in the path or hash (OpenChat quirk)
+      // Use persistence fallback
+      if (!lId) {
+        lId = sessionStorage.getItem('liff_leaderId');
+      }
+
+      // Regex Fallback (Final check)
       if (!lId && typeof window !== 'undefined') {
         const fullUrl = window.location.href;
         if (fullUrl.includes('leaderId=')) {
           const match = fullUrl.match(/leaderId=([^&?#]+)/);
-          if (match) lId = match[1];
+          if (match) {
+            lId = match[1];
+            sessionStorage.setItem('liff_leaderId', lId); // Re-persist
+          }
         }
       }
 
