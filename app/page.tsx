@@ -145,16 +145,40 @@ export default function GroupBuyPage() {
         throw new Error('LIFF ID 未設定或格式錯誤，請檢查環境變數 NEXT_PUBLIC_LIFF_ID');
       }
 
-      // [Pre-Initialization] Grab and persist leaderId immediately before LIFF alters URL
+      // [Ultra-Robust Persistence] Multi-layered storage & URL Protection
+      let lId: string | null = null;
+      let m: string | null = null;
+
       if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
-        let currentLId = urlParams.get('leaderId');
-        if (!currentLId) {
+        lId = urlParams.get('leaderId');
+        m = urlParams.get('mode');
+
+        // Regex Fallback for mangled URLs (OpenChat context)
+        if (!lId) {
           const match = window.location.href.match(/leaderId=([^&?#]+)/);
-          if (match) currentLId = match[1];
+          if (match) lId = match[1];
         }
-        if (currentLId) {
-          sessionStorage.setItem('liff_leaderId', currentLId);
+
+        // 1. SAVE to all layers if found in URL
+        if (lId) {
+          localStorage.setItem('liff_leaderId', lId);
+          sessionStorage.setItem('liff_leaderId', lId);
+          console.log(`[Persistence] Saved leaderId: ${lId}`);
+
+          // 2. Redirect-Once Cleanup: Remove leaderId from URL to prevent double-processing/leak
+          // but only if we are not in the middle of a LIFF auth redirect (checking for code/state)
+          if (!urlParams.has('code') && !urlParams.has('state')) {
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete('leaderId');
+            // We use history.replaceState to avoid adding a new history entry
+            window.history.replaceState({}, '', cleanUrl.toString());
+          }
+        }
+        // 3. LOAD from layers if missing in URL
+        else {
+          lId = localStorage.getItem('liff_leaderId') || sessionStorage.getItem('liff_leaderId');
+          if (lId) console.log(`[Persistence] Restored leaderId from storage: ${lId}`);
         }
       }
 
@@ -172,35 +196,13 @@ export default function GroupBuyPage() {
         pictureUrl: profile.pictureUrl,
       });
 
-      // [Extraction Stage] Get URL parameters with storage fallback
-      const urlParams = new URLSearchParams(window.location.search);
-      let lId = urlParams.get('leaderId');
-      const mode = urlParams.get('mode');
-
-      // Use persistence fallback
-      if (!lId) {
-        lId = sessionStorage.getItem('liff_leaderId');
-      }
-
-      // Regex Fallback (Final check)
-      if (!lId && typeof window !== 'undefined') {
-        const fullUrl = window.location.href;
-        if (fullUrl.includes('leaderId=')) {
-          const match = fullUrl.match(/leaderId=([^&?#]+)/);
-          if (match) {
-            lId = match[1];
-            sessionStorage.setItem('liff_leaderId', lId); // Re-persist
-          }
-        }
-      }
-
-      if (mode === 'seed') {
+      if (m === 'seed') {
         setViewMode('seed');
         const targetId = lId || profile.userId;
         loadData(targetId, profile.userId, profile.displayName, false);
       } else if (!lId) {
         setViewMode('main');
-        console.error('Missing leaderId in URL:', window.location.href);
+        console.error('Missing leaderId in storage and URL:', window.location.href);
         toast.error('無效的連結：缺少團主 ID (Missing Leader ID)。請再次確認分享連結是否完整。');
       } else {
         const cleanLId = lId.trim();
