@@ -14,6 +14,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 
 const GAS_URL = "/api/products";
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2008798234-72bJqeYx";
+const LEADER_ID_STORAGE_KEY = "liff_leaderId";
 
 // Type definitions
 interface Product {
@@ -69,6 +70,55 @@ declare global {
 }
 
 const DEPLOY_TIMESTAMP = '2026-01-30T22:50:00Z'; // Cache-busting timestamp
+
+const extractLeaderIdFromState = (stateRaw: string | null): string | null => {
+  if (!stateRaw) return null;
+  let decoded = stateRaw;
+  try {
+    decoded = decodeURIComponent(stateRaw);
+  } catch {
+    decoded = stateRaw;
+  }
+
+  // 1) Full URL form
+  try {
+    if (decoded.startsWith("http://") || decoded.startsWith("https://")) {
+      const url = new URL(decoded);
+      const idFromUrl = url.searchParams.get("leaderId");
+      if (idFromUrl) return idFromUrl;
+      const nestedState = url.searchParams.get("liff.state");
+      if (nestedState) return extractLeaderIdFromState(nestedState);
+    }
+  } catch {
+    // ignore URL parse errors
+  }
+
+  // 2) Query string form
+  try {
+    const params = new URLSearchParams(decoded.startsWith("?") ? decoded.slice(1) : decoded);
+    const idFromParams = params.get("leaderId");
+    if (idFromParams) return idFromParams;
+  } catch {
+    // ignore query parse errors
+  }
+
+  // 3) Regex fallback
+  const match = decoded.match(/leaderId=([^&?#]+)/);
+  return match?.[1] || null;
+};
+
+const buildRedirectUri = (href: string, leaderId: string | null): string => {
+  if (!leaderId) return href;
+  try {
+    const url = new URL(href);
+    if (!url.searchParams.get("leaderId")) {
+      url.searchParams.set("leaderId", leaderId);
+    }
+    return url.toString();
+  } catch {
+    return href;
+  }
+};
 
 export default function GroupBuyPage() {
   const searchParams = useSearchParams();
@@ -151,45 +201,61 @@ export default function GroupBuyPage() {
       // [Ultra-Robust Persistence] Multi-layered storage & URL Protection
       let lId: string | null = null;
       let m: string | null = null;
+      const originalHref = window.location.href;
+      const urlParams = new URLSearchParams(window.location.search);
 
-      if (typeof window !== 'undefined') {
-        const urlParams = new URLSearchParams(window.location.search);
-        lId = urlParams.get('leaderId');
-        m = urlParams.get('mode');
+      lId = urlParams.get('leaderId');
+      m = urlParams.get('mode');
 
-        // Regex Fallback for mangled URLs (OpenChat context)
-        if (!lId) {
-          const match = window.location.href.match(/leaderId=([^&?#]+)/);
-          if (match) lId = match[1];
-        }
+      // Regex Fallback for mangled URLs (OpenChat context)
+      if (!lId) {
+        const match = window.location.href.match(/leaderId=([^&?#]+)/);
+        if (match) lId = match[1];
+      }
 
-        // 1. SAVE to all layers if found in URL
-        if (lId) {
-          localStorage.setItem('liff_leaderId', lId);
-          sessionStorage.setItem('liff_leaderId', lId);
-          console.log(`[Persistence] Saved leaderId: ${lId}`);
+      // LINE community: leaderId may be embedded in liff.state
+      if (!lId) {
+        const liffStateParam = urlParams.get('liff.state');
+        const lIdFromState = extractLeaderIdFromState(liffStateParam);
+        if (lIdFromState) lId = lIdFromState;
+      }
 
-          // 2. Redirect-Once Cleanup: Remove leaderId from URL to prevent double-processing/leak
-          // but only if we are not in the middle of a LIFF auth redirect (checking for code/state)
-          if (!urlParams.has('code') && !urlParams.has('state')) {
-            const cleanUrl = new URL(window.location.href);
-            cleanUrl.searchParams.delete('leaderId');
-            // We use history.replaceState to avoid adding a new history entry
-            window.history.replaceState({}, '', cleanUrl.toString());
-          }
-        }
-        // 3. LOAD from layers if missing in URL
-        else {
-          lId = localStorage.getItem('liff_leaderId') || sessionStorage.getItem('liff_leaderId');
-          if (lId) console.log(`[Persistence] Restored leaderId from storage: ${lId}`);
-        }
+      // 1. SAVE to all layers if found in URL/state
+      if (lId) {
+        localStorage.setItem(LEADER_ID_STORAGE_KEY, lId);
+        sessionStorage.setItem(LEADER_ID_STORAGE_KEY, lId);
+        console.log(`[Persistence] Saved leaderId: ${lId}`);
+      }
+      // 2. LOAD from layers if missing in URL/state
+      else {
+        lId = localStorage.getItem(LEADER_ID_STORAGE_KEY) || sessionStorage.getItem(LEADER_ID_STORAGE_KEY);
+        if (lId) console.log(`[Persistence] Restored leaderId from storage: ${lId}`);
       }
 
       await window.liff.init({ liffId: LIFF_ID });
 
       if (!window.liff.isLoggedIn()) {
-        window.liff.login({ redirectUri: window.location.href });
+        const redirectUri = buildRedirectUri(originalHref, lId);
+        window.liff.login({ redirectUri });
         return;
+      }
+
+      // Post-login: try LIFF runtime state in case URL was stripped
+      const runtimeState = (window.liff as any)?.state as string | undefined;
+      const lIdFromRuntime = extractLeaderIdFromState(runtimeState || null);
+      if (!lId && lIdFromRuntime) {
+        lId = lIdFromRuntime;
+        localStorage.setItem(LEADER_ID_STORAGE_KEY, lId);
+        sessionStorage.setItem(LEADER_ID_STORAGE_KEY, lId);
+        console.log(`[Persistence] Restored leaderId from liff.state: ${lId}`);
+      }
+
+      // Redirect-Once Cleanup: only after login and only if leaderId is still present in URL
+      if (lId && urlParams.has('leaderId') && !urlParams.has('code') && !urlParams.has('state') && !urlParams.has('liff.state')) {
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('leaderId');
+        // We use history.replaceState to avoid adding a new history entry
+        window.history.replaceState({}, '', cleanUrl.toString());
       }
 
       const profile = await window.liff.getProfile();
