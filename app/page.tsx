@@ -144,7 +144,7 @@ export default function GroupBuyPage() {
       await window.liff.init({ liffId: LIFF_ID });
 
       if (!window.liff.isLoggedIn()) {
-        window.liff.login();
+        window.liff.login({ redirectUri: window.location.href });
         return;
       }
 
