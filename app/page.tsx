@@ -141,6 +141,10 @@ export default function GroupBuyPage() {
         return;
       }
 
+      if (!LIFF_ID || LIFF_ID.includes('YOUR_LIFF_ID')) {
+        throw new Error('LIFF ID 未設定或格式錯誤，請檢查環境變數 NEXT_PUBLIC_LIFF_ID');
+      }
+
       await window.liff.init({ liffId: LIFF_ID });
 
       if (!window.liff.isLoggedIn()) {
@@ -152,40 +156,58 @@ export default function GroupBuyPage() {
       setUserProfile({
         userId: profile.userId,
         displayName: profile.displayName,
-        pictureUrl: profile.pictureUrl, // Capture pictureUrl
+        pictureUrl: profile.pictureUrl,
       });
 
+      // [OpenChat Support] Use a more robust way to get URL parameters
+      // Some environments mangle the URL or put parameters in different places
       const urlParams = new URLSearchParams(window.location.search);
-      const lId = urlParams.get('leaderId');
+      let lId = urlParams.get('leaderId');
       const mode = urlParams.get('mode');
 
+      // Fallback: Check if leaderId is somehow encoded in the path or hash (OpenChat quirk)
+      if (!lId && typeof window !== 'undefined') {
+        const fullUrl = window.location.href;
+        if (fullUrl.includes('leaderId=')) {
+          const match = fullUrl.match(/leaderId=([^&?#]+)/);
+          if (match) lId = match[1];
+        }
+      }
+
       if (mode === 'seed') {
-        // Explicit Seed Mode (Leader Lobby)
         setViewMode('seed');
         const targetId = lId || profile.userId;
         loadData(targetId, profile.userId, profile.displayName, false);
       } else if (!lId) {
         setViewMode('main');
-        toast.error('無效的連結：缺少團主 ID (Missing Leader ID)');
+        console.error('Missing leaderId in URL:', window.location.href);
+        toast.error('無效的連結：缺少團主 ID (Missing Leader ID)。請再次確認分享連結是否完整。');
       } else {
-        setLeaderId(lId);
-        // 如果目前使用者就是團主，先用 Line 抓到的暱稱預填
-        if (profile.userId === lId) {
+        const cleanLId = lId.trim();
+        setLeaderId(cleanLId);
+        if (profile.userId === cleanLId) {
           setLeaderName(profile.displayName);
         }
         setViewMode('main');
-        // Get token
         let tok = "";
         if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
           tok = window.liff.getIDToken() || "";
         }
-        loadData(lId, profile.userId, profile.displayName, true, tok);
+        loadData(cleanLId, profile.userId, profile.displayName, true, tok);
       }
     } catch (error) {
       console.error('LIFF initialization failed:', error);
       const msg = error instanceof Error ? error.message : String(error);
-      toast.error(`系統啟動失敗: ${msg}`);
-      // Fallback: Show main view even if LIFF fails, to let user see "something"
+
+      // More descriptive error for user troubleshooting
+      if (msg.includes('liffId')) {
+        toast.error(`系統啟動失敗：LIFF ID 設定錯誤 (${LIFF_ID})。請聯絡系統管理員。`);
+      } else if (msg.includes('init')) {
+        toast.error(`LIFF 初始化失敗：請確保在 LINE 環境或支援的瀏覽器中開啟。`);
+      } else {
+        toast.error(`系統啟動失敗: ${msg}`);
+      }
+
       setViewMode('main');
     }
   };
