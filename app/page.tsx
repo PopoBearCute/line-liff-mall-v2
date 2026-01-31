@@ -77,7 +77,7 @@ declare global {
 
 const DEPLOY_TIMESTAMP = '2026-01-31T13:40:00Z'; // Updated deployment timestamp
 
-const extractLeaderIdFromState = (stateRaw: string | null): string | null => {
+const getParamFromRawState = (stateRaw: string | null, key: string): string | null => {
   if (!stateRaw) return null;
   let decoded = stateRaw;
   try {
@@ -86,14 +86,14 @@ const extractLeaderIdFromState = (stateRaw: string | null): string | null => {
     decoded = stateRaw;
   }
 
-  // 1) Full URL form
+  // 1) Full URL form inside state
   try {
     if (decoded.startsWith("http://") || decoded.startsWith("https://")) {
       const url = new URL(decoded);
-      const idFromUrl = url.searchParams.get("leaderId");
-      if (idFromUrl) return idFromUrl;
+      const valFromUrl = url.searchParams.get(key);
+      if (valFromUrl) return valFromUrl;
       const nestedState = url.searchParams.get("liff.state");
-      if (nestedState) return extractLeaderIdFromState(nestedState);
+      if (nestedState) return getParamFromRawState(nestedState, key);
     }
   } catch {
     // ignore URL parse errors
@@ -102,24 +102,54 @@ const extractLeaderIdFromState = (stateRaw: string | null): string | null => {
   // 2) Query string form
   try {
     const params = new URLSearchParams(decoded.startsWith("?") ? decoded.slice(1) : decoded);
-    const idFromParams = params.get("leaderId");
-    if (idFromParams) return idFromParams;
+    const valFromParams = params.get(key);
+    if (valFromParams) return valFromParams;
   } catch {
     // ignore query parse errors
   }
 
   // 3) Regex fallback
-  const match = decoded.match(/leaderId=([^&?#]+)/);
+  const regex = new RegExp(`${key}=([^&?#]+)`);
+  const match = decoded.match(regex);
   return match?.[1] || null;
 };
 
-const buildRedirectUri = (href: string, leaderId: string | null): string => {
-  if (!leaderId) return href;
+const getPreservedParam = (key: string, searchParams: URLSearchParams, liffState: string | null): string | null => {
+  const STORAGE_PREFIX = "liff_saved_";
+
+  // 1. Check URL
+  let value = searchParams.get(key);
+
+  // 2. Check LIFF State
+  if (!value && liffState) {
+    value = getParamFromRawState(liffState, key);
+  }
+
+  // 3. Fallback to storage
+  if (!value && typeof window !== 'undefined') {
+    value = sessionStorage.getItem(STORAGE_PREFIX + key) || localStorage.getItem(STORAGE_PREFIX + key);
+  }
+
+  // 4. Persistence: If we have it now, lock it into session
+  if (value && typeof window !== 'undefined') {
+    sessionStorage.setItem(STORAGE_PREFIX + key, value);
+    // Only persist leaderId to localStorage for long-term memory
+    if (key === 'leaderId') {
+      localStorage.setItem(STORAGE_PREFIX + key, value);
+    }
+  }
+
+  return value;
+};
+
+const buildRedirectUri = (href: string, params: Record<string, string | null>): string => {
   try {
     const url = new URL(href);
-    if (!url.searchParams.get("leaderId") && leaderId) {
-      url.searchParams.set("leaderId", leaderId);
-    }
+    Object.entries(params).forEach(([key, value]) => {
+      if (value && !url.searchParams.has(key)) {
+        url.searchParams.set(key, value);
+      }
+    });
     return url.toString();
   } catch {
     return href;
@@ -202,60 +232,25 @@ export default function GroupBuyPage() {
         return;
       }
 
-      if (!LIFF_ID || LIFF_ID.includes('YOUR_LIFF_ID')) {
-        throw new Error('LIFF ID 未設定或格式錯誤，請檢查環境變數 NEXT_PUBLIC_LIFF_ID');
-      }
-
-      // [Ultra-Robust Persistence] Multi-layered storage & URL Protection
       let lId: string | null = null;
       let m: string | null = null;
+      let d: string | null = null;
       const originalHref = window.location.href;
       const urlParams = new URLSearchParams(window.location.search);
+      const liffStateParam = urlParams.get('liff.state');
 
-      lId = urlParams.get('leaderId');
-      m = urlParams.get('mode');
+      // Universal Parameter Extraction (survives redirects/OpenChat filtering)
+      lId = getPreservedParam('leaderId', urlParams, liffStateParam);
+      m = getPreservedParam('mode', urlParams, liffStateParam);
+      d = getPreservedParam('debug', urlParams, liffStateParam);
 
-      // Regex Fallback for mangled URLs (OpenChat context)
+      // Regex Fallback for mangled URLs (extra safety)
       if (!lId) {
         const match = window.location.href.match(/leaderId=([^&?#]+)/);
-        if (match) lId = match[1];
-      }
-
-      // LINE community: leaderId may be embedded in liff.state
-      if (!lId) {
-        const liffStateParam = urlParams.get('liff.state');
-        const lIdFromState = extractLeaderIdFromState(liffStateParam);
-        if (lIdFromState) lId = lIdFromState;
-      }
-
-      // 1. SAVE to all layers if found in URL/state
-      if (lId) {
-        localStorage.setItem(LEADER_ID_STORAGE_KEY, lId);
-        sessionStorage.setItem(LEADER_ID_STORAGE_KEY, lId);
-        console.log(`[Persistence] Saved leaderId: ${lId}`);
-      }
-      // 2. LOAD from layers if missing in URL/state
-      else {
-        lId = localStorage.getItem(LEADER_ID_STORAGE_KEY) || sessionStorage.getItem(LEADER_ID_STORAGE_KEY);
-        if (lId) console.log(`[Persistence] Restored leaderId from storage: ${lId}`);
-      }
-
-      await window.liff.init({ liffId: LIFF_ID });
-
-      if (!window.liff.isLoggedIn()) {
-        const redirectUri = buildRedirectUri(originalHref, lId);
-        window.liff.login({ redirectUri });
-        return;
-      }
-
-      // Post-login: try LIFF runtime state in case URL was stripped
-      const runtimeState = (window.liff as any)?.state as string | undefined;
-      const lIdFromRuntime = extractLeaderIdFromState(runtimeState || null);
-      if (!lId && lIdFromRuntime) {
-        lId = lIdFromRuntime;
-        localStorage.setItem(LEADER_ID_STORAGE_KEY, lId);
-        sessionStorage.setItem(LEADER_ID_STORAGE_KEY, lId);
-        console.log(`[Persistence] Restored leaderId from liff.state: ${lId}`);
+        if (match) {
+          lId = match[1];
+          localStorage.setItem("liff_saved_leaderId", lId);
+        }
       }
 
       // Redirect-Once Cleanup: only after login and only if leaderId is still present in URL
@@ -266,11 +261,27 @@ export default function GroupBuyPage() {
         window.history.replaceState({}, '', cleanUrl.toString());
       }
 
+      await window.liff.init({ liffId: LIFF_ID });
+
+      if (!window.liff.isLoggedIn()) {
+        const redirectUri = buildRedirectUri(originalHref, { leaderId: lId, mode: m, debug: d });
+        window.liff.login({ redirectUri });
+        return;
+      }
+
+      // Post-login: re-check runtime state for missing params
+      const runtimeState = (window.liff as any)?.state as string | undefined;
+      if (runtimeState) {
+        if (!lId) lId = getParamFromRawState(runtimeState, 'leaderId');
+        if (!m) m = getParamFromRawState(runtimeState, 'mode');
+        if (!d) d = getParamFromRawState(runtimeState, 'debug');
+      }
+
       let profile = null;
       let context = null;
 
-      // Debug: Check for debug flag
-      const debugMode = urlParams.get('debug') === 'true';
+      // Debug: Check for debug flag (URL or Session)
+      const debugMode = d === 'true';
       setShowDebug(debugMode);
 
       try {
