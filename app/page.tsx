@@ -59,6 +59,12 @@ interface Liff {
   logout: () => void;
   getProfile: () => Promise<{ userId: string; displayName: string; pictureUrl?: string }>;
   getIDToken: () => string | null;
+  getContext: () => { type: string; viewType: string; userId?: string; utouId?: string; roomId?: string; groupId?: string } | null; // Add getContext
+  getOS: () => string;
+  getLanguage: () => string;
+  getVersion: () => string;
+  isInClient: () => boolean;
+  getDecodedIDToken: () => any;
   isApiAvailable: (name: string) => boolean;
   shareTargetPicker: (messages: any[]) => Promise<any>;
 }
@@ -140,6 +146,8 @@ export default function GroupBuyPage() {
   const [isEnabling, setIsEnabling] = useState(false);
   const [submittingProduct, setSubmittingProduct] = useState<string | null>(null);
   const [enabledStatusSnapshot, setEnabledStatusSnapshot] = useState<Record<string, boolean>>({});
+  const [debugInfo, setDebugInfo] = useState<any>(null); // Debug info state
+  const [showDebug, setShowDebug] = useState(false);
 
   // IG-Style Tabs State
   const [activeTab, setActiveTab] = useState(0);
@@ -258,7 +266,47 @@ export default function GroupBuyPage() {
         window.history.replaceState({}, '', cleanUrl.toString());
       }
 
-      const profile = await window.liff.getProfile();
+      let profile = null;
+      let context = null;
+
+      // Debug: Check for debug flag
+      const debugMode = urlParams.get('debug') === 'true';
+      setShowDebug(debugMode);
+
+      try {
+        profile = await window.liff.getProfile();
+      } catch (profileError) {
+        console.warn('LIFF getProfile failed, attempting fallback:', profileError);
+        // Fallback for OpenChat or blocked profile access
+        context = window.liff.getContext();
+        if (context && context.userId) {
+          profile = {
+            userId: context.userId,
+            displayName: `社群使用者 (${context.userId.slice(0, 4)})`,
+            pictureUrl: undefined
+          };
+          toast("已切換至社群相容模式", { description: "部分功能(如頭像)可能無法顯示" });
+        }
+      }
+
+      if (debugMode) {
+        setDebugInfo({
+          os: window.liff.getOS(),
+          language: window.liff.getLanguage(),
+          version: window.liff.getVersion(),
+          isInClient: window.liff.isInClient(),
+          isLoggedIn: window.liff.isLoggedIn(),
+          context: window.liff.getContext(),
+          decodedIDToken: window.liff.getDecodedIDToken(),
+          profileError: !profile ? "Profile load failed" : null,
+          profile: profile
+        });
+      }
+
+      if (!profile) {
+        throw new Error('無法取得使用者資料 (Profile & Context failed)');
+      }
+
       setUserProfile({
         userId: profile.userId,
         displayName: profile.displayName,
@@ -297,6 +345,11 @@ export default function GroupBuyPage() {
         toast.error(`LIFF 初始化失敗：請確保在 LINE 環境或支援的瀏覽器中開啟。`);
       } else {
         toast.error(`系統啟動失敗: ${msg}`);
+      }
+
+      // If debug mode is on, still show what we have
+      if (urlParams.get('debug') === 'true') {
+        setDebugInfo(prev => ({ ...prev, error: msg }));
       }
 
       setViewMode('main');
@@ -1084,6 +1137,17 @@ export default function GroupBuyPage() {
         </div>
       </div>
       <StickyTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Debug Panel */}
+      {showDebug && debugInfo && (
+        <div className="fixed bottom-0 left-0 right-0 bg-black/90 text-green-400 p-4 text-xs font-mono z-50 overflow-auto max-h-[50vh] break-all">
+          <div className="flex justify-between items-center mb-2 border-b border-green-600 pb-1">
+            <h3 className="font-bold">LIFF Debugger</h3>
+            <button onClick={() => setShowDebug(false)} className="px-2 py-1 bg-green-900 rounded">Close</button>
+          </div>
+          <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+        </div>
+      )}
     </Suspense>
   );
 }
