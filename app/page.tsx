@@ -265,7 +265,17 @@ export default function GroupBuyPage() {
       await window.liff.init({ liffId: LIFF_ID });
 
       if (!window.liff.isLoggedIn()) {
-        const redirectUri = buildRedirectUri(originalHref, { leaderId: lId, mode: m, debug: d });
+        // [Fix] HARD ENFORCE redirect params to prevent "stickiness" of old session data
+        // We explicitly tell LINE: "Send the user back HERE, with THESE params."
+        const redirectParams: Record<string, string | null> = {
+          leaderId: lId,
+          mode: m,
+          debug: d
+        };
+
+        console.log('[LIFF] Redirecting for login with params:', redirectParams);
+        const redirectUri = buildRedirectUri(window.location.href.split('?')[0], redirectParams);
+
         window.liff.login({ redirectUri });
         return;
       }
