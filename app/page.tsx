@@ -178,6 +178,7 @@ export default function GroupBuyPage() {
   const [enabledStatusSnapshot, setEnabledStatusSnapshot] = useState<Record<string, boolean>>({});
   const [debugInfo, setDebugInfo] = useState<any>(null); // Debug info state
   const [showDebug, setShowDebug] = useState(false);
+  const [isLiffInitializing, setIsLiffInitializing] = useState(true);
 
   // IG-Style Tabs State
   const [activeTab, setActiveTab] = useState(0);
