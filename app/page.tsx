@@ -377,8 +377,18 @@ export default function GroupBuyPage() {
 
       if (m === 'seed') {
         setViewMode('seed');
-        const targetId = lId || profile.userId;
-        loadData(targetId, profile.userId, profile.displayName, false);
+        // [Fix] In Seed Mode, the Leader is ALWAYS the current user.
+        // We override any persisted leaderId from other visits to "heal" contamination.
+        const selfId = profile.userId;
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem("liff_saved_leaderId", selfId);
+          sessionStorage.setItem("liff_saved_leaderId", selfId);
+        }
+
+        setLeaderId(selfId);
+        setLeaderName(profile.displayName);
+        loadData(selfId, selfId, profile.displayName, false);
       } else if (!lId) {
         setViewMode('main');
         console.error('Missing leaderId in storage and URL:', window.location.href);
