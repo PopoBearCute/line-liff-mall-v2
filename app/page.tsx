@@ -277,52 +277,102 @@ export default function GroupBuyPage() {
         if (!d) d = getParamFromRawState(runtimeState, 'debug');
       }
 
-      let profile = null;
-      let context = null;
 
-      // Debug: Check for debug flag (URL or Session)
-      const debugMode = d === 'true';
-      setShowDebug(debugMode);
+      // [Identity Strategy]: Try Hard, Fail Gracefully
+      // Tier 1: Gold (Full Profile)
+      // Tier 2: Silver (Context ID)
+      // Tier 3: Bronze (Guest/Error)
+
+      let profile: UserProfile | null = null;
+      let context: any | null = null; // Define context here for broader scope
 
       try {
+        console.log('[Identity] Attempting Tier 1: getProfile');
         profile = await window.liff.getProfile();
+        console.log('[Identity] Tier 1 Success');
       } catch (profileError) {
-        console.warn('LIFF getProfile failed, attempting fallback:', profileError);
-        // Fallback for OpenChat or blocked profile access
+        console.warn('[Identity] Tier 1 Failed (Profile restricted or environment issue):', profileError);
+
+        // Tier 2: Try Context ID
         context = window.liff.getContext();
         if (context && context.userId) {
+          console.log('[Identity] Tier 2 Success: Using Context ID');
           profile = {
             userId: context.userId,
-            displayName: `社群使用者 (${context.userId.slice(0, 4)})`,
-            pictureUrl: undefined
+            displayName: `社群用戶_${context.userId.substring(0, 4)}`,
+            pictureUrl: undefined // Default avatar will be used
           };
-          toast("已切換至社群相容模式", { description: "部分功能(如頭像)可能無法顯示" });
+          // Optional: Verify if this is truly OpenChat to customize the message
+          if (context.type === 'room' || context.type === 'utou' || context.type === 'square_chat') {
+            toast("已切換至社群相容模式", { description: "部分個人資訊無法顯示" });
+          }
         }
       }
 
-      if (debugMode) {
-        setDebugInfo({
-          os: window.liff.getOS(),
-          language: window.liff.getLanguage(),
-          version: window.liff.getVersion(),
-          isInClient: window.liff.isInClient(),
-          isLoggedIn: window.liff.isLoggedIn(),
-          context: window.liff.getContext(),
-          decodedIDToken: window.liff.getDecodedIDToken(),
-          profileError: !profile ? "Profile load failed" : null,
-          profile: profile
-        });
-      }
-
+      // Tier 3: Guest Mode (Final Fallback)
       if (!profile) {
-        throw new Error('無法取得使用者資料 (Profile & Context failed)');
+        console.warn('[Identity] Tier 2 Failed: No User ID found. Falling back to Guest.');
+        // Generate a random session ID for this guest
+        let guestId = sessionStorage.getItem('liff_guest_id');
+        if (!guestId) {
+          guestId = 'guest_' + Math.random().toString(36).substring(2, 8);
+          sessionStorage.setItem('liff_guest_id', guestId);
+        }
+
+        profile = {
+          userId: guestId,
+          displayName: '訪客',
+          pictureUrl: undefined
+        };
+        toast("訪客模式", { description: "無法取得使用者資訊，僅供瀏覽" });
       }
 
-      setUserProfile({
-        userId: profile.userId,
-        displayName: profile.displayName,
-        pictureUrl: profile.pictureUrl,
-      });
+      // --- Success State Setup ---
+      // At this point, 'profile' is GUARANTEED to be populated (Tier 1, 2, or 3)
+      setUserProfile(profile);
+
+      // Update Debug Info
+      const debugMode = d === 'true';
+      setShowDebug(debugMode);
+      const newDebugInfo = {
+        os: window.liff.getOS(),
+        language: window.liff.getLanguage(),
+        version: window.liff.getVersion(),
+        isInClient: window.liff.isInClient(),
+        context: context || window.liff.getContext(),
+        decodedIDToken: window.liff.getDecodedIDToken(),
+        error: null,
+        identityTier: profile.userId.startsWith('guest_') ? 'Tier 3 (Guest)' : (profile.displayName.startsWith('社群用戶_') ? 'Tier 2 (Context)' : 'Tier 1 (Profile)')
+      };
+      setDebugInfo(newDebugInfo);
+
+      // Fetch member data from Supabase
+      try {
+        const { data: member, error } = await supabase
+          .from('Members')
+          .select('*')
+          .eq('LineID', profile.userId)
+          .single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows found"
+          console.error('[Supabase] Member fetch error:', error);
+        }
+
+        if (member) {
+          setCurrentMember(member);
+        } else {
+          // If member doesn't exist, we might auto-register or just leave as null
+          // dependent on business logic. For now, we allow them to proceed as "New User"
+          console.log('[Supabase] New user detected:', profile.userId);
+        }
+      } catch (dbError) {
+        console.error('[Supabase] Unexpected DB error:', dbError);
+      }
+
+      // Unlock UI
+      setIsLiffInitializing(false);
+
+      // --- End Initialize ---
 
       if (m === 'seed') {
         setViewMode('seed');
