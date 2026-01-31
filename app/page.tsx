@@ -75,7 +75,7 @@ declare global {
   }
 }
 
-const DEPLOY_TIMESTAMP = '2026-01-30T22:50:00Z'; // Cache-busting timestamp
+const DEPLOY_TIMESTAMP = '2026-01-31T13:40:00Z'; // Updated deployment timestamp
 
 const extractLeaderIdFromState = (stateRaw: string | null): string | null => {
   if (!stateRaw) return null;
@@ -117,7 +117,7 @@ const buildRedirectUri = (href: string, leaderId: string | null): string => {
   if (!leaderId) return href;
   try {
     const url = new URL(href);
-    if (!url.searchParams.get("leaderId")) {
+    if (!url.searchParams.get("leaderId") && leaderId) {
       url.searchParams.set("leaderId", leaderId);
     }
     return url.toString();
