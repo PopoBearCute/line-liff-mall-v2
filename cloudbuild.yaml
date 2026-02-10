@@ -1,0 +1,42 @@
+steps:
+  # 1. Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_SUPABASE_URL=$_SUPABASE_URL'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_SUPABASE_ANON_KEY=$_SUPABASE_ANON_KEY'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/github.com/popobearcute/line-liff-mall-v2:$COMMIT_SHA'
+      - '.'
+
+  # 2. Push the image to GCR
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/github.com/popobearcute/line-liff-mall-v2:$COMMIT_SHA'
+
+  # 3. Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'line-liff-mall-v2'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/github.com/popobearcute/line-liff-mall-v2:$COMMIT_SHA'
+      - '--region'
+      - 'asia-east1'
+      - '--project'
+      - '$PROJECT_ID'
+
+substitutions:
+  _SUPABASE_URL: ''
+  _SUPABASE_ANON_KEY: ''
+
+images:
+  - 'gcr.io/$PROJECT_ID/github.com/popobearcute/line-liff-mall-v2:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
