@@ -11,6 +11,7 @@ import { SeedMode } from "@/components/group-buy/seed-mode";
 import Loading from "./loading";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { LeaderSelector } from "@/components/group-buy/leader-selector";
 
 const GAS_URL = "/api/products";
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2008798234-72bJqeYx";
@@ -167,7 +168,7 @@ export default function GroupBuyPage() {
   const [leaderId, setLeaderId] = useState<string | null>(leaderIdFromUrl);
   const [leaderName, setLeaderName] = useState<string>("");
   const [leaderAvatar, setLeaderAvatar] = useState<string>(""); // New State
-  const [viewMode, setViewMode] = useState<'loading' | 'seed' | 'main'>(leaderIdFromUrl ? 'main' : 'loading');
+  const [viewMode, setViewMode] = useState<'loading' | 'seed' | 'main' | 'select-leader'>(leaderIdFromUrl ? 'main' : 'loading');
   const [activeWaves, setActiveWaves] = useState<ActiveWave[]>([]);
   const [cart, setCart] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -400,9 +401,8 @@ export default function GroupBuyPage() {
         setLeaderName(profile.displayName);
         loadData(selfId, selfId, profile.displayName, false);
       } else if (!lId) {
-        setViewMode('main');
-        console.error('Missing leaderId in storage and URL:', window.location.href);
-        toast.error('無效的連結：缺少團主 ID (Missing Leader ID)。請再次確認分享連結是否完整。');
+        console.log('Missing leaderId, switching to Select Leader mode');
+        setViewMode('select-leader');
       } else {
         const cleanLId = lId.trim();
         setLeaderId(cleanLId);
@@ -661,6 +661,32 @@ export default function GroupBuyPage() {
 
 
 
+
+
+  const handleLeaderSelect = async (selectedLeaderId: string) => {
+    if (!selectedLeaderId) return;
+
+    setLeaderId(selectedLeaderId);
+
+    // Persist to storage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("liff_saved_leaderId", selectedLeaderId);
+      sessionStorage.setItem("liff_saved_leaderId", selectedLeaderId);
+
+      // Update URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.set('leaderId', selectedLeaderId);
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    // Load data for the new leader
+    const uid = userProfile?.userId || 'GUEST';
+    const dname = userProfile?.displayName || 'Guest';
+
+    setIsLoading(true);
+    await loadData(selectedLeaderId, uid, dname, true);
+    setViewMode('main');
+  };
 
   // --- Submit Handler ---
   const handleSubmit = async (singleProductName?: string) => {
@@ -1107,6 +1133,10 @@ export default function GroupBuyPage() {
       onRemoveVoter={handleRemoveVoter}
     />
   );
+
+  if (viewMode === 'select-leader') {
+    return <LeaderSelector onSelect={handleLeaderSelect} />;
+  }
 
   // 3. preparingProducts: REMOVED (Merged into collecting)
 
