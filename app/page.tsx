@@ -178,6 +178,7 @@ export default function GroupBuyPage() {
   const [submittingProduct, setSubmittingProduct] = useState<string | null>(null);
   const [enabledStatusSnapshot, setEnabledStatusSnapshot] = useState<Record<string, boolean>>({});
   const [debugInfo, setDebugInfo] = useState<any>(null); // Debug info state
+  const [currentMember, setCurrentMember] = useState<any>(null); // Member data state
   const [showDebug, setShowDebug] = useState(false);
   const [isLiffInitializing, setIsLiffInitializing] = useState(true);
 
@@ -421,6 +422,7 @@ export default function GroupBuyPage() {
     } catch (error) {
       console.error('LIFF initialization failed:', error);
       const msg = error instanceof Error ? error.message : String(error);
+      const currentUrlParams = new URL(window.location.href).searchParams;
 
       // More descriptive error for user troubleshooting
       if (msg.includes('liffId')) {
@@ -432,8 +434,8 @@ export default function GroupBuyPage() {
       }
 
       // If debug mode is on, still show what we have
-      if (urlParams.get('debug') === 'true') {
-        setDebugInfo(prev => ({ ...prev, error: msg }));
+      if (currentUrlParams.get('debug') === 'true') {
+        setDebugInfo((prev: any) => ({ ...prev, error: msg }));
       }
 
       setViewMode('main');
