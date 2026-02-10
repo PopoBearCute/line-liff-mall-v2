@@ -76,7 +76,7 @@ declare global {
   }
 }
 
-const DEPLOY_TIMESTAMP = '2026-01-31T13:40:00Z'; // Updated deployment timestamp
+const DEPLOY_TIMESTAMP = '2026-02-10T15:45:00Z'; // Fresh timestamp to verify deployment
 
 const getParamFromRawState = (stateRaw: string | null, key: string): string | null => {
   if (!stateRaw) return null;
@@ -354,7 +354,9 @@ export default function GroupBuyPage() {
         context: context || window.liff.getContext(),
         decodedIDToken: window.liff.getDecodedIDToken(),
         error: null,
-        identityTier: profile.userId.startsWith('guest_') ? 'Tier 3 (Guest)' : (profile.displayName.startsWith('社群用戶_') ? 'Tier 2 (Context)' : 'Tier 1 (Profile)')
+        identityTier: profile.userId.startsWith('guest_') ? 'Tier 3 (Guest)' : (profile.displayName.startsWith('社群用戶_') ? 'Tier 2 (Context)' : 'Tier 1 (Profile)'),
+        deployTimestamp: DEPLOY_TIMESTAMP,
+        currentViewMode: viewMode
       };
       setDebugInfo(newDebugInfo);
 
