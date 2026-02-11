@@ -1,15 +1,17 @@
 import { motion } from "framer-motion";
-import { Flame, MessageCircleHeart, PackageOpen } from "lucide-react";
+import { Flame, MessageCircleHeart, Shield } from "lucide-react";
 
 interface StickyTabsProps {
     activeTab: number;
     onTabChange: (index: number) => void;
+    isLeader?: boolean;
 }
 
-export function StickyTabs({ activeTab, onTabChange }: StickyTabsProps) {
+export function StickyTabs({ activeTab, onTabChange, isLeader }: StickyTabsProps) {
     const tabs = [
         { name: "熱銷開賣", icon: Flame },
-        { name: "許願登記", icon: MessageCircleHeart }
+        { name: "許願登記", icon: MessageCircleHeart },
+        ...(isLeader ? [{ name: "團主管理", icon: Shield }] : []),
     ];
 
     return (
@@ -31,7 +33,7 @@ export function StickyTabs({ activeTab, onTabChange }: StickyTabsProps) {
                                 {isActive && (
                                     <motion.div
                                         layoutId="activeTabDot"
-                                        className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"
+                                        className={`absolute -top-1 -right-1 w-2 h-2 ${index === 2 ? "bg-blue-500" : "bg-red-500"} rounded-full`}
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
                                         transition={{ type: "spring", stiffness: 500, damping: 30 }}

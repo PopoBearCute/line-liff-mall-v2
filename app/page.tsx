@@ -12,6 +12,7 @@ import Loading from "./loading";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { LeaderSelector } from "@/components/group-buy/leader-selector";
+import { LeaderManagementTab } from "@/components/group-buy/leader-management-tab";
 
 const GAS_URL = "/api/products";
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2008798234-72bJqeYx";
@@ -667,7 +668,7 @@ export default function GroupBuyPage() {
 
 
 
-  const handleLeaderSelect = async (selectedLeaderId: string) => {
+  const handleLeaderSelect = async (selectedLeaderId: string, mode?: string) => {
     if (!selectedLeaderId) return;
 
     setLeaderId(selectedLeaderId);
@@ -680,6 +681,7 @@ export default function GroupBuyPage() {
       // Update URL without reload
       const url = new URL(window.location.href);
       url.searchParams.set('leaderId', selectedLeaderId);
+      if (mode) url.searchParams.set('mode', mode);
       window.history.replaceState({}, '', url.toString());
     }
 
@@ -687,9 +689,20 @@ export default function GroupBuyPage() {
     const uid = userProfile?.userId || 'GUEST';
     const dname = userProfile?.displayName || 'Guest';
 
+    // If mode=seed, the user is a leader entering their own room
+    if (mode === 'seed') {
+      setIsLeader(true);
+      setLeaderName(dname);
+    }
+
     setIsLoading(true);
     await loadData(selectedLeaderId, uid, dname, true);
     setViewMode('main');
+
+    // If leader, auto-switch to management tab
+    if (mode === 'seed') {
+      setActiveTab(2);
+    }
   };
 
   // --- Submit Handler ---
@@ -1139,7 +1152,7 @@ export default function GroupBuyPage() {
   );
 
   if (viewMode === 'select-leader') {
-    return <LeaderSelector onSelect={handleLeaderSelect} />;
+    return <LeaderSelector onSelect={handleLeaderSelect} lineUserId={userProfile?.userId} />;
   }
 
   // 3. preparingProducts: REMOVED (Merged into collecting)
@@ -1241,7 +1254,7 @@ export default function GroupBuyPage() {
                 isLoading={isLoading}
                 isLeader={isLeader}
                 leaderName={leaderName || undefined}
-                leaderAvatar={leaderAvatar} // Pass Avatar
+                leaderAvatar={leaderAvatar}
                 currentUserId={userProfile?.userId}
                 onRemoveVoter={handleRemoveVoter}
                 onSingleSubmit={handleSubmit}
@@ -1250,9 +1263,26 @@ export default function GroupBuyPage() {
               />
             </div>
           )}
+
+          {activeTab === 2 && isLeader && (
+            <LeaderManagementTab
+              userName={userProfile?.displayName || leaderName}
+              lineUserId={userProfile?.userId}
+              collectingCount={collectingProducts.length}
+              activeCount={activeProducts.length}
+              products={[...activeProducts, ...collectingProducts]}
+              onShareCollecting={() => handleShare('collecting')}
+              onShareActive={() => handleShare('active')}
+              onRemoveVoter={handleRemoveVoter}
+              onReturnToLobby={() => {
+                setViewMode('select-leader');
+                setActiveTab(0);
+              }}
+            />
+          )}
         </div>
       </div>
-      <StickyTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <StickyTabs activeTab={activeTab} onTabChange={setActiveTab} isLeader={isLeader} />
 
       {/* Debug Panel */}
       {showDebug && debugInfo && (

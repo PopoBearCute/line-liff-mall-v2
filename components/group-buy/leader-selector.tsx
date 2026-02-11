@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import Image from "next/image";
+import { LeaderBindDialog } from "./leader-bind-dialog";
 
 interface Leader {
   id: string;
@@ -22,7 +24,8 @@ interface Leader {
 }
 
 interface LeaderSelectorProps {
-  onSelect: (leaderId: string) => void;
+  onSelect: (leaderId: string, mode?: string) => void;
+  lineUserId?: string; // Current user's LINE ID for binding
 }
 
 // Haversine formula to calculate distance between two points in km
@@ -38,12 +41,55 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 }
 
-export function LeaderSelector({ onSelect }: LeaderSelectorProps) {
+export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
   const [leaders, setLeaders] = useState<Leader[]>([]);
   const [filteredLeaders, setFilteredLeaders] = useState<Leader[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Long-press state for logo
+  const [showBindDialog, setShowBindDialog] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isLongPressing, setIsLongPressing] = useState(false);
+
+  const handleLongPressStart = useCallback(() => {
+    setIsLongPressing(true);
+    longPressTimer.current = setTimeout(async () => {
+      setIsLongPressing(false);
+      if (!lineUserId || !supabase) {
+        toast.error("無法取得您的身分資訊");
+        return;
+      }
+
+      // Check if this LINE ID is already bound
+      const { data: existingLeader } = await supabase
+        .from("GroupLeaders")
+        .select("Username")
+        .eq("LineID", lineUserId)
+        .single();
+
+      if (existingLeader) {
+        toast.success("歡迎回來，團購主！");
+        onSelect(existingLeader.Username, "seed");
+      } else {
+        setShowBindDialog(true);
+      }
+    }, 2000); // 2 seconds
+  }, [lineUserId, onSelect]);
+
+  const handleLongPressEnd = useCallback(() => {
+    setIsLongPressing(false);
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
+  const handleBindSuccess = (username: string) => {
+    setShowBindDialog(false);
+    onSelect(username, "seed");
+  };
 
   useEffect(() => {
     // Attempt to get user location
@@ -156,7 +202,35 @@ export function LeaderSelector({ onSelect }: LeaderSelectorProps) {
 
   return (
     <div className="container mx-auto p-4 max-w-md min-h-screen bg-transparent">
-      <div className="text-center mb-8 pt-8 px-4">
+      {/* Logo with long-press trigger */}
+      <div className="flex justify-center pt-6 mb-2">
+        <div
+          className={`relative select-none cursor-pointer transition-transform duration-300 ${isLongPressing ? "scale-90 opacity-70" : "scale-100"
+            }`}
+          onTouchStart={handleLongPressStart}
+          onTouchEnd={handleLongPressEnd}
+          onTouchCancel={handleLongPressEnd}
+          onMouseDown={handleLongPressStart}
+          onMouseUp={handleLongPressEnd}
+          onMouseLeave={handleLongPressEnd}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <Image
+            src="/ball-logo.png"
+            alt="CPC Mall"
+            width={80}
+            height={80}
+            className="rounded-full shadow-lg pointer-events-none"
+            draggable={false}
+            priority
+          />
+          {isLongPressing && (
+            <div className="absolute inset-0 rounded-full border-4 border-blue-400 animate-ping" />
+          )}
+        </div>
+      </div>
+
+      <div className="text-center mb-8 px-4">
         <h1 className="text-3xl font-extrabold mb-3 tracking-tight text-slate-800">選擇團購主</h1>
         <p className="text-slate-500 text-sm font-medium">
           {userCoords ? "已根據您的位置推薦鄰近站點" : "請選擇您所屬的團購主以進入賣場"}
@@ -248,6 +322,16 @@ export function LeaderSelector({ onSelect }: LeaderSelectorProps) {
           </div>
         )}
       </div>
+
+      {/* Leader Bind Dialog */}
+      {lineUserId && (
+        <LeaderBindDialog
+          open={showBindDialog}
+          onOpenChange={setShowBindDialog}
+          lineUserId={lineUserId}
+          onBindSuccess={handleBindSuccess}
+        />
+      )}
     </div>
   );
 }
