@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search } from "lucide-react";
+import { Search, MapPin, Fuel } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -266,10 +266,10 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
               <div className="p-4 flex flex-col gap-3">
 
                 {/* 1. Header Row (Identity) */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   {/* Left: Avatar */}
                   <div className="relative shrink-0">
-                    <Avatar className="h-16 w-16 border-2 border-white shadow-sm">
+                    <Avatar className="h-14 w-14 border-2 border-white shadow-sm shrink-0">
                       <AvatarImage src={leader.avatar_url || "/leader-avatar.png"} className="object-cover" />
                       <AvatarFallback className="bg-slate-100 text-slate-500 font-bold text-lg">
                         {leader.name.slice(0, 1)}
@@ -284,7 +284,7 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
                         團購主
                       </span>
                     </div>
-                    <h3 className="font-bold text-lg text-slate-900 leading-tight truncate">
+                    <h3 className="font-bold text-base text-slate-900 leading-tight truncate">
                       {leader.name}
                     </h3>
                   </div>
@@ -293,7 +293,7 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
                   <div className="shrink-0">
                     <Button
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 font-bold shadow-sm shadow-blue-200"
+                      className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-3 h-9 font-bold shadow-sm shadow-blue-200"
                     >
                       選我
                     </Button>
@@ -307,20 +307,14 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2.5">
                     <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-blue-600">
-                      {/* Gas Station Icon */}
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 22v-8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8" />
-                        <path d="M3 12a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2" />
-                        <path d="M12 2v2" />
-                        <path d="M3 22h18" />
-                      </svg>
+                      <Fuel className="h-4 w-4" />
                     </div>
-                    <div className="flex items-baseline gap-2 overflow-hidden">
-                      <span className="font-bold text-slate-700 truncate text-[15px]">
+                    <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+                      <span className="font-bold text-slate-700 truncate text-[14px]">
                         {leader.store_name || "中油加油站"}
                       </span>
                       {leader.distance !== undefined && (
-                        <span className="text-slate-400 text-xs whitespace-nowrap font-medium">
+                        <span className="text-slate-400 text-xs whitespace-nowrap font-medium shrink-0">
                           | 距您 {leader.distance.toFixed(1)} km
                         </span>
                       )}
@@ -330,13 +324,10 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
                   {/* 3. Footer Row (Detail: Address) */}
                   <div className="flex items-start gap-2.5">
                     <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 text-slate-400">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
+                      <MapPin className="h-4 w-4" />
                     </div>
-                    <div className="flex-1 min-w-0 py-1.5">
-                      <p className="text-sm text-slate-500 leading-snug break-words">
+                    <div className="flex-1 min-w-0 py-1">
+                      <p className="text-[13px] text-slate-500 leading-snug break-words">
                         取貨地址：{leader.address || "請洽團購主確認"}
                       </p>
                     </div>
