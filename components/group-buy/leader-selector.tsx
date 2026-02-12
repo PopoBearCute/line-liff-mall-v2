@@ -259,50 +259,86 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
             onClick={() => onSelect(leader.username)}
             className="group relative cursor-pointer active:scale-95 transition-all duration-300"
           >
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-3xl opacity-0 group-hover:opacity-10 transition duration-300"></div>
-            <Card className="relative overflow-hidden border-none bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-lg shadow-slate-200/50 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300">
-              <div className="p-5 flex items-center gap-5">
-                <div className="relative">
-                  <Avatar className="h-16 w-16 border-4 border-slate-50 shadow-inner">
-                    <AvatarImage src={leader.avatar_url} />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-50 to-indigo-100 text-blue-600 font-bold text-lg">
-                      {leader.name.slice(0, 1)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 border-4 border-white rounded-full"></div>
-                </div>
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-[24px] opacity-0 group-hover:opacity-10 transition duration-300"></div>
+            <Card className="relative overflow-hidden border border-slate-100 bg-white rounded-[20px] shadow-sm hover:shadow-md transition-all duration-300">
+              <div className="p-4 flex flex-col gap-3">
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-bold text-lg text-slate-800 truncate group-hover:text-blue-600 transition-colors">
+                {/* 1. Header Row (Identity) */}
+                <div className="flex items-center gap-4">
+                  {/* Left: Avatar */}
+                  <div className="relative shrink-0">
+                    <Avatar className="h-16 w-16 border-2 border-white shadow-sm">
+                      <AvatarImage src={leader.avatar_url || "/leader-avatar.png"} className="object-cover" />
+                      <AvatarFallback className="bg-slate-100 text-slate-500 font-bold text-lg">
+                        {leader.name.slice(0, 1)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+
+                  {/* Middle: Text Info */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <div className="inline-flex items-center gap-1.5 mb-0.5">
+                      <span className="bg-slate-100 text-slate-500 text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide">
+                        團購主
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-lg text-slate-900 leading-tight truncate">
                       {leader.name}
                     </h3>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <span className="hidden sm:inline-block px-2 py-0.5 bg-slate-100 rounded-md text-[10px] uppercase font-bold text-slate-600">
-                        Station
-                      </span>
-                      <p className="text-sm truncate font-medium">
-                        {leader.store_name || "中油加油站"}
-                      </p>
-                    </div>
-                    {leader.distance !== undefined && (
-                      <div className="flex items-center gap-1.5 text-blue-600 font-bold text-xs bg-blue-50 self-start px-2 py-1 rounded-full">
-                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-                        距離 {leader.distance.toFixed(1)} km
-                      </div>
-                    )}
+
+                  {/* Right: Select Button */}
+                  <div className="shrink-0">
+                    <Button
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 font-bold shadow-sm shadow-blue-200"
+                    >
+                      選我
+                    </Button>
                   </div>
                 </div>
 
-                <div className="flex flex-col items-center">
-                  <div className="h-10 w-10 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                {/* Separator */}
+                <div className="h-px bg-slate-50 w-full" />
+
+                {/* 2. Middle Row (Context: Location) */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-blue-600">
+                      {/* Gas Station Icon */}
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 22v-8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8" />
+                        <path d="M3 12a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2" />
+                        <path d="M12 2v2" />
+                        <path d="M3 22h18" />
+                      </svg>
+                    </div>
+                    <div className="flex items-baseline gap-2 overflow-hidden">
+                      <span className="font-bold text-slate-700 truncate text-[15px]">
+                        {leader.store_name || "中油加油站"}
+                      </span>
+                      {leader.distance !== undefined && (
+                        <span className="text-slate-400 text-xs whitespace-nowrap font-medium">
+                          | 距您 {leader.distance.toFixed(1)} km
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 3. Footer Row (Detail: Address) */}
+                  <div className="flex items-start gap-2.5">
+                    <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 text-slate-400">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                        <circle cx="12" cy="10" r="3" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-slate-500 leading-snug py-1.5">
+                      取貨地址：屏東縣屏東市復興路123號
+                    </p>
                   </div>
                 </div>
+
               </div>
             </Card>
           </div>
