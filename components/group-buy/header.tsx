@@ -13,93 +13,31 @@ interface HeaderProps {
   leaderName?: string;
   lineUserId?: string;
   onSelect?: (leaderId: string, mode?: string) => void;
+  onHome?: () => void;
   onShare?: () => void;
 }
 
-export function Header({ isLeader, lineUserId, onSelect }: HeaderProps) {
-  const [showBindDialog, setShowBindDialog] = useState(false);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isLongPressing, setIsLongPressing] = useState(false);
-
-  const handleLongPressStart = useCallback(() => {
-    setIsLongPressing(true);
-    longPressTimer.current = setTimeout(async () => {
-      setIsLongPressing(false);
-      if (!lineUserId || !supabase) {
-        toast.error("無法取得您的身分資訊");
-        return;
-      }
-
-      // Check if this LINE ID is already bound
-      const { data: existingLeader } = await supabase
-        .from("GroupLeaders")
-        .select("Username")
-        .eq("LineID", lineUserId)
-        .single();
-
-      if (existingLeader) {
-        toast.success("歡迎回來，團購主！");
-        if (onSelect) onSelect(existingLeader.Username, "seed");
-      } else {
-        setShowBindDialog(true);
-      }
-    }, 2000);
-  }, [lineUserId, onSelect]);
-
-  const handleLongPressEnd = useCallback(() => {
-    setIsLongPressing(false);
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  }, []);
-
-  const handleBindSuccess = (username: string) => {
-    setShowBindDialog(false);
-    if (onSelect) onSelect(username, "seed");
-  };
-
+export function Header({ isLeader, onHome }: HeaderProps) {
   return (
-    <>
-      <div className="fixed top-4 right-4 z-[50] flex items-center gap-3">
-        {/* Logo with long-press trigger */}
-        <div
-          className={`relative select-none cursor-pointer transition-transform duration-300 ${isLongPressing ? "scale-90 opacity-70" : "scale-100"
-            }`}
-          onTouchStart={handleLongPressStart}
-          onTouchEnd={handleLongPressEnd}
-          onTouchCancel={handleLongPressEnd}
-          onMouseDown={handleLongPressStart}
-          onMouseUp={handleLongPressEnd}
-          onMouseLeave={handleLongPressEnd}
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          <div className="bg-white p-1 rounded-full shadow-md border border-slate-100">
-            <Image
-              src="/mall-icon.png"
-              alt="CPC Mall"
-              width={40}
-              height={40}
-              className="rounded-full pointer-events-none"
-              draggable={false}
-              priority
-            />
-          </div>
-          {isLongPressing && (
-            <div className="absolute inset-0 rounded-full border-2 border-blue-400 animate-ping" />
-          )}
+    <div className="fixed top-4 right-4 z-[50]">
+      <div
+        onClick={onHome}
+        className="flex flex-col items-center gap-1 cursor-pointer group active:scale-95 transition-transform"
+      >
+        <div className="bg-white p-1 rounded-full shadow-md border border-slate-100 group-hover:border-blue-200 transition-colors">
+          <Image
+            src="/mall-icon.png"
+            alt="CPC Mall"
+            width={38}
+            height={38}
+            className="rounded-full"
+            priority
+          />
         </div>
+        <span className="text-[10px] font-bold text-slate-400 group-hover:text-blue-500 transition-colors bg-white/80 px-1.5 py-0.5 rounded-full shadow-sm">
+          返回選單
+        </span>
       </div>
-
-      {/* Leader Bind Dialog */}
-      {lineUserId && (
-        <LeaderBindDialog
-          open={showBindDialog}
-          onOpenChange={setShowBindDialog}
-          lineUserId={lineUserId}
-          onBindSuccess={handleBindSuccess}
-        />
-      )}
-    </>
+    </div>
   );
 }

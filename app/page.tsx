@@ -705,6 +705,25 @@ export default function GroupBuyPage() {
     }
   };
 
+  const handleHome = () => {
+    setLeaderId(null);
+    setViewMode('select-leader');
+    setIsLeader(false);
+    setLeaderName("");
+    setLeaderAvatar("");
+    setCart({});
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem("liff_saved_leaderId");
+      sessionStorage.removeItem("liff_saved_leaderId");
+
+      const url = new URL(window.location.href);
+      url.searchParams.delete('leaderId');
+      url.searchParams.delete('mode');
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
+
   // --- Submit Handler ---
   const handleSubmit = async (singleProductName?: string) => {
     if (!userProfile) {
@@ -1175,19 +1194,20 @@ export default function GroupBuyPage() {
 
       <div className="mesh-gradient min-h-screen w-full pb-36 overflow-y-auto">
         <Header
-          wave={activeWaves[activeTab]?.wave || "1"}
-          roleTag={isLeader ? "團購主" : "消費者"}
+          wave={activeWaves[activeTab]?.wave || ""}
+          roleTag={isLeader ? "團購主端" : "消費者端"}
           isLeader={isLeader}
           leaderName={leaderName}
           lineUserId={userProfile?.userId}
           onSelect={handleLeaderSelect}
+          onHome={handleHome}
         />
 
 
         {/* Stories Bar */}
         <div className="pt-3">
           <StoriesBar
-            // Logic: If I am the leader, show MY current profile avatar (most up to date). 
+            // Logic: If I am the leader, show MY current profile avatar (most up to date).
             // If I am a guest, show the fetched 'leaderAvatar'. If missing, let component show default icon.
             // NEVER show guest's avatar as the leader.
             leaderAvatar={isLeader ? (userProfile?.pictureUrl || leaderAvatar) : leaderAvatar}
