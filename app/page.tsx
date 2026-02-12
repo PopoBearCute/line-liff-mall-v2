@@ -1175,10 +1175,12 @@ export default function GroupBuyPage() {
 
       <div className="mesh-gradient min-h-screen w-full pb-36 overflow-y-auto">
         <Header
-          roleTag={isLeader ? "您是本團負責人" : "你是團員"}
+          wave={activeWaves[activeTab]?.wave || "1"}
+          roleTag={isLeader ? "團購主" : "消費者"}
           isLeader={isLeader}
-          wave={activeWaves[0]?.wave || ""}
           leaderName={leaderName}
+          lineUserId={userProfile?.userId}
+          onSelect={handleLeaderSelect}
         />
 
 

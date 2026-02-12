@@ -7,6 +7,6 @@
 - [x] Seed database with initial leader data
 - [x] Integrate Leader Selection into main page
 - [x] Clean up Git state and fix `.gitignore` (over 10,000 files previously showing)
-- [/] Deploy and Verify
+- [x] Deploy and Verify
     - [x] Push clean source code to GitHub
-    - [ ] Verify deployment on Cloud Run
+    - [x] Verify deployment on Cloud Run

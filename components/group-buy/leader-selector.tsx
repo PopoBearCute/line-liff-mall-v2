@@ -215,15 +215,17 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
           onMouseLeave={handleLongPressEnd}
           onContextMenu={(e) => e.preventDefault()}
         >
-          <Image
-            src="/ball-logo.png"
-            alt="CPC Mall"
-            width={80}
-            height={80}
-            className="rounded-full shadow-lg pointer-events-none"
-            draggable={false}
-            priority
-          />
+          <div className="bg-white p-2 rounded-full shadow-lg border border-slate-100">
+            <Image
+              src="/ball-logo.png"
+              alt="CPC Mall"
+              width={80}
+              height={80}
+              className="rounded-full pointer-events-none"
+              draggable={false}
+              priority
+            />
+          </div>
           {isLongPressing && (
             <div className="absolute inset-0 rounded-full border-4 border-blue-400 animate-ping" />
           )}
