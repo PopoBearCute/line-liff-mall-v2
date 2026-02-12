@@ -267,7 +267,7 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
           >
             <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-[24px] opacity-0 group-hover:opacity-10 transition duration-300"></div>
             <Card className="relative overflow-hidden border border-slate-100 bg-white rounded-[20px] shadow-sm hover:shadow-md transition-all duration-300">
-              <div className="pt-3 pb-2 px-4 flex flex-col gap-3">
+              <div className="pt-0.5 pb-0.5 px-4 flex flex-col gap-3">
 
                 {/* 1. Header Row (Identity) */}
                 <div className="flex items-center gap-3">
@@ -330,7 +330,7 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
                     <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 text-slate-400">
                       <MapPin className="h-4 w-4" />
                     </div>
-                    <div className="flex-1 min-w-0 py-1">
+                    <div className="flex-1 min-w-0 py-0.5">
                       <p className="text-[13px] text-slate-500 leading-snug break-words">
                         取貨地址：{leader.address || "請洽團購主確認"}
                       </p>
