@@ -21,6 +21,7 @@ interface Leader {
   latitude?: number;
   longitude?: number;
   distance?: number; // Calculated distance in km
+  address?: string;
 }
 
 interface LeaderSelectorProps {
@@ -119,7 +120,7 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
 
         const { data, error } = await supabase
           .from("GroupLeaders")
-          .select("id, name:團主名稱, avatar_url, store_name:加油站, station_code:站代號, username:Username, latitude:緯度, longitude:經度")
+          .select("id, name:團主名稱, avatar_url, store_name:加油站, station_code:站代號, username:Username, latitude:緯度, longitude:經度, address:指定地址")
           .eq("IsGroupLeader", "Yes");
 
         if (error) {
@@ -134,7 +135,8 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
             station_code: item.station_code,
             username: item.username,
             latitude: item.latitude,
-            longitude: item.longitude
+            longitude: item.longitude,
+            address: item.address
           }));
           setLeaders(formattedData);
         }
@@ -333,9 +335,11 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
                         <circle cx="12" cy="10" r="3" />
                       </svg>
                     </div>
-                    <p className="text-sm text-slate-500 leading-snug py-1.5">
-                      取貨地址：屏東縣屏東市復興路123號
-                    </p>
+                    <div className="flex-1 min-w-0 py-1.5">
+                      <p className="text-sm text-slate-500 leading-snug break-words">
+                        取貨地址：{leader.address || "請洽團購主確認"}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
