@@ -22,6 +22,7 @@ interface Leader {
   longitude?: number;
   distance?: number; // Calculated distance in km
   address?: string;
+  LineID?: string;
 }
 
 interface LeaderSelectorProps {
@@ -48,6 +49,7 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [showAllLeaders, setShowAllLeaders] = useState(false);
 
   // Long-press state for logo
   const [showBindDialog, setShowBindDialog] = useState(false);
@@ -120,7 +122,7 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
 
         const { data, error } = await supabase
           .from("GroupLeaders")
-          .select("id, name:團主名稱, avatar_url, store_name:加油站, station_code:站代號, username:Username, latitude:緯度, longitude:經度, address:指定地址")
+          .select("id, name:團主名稱, avatar_url, store_name:加油站, station_code:站代號, username:Username, latitude:緯度, longitude:經度, address:指定地址, LineID")
           .eq("IsGroupLeader", "Yes");
 
         if (error) {
@@ -136,8 +138,10 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
             username: item.username,
             latitude: item.latitude,
             longitude: item.longitude,
-            address: item.address
-          }));
+            address: item.address,
+            LineID: item.LineID
+          }))
+            .filter(item => item.LineID && item.LineID.trim() !== ""); // Keep only bound leaders
           setLeaders(formattedData);
         }
       } catch (err) {
@@ -254,8 +258,8 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
         />
       </div>
 
-      <div className="grid gap-4 pb-20">
-        {filteredLeaders.map((leader) => (
+      <div className="grid gap-4 pb-10">
+        {filteredLeaders.slice(0, showAllLeaders ? undefined : 5).map((leader) => (
           <div
             key={leader.id}
             onClick={() => onSelect(leader.username)}
@@ -263,7 +267,7 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
           >
             <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-[24px] opacity-0 group-hover:opacity-10 transition duration-300"></div>
             <Card className="relative overflow-hidden border border-slate-100 bg-white rounded-[20px] shadow-sm hover:shadow-md transition-all duration-300">
-              <div className="p-4 flex flex-col gap-3">
+              <div className="pt-3 pb-2 px-4 flex flex-col gap-3">
 
                 {/* 1. Header Row (Identity) */}
                 <div className="flex items-center gap-3">
@@ -338,6 +342,19 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
             </Card>
           </div>
         ))}
+
+        {!showAllLeaders && filteredLeaders.length > 5 && (
+          <Button
+            variant="outline"
+            className="w-full h-12 rounded-2xl border-slate-200 text-slate-500 font-bold hover:bg-slate-50 hover:text-blue-600 transition-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowAllLeaders(true);
+            }}
+          >
+            展開顯示更多站點 ({filteredLeaders.length - 5})
+          </Button>
+        )}
 
         {filteredLeaders.length === 0 && (
           <div className="text-center py-20 bg-white/50 rounded-[2rem] border-2 border-dashed border-slate-200">
