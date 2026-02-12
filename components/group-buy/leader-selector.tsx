@@ -217,7 +217,7 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
         >
           <div className="bg-white p-2 rounded-full shadow-lg border border-slate-100">
             <Image
-              src="/ball-logo.png"
+              src="/mall-icon.png"
               alt="CPC Mall"
               width={80}
               height={80}

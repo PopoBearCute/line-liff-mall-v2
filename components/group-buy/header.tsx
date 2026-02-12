@@ -76,7 +76,7 @@ export function Header({ isLeader, lineUserId, onSelect }: HeaderProps) {
         >
           <div className="bg-white p-1 rounded-full shadow-md border border-slate-100">
             <Image
-              src="/ball-logo.png"
+              src="/mall-icon.png"
               alt="CPC Mall"
               width={40}
               height={40}
