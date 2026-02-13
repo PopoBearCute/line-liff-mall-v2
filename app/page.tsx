@@ -690,9 +690,10 @@ export default function GroupBuyPage() {
     const dname = userProfile?.displayName || 'Guest';
 
     // If mode=seed, the user is a leader entering their own room
+    // [Bug #1 Fix] 不再「樂觀地」設定 isLeader，
+    // 改由 API 查詢 GroupLeaders 資料表後統一決定
     if (mode === 'seed') {
-      setIsLeader(true);
-      setLeaderName(dname);
+      sessionStorage.setItem("liff_saved_mode", mode);
     }
 
     setIsLoading(true);
@@ -700,6 +701,7 @@ export default function GroupBuyPage() {
     setViewMode('main');
 
     // If leader, auto-switch to management tab
+    // (isLeader 已由 loadData → API 回傳值正確設定)
     if (mode === 'seed') {
       setActiveTab(2);
     }

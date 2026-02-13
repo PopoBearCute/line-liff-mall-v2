@@ -145,7 +145,21 @@ export async function GET(request: Request) {
 
 
         // 3. Leader Identity & Avatar Lookup
-        let isLeader = (leaderId && userId && String(leaderId).trim() === String(userId).trim()) || false;
+        // [Bug #1 Fix] 正確的身分判定：查詢 GroupLeaders 資料表
+        // 比對「站點代號 (Username)」與「目前登入者的 LINE UID (LineID)」
+        // 舊邏輯（錯誤）：leaderId === userId → 永遠 false，因為兩者是不同概念的 ID
+        let isLeader = false;
+        if (leaderId && userId) {
+            const { data: leaderRow } = await supabaseInternal
+                .from('GroupLeaders')
+                .select('Username, LineID')
+                .eq('Username', String(leaderId).trim())
+                .eq('LineID', String(userId).trim())
+                .maybeSingle();
+
+            isLeader = !!leaderRow;
+            console.log(`[API GET] isLeader check: Username="${leaderId}", LineID="${userId}" → ${isLeader}`);
+        }
         let leaderName = '團購主';
         let leaderAvatar = '';
 
