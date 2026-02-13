@@ -10,10 +10,10 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: '行動商城團購網',
-  description: '中油PAY行動商城團購網：輕鬆揪團、一鍵下單，享受最優惠的團購體驗！',
+  description: '行動商城團購網：輕鬆揪團、一鍵下單，享受最優惠的團購體驗！',
   openGraph: {
     title: '行動商城團購網',
-    description: '中油PAY行動商城團購網：輕鬆揪團、一鍵下單，享受最優惠的團購體驗！',
+    description: '行動商城團購網：輕鬆揪團、一鍵下單，享受最優惠的團購體驗！',
     images: [
       {
         url: 'https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png', // Temporary placeholder for reliable display

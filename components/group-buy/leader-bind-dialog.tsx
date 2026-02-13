@@ -29,8 +29,6 @@ export function LeaderBindDialog({
     open,
     onOpenChange,
     lineUserId,
-    onOpenChange,
-    lineUserId,
     onBindSuccess,
     userAvatar, // [New]
     displayName // [New]
