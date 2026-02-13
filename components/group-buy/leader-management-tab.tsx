@@ -3,18 +3,7 @@
 import { useState } from "react";
 import { Share2, BarChart3, LogOut, ShieldOff, Home, Loader2 } from "lucide-react";
 import { OrderSummaryDrawer } from "./order-summary-drawer";
-// [Cleanup] supabase 直接操作已移至 API route
 import { toast } from "sonner";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
 interface LeaderManagementTabProps {
@@ -41,7 +30,6 @@ export function LeaderManagementTab({
     onReturnToLobby,
 }: LeaderManagementTabProps) {
     const [showStats, setShowStats] = useState(false);
-    const [unbindStep, setUnbindStep] = useState<0 | 1 | 2>(0); // 0=closed, 1=first confirm, 2=second confirm
     const [isUnbinding, setIsUnbinding] = useState(false);
 
     // Secret Admin Trigger State
@@ -51,6 +39,13 @@ export function LeaderManagementTab({
 
     const isCollectingDisabled = collectingCount === 0;
     const isActiveDisabled = activeCount === 0;
+
+    // Unbind with native confirm dialogs (Radix AlertDialog onClick doesn't fire in LINE WebView)
+    const handleUnbindClick = async () => {
+        if (!window.confirm("確定要解除團主身分嗎？\n\n解除後您需要重新輸入站號與工號才能再次綁定。")) return;
+        if (!window.confirm("⚠️ 最終確認\n\n這將會清除您的團主綁定資料，此操作無法在此頁面中復原。")) return;
+        await handleUnbind();
+    };
 
     const handleUnbind = async () => {
         setIsUnbinding(true);
@@ -87,7 +82,6 @@ export function LeaderManagementTab({
             }
 
             toast.success("已成功解除團主身分");
-            setUnbindStep(0);
             onReturnToLobby();
         } catch (err) {
             console.error("Unexpected unbind error:", err);
@@ -212,14 +206,24 @@ export function LeaderManagementTab({
                     回到大廳首頁
                 </Button>
 
-                {/* Unbind */}
+                {/* Unbind - uses native window.confirm (reliable in LINE WebView) */}
                 <Button
                     variant="ghost"
-                    onClick={() => setUnbindStep(1)}
+                    onClick={handleUnbindClick}
+                    disabled={isUnbinding}
                     className="w-full h-10 rounded-2xl text-red-400 hover:text-red-600 hover:bg-red-50 font-medium text-sm"
                 >
-                    <ShieldOff className="h-4 w-4 mr-2" />
-                    解除團主身分
+                    {isUnbinding ? (
+                        <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            解除中...
+                        </>
+                    ) : (
+                        <>
+                            <ShieldOff className="h-4 w-4 mr-2" />
+                            解除團主身分
+                        </>
+                    )}
                 </Button>
             </div>
 
@@ -230,74 +234,6 @@ export function LeaderManagementTab({
                 products={products}
                 onRemoveVoter={onRemoveVoter}
             />
-
-            {/* Unbind Confirmation - Step 1 */}
-            <AlertDialog open={unbindStep === 1} onOpenChange={(open) => !open && setUnbindStep(0)}>
-                <AlertDialogContent className="max-w-[340px] rounded-3xl border-none">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="text-center">確定要解除團主身分嗎？</AlertDialogTitle>
-                        <AlertDialogDescription className="text-center">
-                            解除後您需要重新輸入站號與工號才能再次綁定。
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-                        <AlertDialogAction
-                            onClick={() => setUnbindStep(2)}
-                            className="w-full bg-red-500 hover:bg-red-600 rounded-xl"
-                        >
-                            確定解除
-                        </AlertDialogAction>
-                        <AlertDialogCancel
-                            onClick={() => setUnbindStep(0)}
-                            className="w-full rounded-xl"
-                        >
-                            取消
-                        </AlertDialogCancel>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            {/* Unbind Confirmation - Step 2 (Final) - Plain div modal to avoid Radix focus trap */}
-            {unbindStep === 2 && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
-                    <div className="fixed inset-0 bg-black/50" />
-                    <div className="relative z-50 w-full max-w-[340px] mx-4 bg-white rounded-3xl p-6 shadow-2xl">
-                        <div className="flex flex-col gap-2 text-center mb-4">
-                            <h3 className="text-lg font-semibold text-red-600">
-                                ⚠️ 最終確認
-                            </h3>
-                            <p className="text-sm text-gray-500">
-                                請再次確認：這將會清除您的團主綁定資料。
-                                此操作無法在此頁面中復原。
-                            </p>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <Button
-                                onClick={handleUnbind}
-                                disabled={isUnbinding}
-                                className="w-full bg-red-600 hover:bg-red-700 rounded-xl"
-                            >
-                                {isUnbinding ? (
-                                    <>
-                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                        解除中...
-                                    </>
-                                ) : (
-                                    "確認解除團主身分"
-                                )}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                onClick={() => setUnbindStep(0)}
-                                disabled={isUnbinding}
-                                className="w-full rounded-xl"
-                            >
-                                我再想想
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
