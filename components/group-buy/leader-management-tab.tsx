@@ -53,7 +53,6 @@ export function LeaderManagementTab({
     const isActiveDisabled = activeCount === 0;
 
     const handleUnbind = async () => {
-        if (!lineUserId) return;
         setIsUnbinding(true);
 
         try {
@@ -61,6 +60,12 @@ export function LeaderManagementTab({
             let idToken = "";
             if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
                 idToken = window.liff.getIDToken() || "";
+            }
+
+            if (!idToken) {
+                toast.error("無法取得身分驗證 Token，請重新整理頁面後再試", { duration: 3000 });
+                setIsUnbinding(false);
+                return;
             }
 
             const res = await fetch('/api/products', {
