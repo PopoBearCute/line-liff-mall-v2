@@ -742,6 +742,7 @@ export default function GroupBuyPage() {
           wave: waveId,
           leaderId: leaderId || userProfile.userId,
           userId: userProfile.userId,
+          leaderName: leaderName, // [Fix] correctly identify leader name for auto-binding
           userName: userProfile.displayName,
           userAvatar: userProfile.pictureUrl,
           items: groupItems.map(i => ({
