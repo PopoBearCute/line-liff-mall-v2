@@ -39,7 +39,7 @@ export function LeaderBindDialog({
     const [error, setError] = useState("");
 
     // Validation
-    const stationCodeValid = /^[A-Za-z0-9]{3,6}$/.test(stationCode);
+    const stationCodeValid = /^\d{5,6}$/.test(stationCode); // Expecting 5-6 digits after D
     const employeeIdValid = /^\d{4,8}$/.test(employeeId);
     const canSubmit = stationCode.length > 0 && employeeId.length > 0;
 
@@ -64,15 +64,31 @@ export function LeaderBindDialog({
                 return;
             }
 
-            // 1. Check if this username exists in GroupLeaders
+            // 1. Check Station Code (Prepend 'D' automatically)
+            const fullStationCode = `D${stationCode}`;
+
+            const { data: stationData, error: stationError } = await supabase
+                .from("StationList")
+                .select("StationID")
+                .eq("StationCode", fullStationCode)
+                .single();
+
+            if (stationError || !stationData) {
+                setError("找不到此站號，請檢查是否正確");
+                setIsSubmitting(false);
+                return;
+            }
+
+            // 2. Check if this username exists in GroupLeaders
             const { data: leader, error: fetchError } = await supabase
                 .from("GroupLeaders")
-                .select("id, Username, LineID, 團主名稱")
-                .eq("Username", username)
+                .select("id, Username, EmployeeID, LineID, 團主名稱")
+                .eq("Username", fullStationCode)
+                .eq("EmployeeID", employeeId)
                 .single();
 
             if (fetchError || !leader) {
-                setError(`查無此站號工號組合「${username}」，請確認後重試`);
+                setError(`查無此站號工號組合「${fullStationCode}-${employeeId}」，請確認後重試`);
                 setIsSubmitting(false);
                 return;
             }
@@ -92,7 +108,8 @@ export function LeaderBindDialog({
                     avatar_url: userAvatar || "", // [New] Update avatar
                     "暱稱": displayName || ""      // [New] Update nickname
                 })
-                .eq("Username", username);
+                .eq("Username", fullStationCode) // Use full station code with D prefix
+                .eq("EmployeeID", employeeId);
 
             if (updateError) {
                 console.error("Bind error:", updateError);
@@ -102,7 +119,7 @@ export function LeaderBindDialog({
             }
 
             toast.success(`綁定成功！歡迎，${leader.團主名稱}`);
-            onBindSuccess(username);
+            onBindSuccess(`${fullStationCode}-${employeeId}`);
         } catch (err) {
             console.error("Unexpected bind error:", err);
             setError("系統異常，請稍後再試");
@@ -136,19 +153,27 @@ export function LeaderBindDialog({
                         <label className="text-xs font-bold text-slate-600 mb-1.5 block">
                             站號
                         </label>
-                        <Input
-                            placeholder="例如：D12345"
-                            value={stationCode}
-                            onChange={(e) => {
-                                setStationCode(e.target.value.toUpperCase());
-                                setError("");
-                            }}
-                            className="h-12 rounded-xl text-center text-lg font-bold tracking-widest border-slate-200 focus-visible:ring-blue-500/30"
-                            maxLength={6}
-                            disabled={isSubmitting}
-                        />
+                        <div className="relative">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 select-none">
+                                D
+                            </div>
+                            <Input
+                                className="pl-7 h-12 rounded-xl text-center text-lg font-bold tracking-widest border-slate-200 focus-visible:ring-blue-500/30 uppercase"
+                                placeholder="12345"
+                                value={stationCode}
+                                maxLength={5}
+                                inputMode="numeric"
+                                onChange={(e) => {
+                                    // Allow only numbers
+                                    const val = e.target.value.replace(/\D/g, "");
+                                    setStationCode(val);
+                                    setError("");
+                                }}
+                                disabled={isSubmitting}
+                            />
+                        </div>
                         {stationCode && !stationCodeValid && (
-                            <p className="text-xs text-amber-500 mt-1">3~6位英數字</p>
+                            <p className="text-xs text-amber-500 mt-1">3~5位數字</p>
                         )}
                     </div>
 
