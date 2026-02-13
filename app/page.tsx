@@ -1260,8 +1260,9 @@ export default function GroupBuyPage() {
             <LeaderManagementTab
               userName={userProfile?.displayName || leaderName}
               lineUserId={userProfile?.userId}
-              collectingCount={collectingProducts.length}
-              activeCount={activeProducts.length}
+              // [Fix] Calculate ENABLED counts for the buttons to reflect actual "on sale" items
+              collectingCount={collectingProducts.filter(p => enabledStatusSnapshot[p.name] !== undefined ? enabledStatusSnapshot[p.name] : (p.isEnabled === true || String(p.isEnabled).toLowerCase() === 'true' || Number(p.isEnabled) === 1)).length}
+              activeCount={activeProducts.filter(p => enabledStatusSnapshot[p.name] !== undefined ? enabledStatusSnapshot[p.name] : (p.isEnabled === true || String(p.isEnabled).toLowerCase() === 'true' || Number(p.isEnabled) === 1)).length}
               products={[...activeProducts, ...collectingProducts]}
               onShareCollecting={() => handleShare('collecting')}
               onShareActive={() => handleShare('active')}
