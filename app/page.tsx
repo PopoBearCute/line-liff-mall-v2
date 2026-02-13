@@ -14,7 +14,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { LeaderSelector } from "@/components/group-buy/leader-selector";
 import { LeaderManagementTab } from "@/components/group-buy/leader-management-tab";
 
-const GAS_URL = "/api/products";
+const API_URL = "/api/products";
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2008798234-72bJqeYx";
 const LEADER_ID_STORAGE_KEY = "liff_leaderId";
 
@@ -435,7 +435,7 @@ export default function GroupBuyPage() {
   ) => {
     if (showLoader) setIsLoading(true);
     try {
-      const response = await fetch(`${GAS_URL}?leaderId=${targetLeaderId}&userId=${userId}&t=${Date.now()}`);
+      const response = await fetch(`${API_URL}?leaderId=${targetLeaderId}&userId=${userId}&t=${Date.now()}`);
       if (!response.ok) {
         let errorMsg = `HTTP error! status: ${response.status}`;
         try {
@@ -451,7 +451,7 @@ export default function GroupBuyPage() {
         setActiveWaves(data.activeWaves || []);
         setIsLeader(previewMode === 'consumer' ? false : (data.isLeader || false));
 
-        // 如果 GAS 回傳了名字，直接用
+        // 如果 API 回傳了名字，直接用
         if (data.leaderName && data.leaderName !== '團購主') {
           setLeaderName(data.leaderName);
         }
@@ -495,7 +495,7 @@ export default function GroupBuyPage() {
 
         return data.activeWaves;
       } else {
-        console.error('GAS Error Response:', data);
+        console.error('API Error Response:', data);
         toast.error(`資料載入錯誤: ${data.error || '不明錯誤'}`);
         setIsLoading(false);
         return [];
@@ -582,7 +582,7 @@ export default function GroupBuyPage() {
 
       console.log("🚀 [Client] Submitting Payload:", payload);
 
-      const res = await fetch(GAS_URL, {
+      const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }, // Content-Type for Next.js API
         body: JSON.stringify(payload)
@@ -751,7 +751,7 @@ export default function GroupBuyPage() {
           idToken: idToken
         };
 
-        const res = await fetch(GAS_URL, {
+        const res = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -764,8 +764,11 @@ export default function GroupBuyPage() {
       toast.success("登記成功！");
       setCart({}); // Clear Cart
 
-      // Auto-refresh
-      await loadData(leaderId || userProfile.userId, userProfile.userId, userProfile.displayName, isLeader, idToken);
+      // [Fix] Add consistency delay to allow DB write propagation
+      await new Promise(r => setTimeout(r, 500));
+
+      // Auto-refresh (Silent update: showLoader=false)
+      await loadData(leaderId || userProfile.userId, userProfile.userId, userProfile.displayName, false, idToken);
 
     } catch (e) {
       console.error(e);
@@ -796,7 +799,7 @@ export default function GroupBuyPage() {
         }
       }
 
-      await fetch(GAS_URL, {
+      await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

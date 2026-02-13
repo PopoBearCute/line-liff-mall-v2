@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase'; // Keep for public READ access
 import { createClient } from '@supabase/supabase-js'; // For private WRITE access
 
-// --- Helper Functions to Match GAS Logic ---
+// --- Helper Functions ---
 
 const superNormalize = (s: string | null | undefined): string => {
     if (!s) return "";
@@ -247,7 +247,7 @@ export async function GET(request: Request) {
     }
 }
 
-// Helper for DB Write Time (Matching GAS legacy format: 2026/1/24 上午 1:35:56)
+// Helper for DB Write Time (format: 2026/1/24 上午 1:35:56)
 const getLegacyTimeStr = (): string => {
     return new Date().toLocaleString('zh-TW', {
         timeZone: 'Asia/Taipei',
@@ -372,7 +372,7 @@ export async function POST(request: Request) {
                 const { prodName, qty } = item;
                 const normalizedProdName = superNormalize(prodName);
 
-                // UniqueKey logic from GAS: LeaderId_Wave_UserId_NormalizedProdName
+                // UniqueKey: LeaderId_Wave_UserId_NormalizedProdName
                 const uniqueKey = `${targetLeaderId}_${String(wave).trim()}_${targetUserId}_${normalizedProdName}`;
 
                 // Check if exists
