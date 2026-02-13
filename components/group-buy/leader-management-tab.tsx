@@ -76,7 +76,7 @@ export function LeaderManagementTab({
 
             if (!res.ok || !result.success) {
                 console.error("Unbind error:", result.error);
-                toast.error(result.error || "解除失敗，請稍後再試");
+                toast.error(result.error || "解除失敗，請稍後再試", { duration: 3000 });
                 setIsUnbinding(false);
                 return;
             }
@@ -253,7 +253,7 @@ export function LeaderManagementTab({
             </AlertDialog>
 
             {/* Unbind Confirmation - Step 2 (Final) */}
-            <AlertDialog open={unbindStep === 2} onOpenChange={(open) => !open && setUnbindStep(0)}>
+            <AlertDialog open={unbindStep === 2} onOpenChange={() => { }}>
                 <AlertDialogContent className="max-w-[340px] rounded-3xl border-none">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="text-center text-red-600">
@@ -265,7 +265,7 @@ export function LeaderManagementTab({
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-                        <AlertDialogAction
+                        <Button
                             onClick={handleUnbind}
                             disabled={isUnbinding}
                             className="w-full bg-red-600 hover:bg-red-700 rounded-xl"
@@ -278,13 +278,15 @@ export function LeaderManagementTab({
                             ) : (
                                 "確認解除團主身分"
                             )}
-                        </AlertDialogAction>
-                        <AlertDialogCancel
+                        </Button>
+                        <Button
+                            variant="outline"
                             onClick={() => setUnbindStep(0)}
+                            disabled={isUnbinding}
                             className="w-full rounded-xl"
                         >
                             我再想想
-                        </AlertDialogCancel>
+                        </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
