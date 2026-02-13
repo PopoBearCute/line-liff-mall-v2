@@ -257,44 +257,47 @@ export function LeaderManagementTab({
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Unbind Confirmation - Step 2 (Final) */}
-            <AlertDialog open={unbindStep === 2} onOpenChange={() => { }}>
-                <AlertDialogContent className="max-w-[340px] rounded-3xl border-none">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="text-center text-red-600">
-                            ⚠️ 最終確認
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="text-center">
-                            請再次確認：這將會清除您的團主綁定資料。
-                            此操作無法在此頁面中復原。
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-                        <Button
-                            onClick={handleUnbind}
-                            disabled={isUnbinding}
-                            className="w-full bg-red-600 hover:bg-red-700 rounded-xl"
-                        >
-                            {isUnbinding ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                    解除中...
-                                </>
-                            ) : (
-                                "確認解除團主身分"
-                            )}
-                        </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => setUnbindStep(0)}
-                            disabled={isUnbinding}
-                            className="w-full rounded-xl"
-                        >
-                            我再想想
-                        </Button>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            {/* Unbind Confirmation - Step 2 (Final) - Plain div modal to avoid Radix focus trap */}
+            {unbindStep === 2 && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <div className="fixed inset-0 bg-black/50" />
+                    <div className="relative z-50 w-full max-w-[340px] mx-4 bg-white rounded-3xl p-6 shadow-2xl">
+                        <div className="flex flex-col gap-2 text-center mb-4">
+                            <h3 className="text-lg font-semibold text-red-600">
+                                ⚠️ 最終確認
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                                請再次確認：這將會清除您的團主綁定資料。
+                                此操作無法在此頁面中復原。
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <Button
+                                onClick={handleUnbind}
+                                disabled={isUnbinding}
+                                className="w-full bg-red-600 hover:bg-red-700 rounded-xl"
+                            >
+                                {isUnbinding ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                        解除中...
+                                    </>
+                                ) : (
+                                    "確認解除團主身分"
+                                )}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => setUnbindStep(0)}
+                                disabled={isUnbinding}
+                                className="w-full rounded-xl"
+                            >
+                                我再想想
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
