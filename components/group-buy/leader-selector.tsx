@@ -28,6 +28,8 @@ interface Leader {
 interface LeaderSelectorProps {
   onSelect: (leaderId: string, mode?: string) => void;
   lineUserId?: string; // Current user's LINE ID for binding
+  userAvatar?: string; // [New] Pass avatar for binding
+  displayName?: string; // [New] Pass name for binding
 }
 
 // Haversine formula to calculate distance between two points in km
@@ -379,6 +381,8 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
           open={showBindDialog}
           onOpenChange={setShowBindDialog}
           lineUserId={lineUserId}
+          userAvatar={userAvatar}
+          displayName={displayName}
           onBindSuccess={handleBindSuccess}
         />
       )}

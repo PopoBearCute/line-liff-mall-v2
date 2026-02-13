@@ -1141,7 +1141,12 @@ export default function GroupBuyPage() {
   // [Seed Mode Removed] — viewMode === 'seed' no longer exists
 
   if (viewMode === 'select-leader') {
-    return <LeaderSelector onSelect={handleLeaderSelect} lineUserId={userProfile?.userId} />;
+    return <LeaderSelector
+      onSelect={handleLeaderSelect}
+      lineUserId={userProfile?.userId}
+      userAvatar={userProfile?.pictureUrl} // [New] Pass Avatar
+      displayName={userProfile?.displayName} // [New] Pass Name
+    />;
   }
 
   // 3. preparingProducts: REMOVED (Merged into collecting)

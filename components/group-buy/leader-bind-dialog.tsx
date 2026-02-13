@@ -21,13 +21,19 @@ interface LeaderBindDialogProps {
     onOpenChange: (open: boolean) => void;
     lineUserId: string;
     onBindSuccess: (username: string) => void;
+    userAvatar?: string;
+    displayName?: string;
 }
 
 export function LeaderBindDialog({
     open,
     onOpenChange,
     lineUserId,
+    onOpenChange,
+    lineUserId,
     onBindSuccess,
+    userAvatar, // [New]
+    displayName // [New]
 }: LeaderBindDialogProps) {
     const [stationCode, setStationCode] = useState("");
     const [employeeId, setEmployeeId] = useState("");
@@ -83,7 +89,11 @@ export function LeaderBindDialog({
             // 3. Bind: write LineID
             const { error: updateError } = await supabase
                 .from("GroupLeaders")
-                .update({ LineID: lineUserId })
+                .update({
+                    LineID: lineUserId,
+                    avatar_url: userAvatar || "", // [New] Update avatar
+                    "暱稱": displayName || ""      // [New] Update nickname
+                })
                 .eq("Username", username);
 
             if (updateError) {
