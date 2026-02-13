@@ -387,22 +387,30 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
           <a
-            href="https://play.google.com/store/apps/details?id=com.cpc.cpcpay&hl=zh_TW&pli=1"
+            href="https://play.google.com/store/apps/details?id=com.cpc.cpcpay&hl=zh_TW"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center h-11 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-colors shadow-lg shadow-slate-200"
+            className="transition-transform hover:scale-105 active:scale-95"
           >
-            <span className="text-xs font-bold">Google Play</span>
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
+              alt="Get it on Google Play"
+              className="h-10 w-auto"
+            />
           </a>
           <a
             href="https://apps.apple.com/tw/app/%E4%B8%AD%E6%B2%B9pay/id1475467410"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center h-11 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-colors shadow-lg shadow-slate-200"
+            className="transition-transform hover:scale-105 active:scale-95"
           >
-            <span className="text-xs font-bold">App Store</span>
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
+              alt="Download on the App Store"
+              className="h-10 w-auto"
+            />
           </a>
         </div>
       </div>
