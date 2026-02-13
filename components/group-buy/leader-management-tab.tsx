@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Share2, BarChart3, LogOut, ShieldOff, Home, Loader2 } from "lucide-react";
 import { OrderSummaryDrawer } from "./order-summary-drawer";
-import { supabase } from "@/lib/supabase";
+// [Cleanup] supabase 直接操作已移至 API route
 import { toast } from "sonner";
 import {
     AlertDialog,
@@ -53,18 +53,30 @@ export function LeaderManagementTab({
     const isActiveDisabled = activeCount === 0;
 
     const handleUnbind = async () => {
-        if (!lineUserId || !supabase) return;
+        if (!lineUserId) return;
         setIsUnbinding(true);
 
         try {
-            const { error } = await supabase
-                .from("GroupLeaders")
-                .update({ LineID: null })
-                .eq("LineID", lineUserId);
+            // Get LIFF Token for secure verification
+            let idToken = "";
+            if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
+                idToken = window.liff.getIDToken() || "";
+            }
 
-            if (error) {
-                console.error("Unbind error:", error);
-                toast.error("解除失敗，請稍後再試");
+            const res = await fetch('/api/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'unbind_leader',
+                    idToken
+                })
+            });
+
+            const result = await res.json();
+
+            if (!res.ok || !result.success) {
+                console.error("Unbind error:", result.error);
+                toast.error(result.error || "解除失敗，請稍後再試");
                 setIsUnbinding(false);
                 return;
             }
@@ -127,8 +139,8 @@ export function LeaderManagementTab({
                     onClick={onShareCollecting}
                     disabled={isCollectingDisabled}
                     className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all active:scale-95 ${isCollectingDisabled
-                            ? "bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed"
-                            : "bg-white border-slate-200 text-slate-700 hover:bg-blue-50 hover:border-blue-200 shadow-sm"
+                        ? "bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-blue-50 hover:border-blue-200 shadow-sm"
                         }`}
                 >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isCollectingDisabled ? "bg-slate-100" : "bg-blue-100"
@@ -150,8 +162,8 @@ export function LeaderManagementTab({
                     onClick={onShareActive}
                     disabled={isActiveDisabled}
                     className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all active:scale-95 ${isActiveDisabled
-                            ? "bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed"
-                            : "bg-white border-slate-200 text-slate-700 hover:bg-red-50 hover:border-red-200 shadow-sm"
+                        ? "bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-red-50 hover:border-red-200 shadow-sm"
                         }`}
                 >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActiveDisabled ? "bg-slate-100" : "bg-red-100"

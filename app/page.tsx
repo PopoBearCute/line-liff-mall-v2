@@ -490,27 +490,8 @@ export default function GroupBuyPage() {
 
         setIsLoading(false);
 
-        // 自動註冊團主：如果是團主且有 activeWaves，自動建立 LeaderBinding (針對每個波段)
-        if (data.isLeader && data.activeWaves && data.activeWaves.length > 0 && displayName) {
-          for (const waveObj of data.activeWaves) {
-            try {
-              await fetch(GAS_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  action: 'auto_register_leader',
-                  wave: waveObj.wave,
-                  leaderId: data.leaderId,
-                  userId: userId,
-                  leaderName: displayName,
-                  idToken: idToken || ""
-                })
-              });
-            } catch (error) {
-              console.error(`Auto-register failed for wave ${waveObj.wave}:`, error);
-            }
-          }
-        }
+        // [Cleanup] auto_register_leader 已移除
+        // LeaderBinding 改由 submit_batch_intent / enable_product 惰性建立
 
         return data.activeWaves;
       } else {
@@ -687,7 +668,7 @@ export default function GroupBuyPage() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem("liff_saved_leaderId");
       sessionStorage.removeItem("liff_saved_leaderId");
-      sessionStorage.removeItem("liff_saved_mode"); // [Bug #4 Fix] 防止殭屍跳轉
+      // [Cleanup] liff_saved_mode 已無人寫入，不需清除
 
       const url = new URL(window.location.href);
       url.searchParams.delete('leaderId');

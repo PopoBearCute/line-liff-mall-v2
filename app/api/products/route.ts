@@ -511,59 +511,41 @@ export async function POST(request: Request) {
             }
         }
 
-        // --- Action: Auto Register Leader ---
-        if (data.action === 'auto_register_leader') {
-            const { wave, leaderId, leaderName, userId: providedUserId } = data;
-
-            // Security Check
+        // --- Action: Unbind Leader Identity ---
+        if (data.action === 'unbind_leader') {
+            // Security Check: Verify LIFF Token
             const verifiedUserId = await verifyLiffToken(idToken);
-            if (verifiedUserId && verifiedUserId.startsWith('ERROR:')) {
+            if (!verifiedUserId) {
+                return NextResponse.json({ success: false, error: "身分驗證失敗：無法取得 Token" }, { status: 401 });
+            }
+            if (verifiedUserId.startsWith('ERROR:')) {
                 return NextResponse.json({ success: false, error: `身分驗證錯誤: ${verifiedUserId.replace('ERROR:', '')}` }, { status: 401 });
             }
 
-            // Security Check: Leader check (via GroupLeaders) OR User check (Self)
-            const { data: leaderCheckRow } = await adminSupabase
+            // Verify the user actually owns a binding in GroupLeaders
+            const { data: boundRow } = await adminSupabase
                 .from('GroupLeaders')
-                .select('Username, LineID')
-                .eq('Username', cleanLeaderId)
+                .select('id, Username, LineID')
                 .eq('LineID', verifiedUserId)
                 .maybeSingle();
 
-            const isAutoAuthValid = !!leaderCheckRow || verifiedUserId === cleanUserId;
-
-            if (!isAutoAuthValid) {
-                console.error(`[API Auth] 自動註冊驗證失敗. User: ${verifiedUserId}, Target Leader: ${cleanLeaderId}, Target User: ${cleanUserId}`);
-                return NextResponse.json({ success: false, error: "自動註冊失敗：身分驗證不符" }, { status: 403 });
+            if (!boundRow) {
+                return NextResponse.json({ success: false, error: "找不到您的團主綁定資料" }, { status: 404 });
             }
 
-            const targetLeaderId = cleanLeaderId;
-            const targetWave = String(wave).trim();
+            // Clear LineID (unbind)
+            const { error: updateError } = await adminSupabase
+                .from('GroupLeaders')
+                .update({ LineID: null })
+                .eq('id', boundRow.id);
 
-            // Robust Check: Handle duplicates without erroring
-            const { data: existingBindings, error: checkError } = await adminSupabase
-                .from('leaderbinding')
-                .select('*')
-                .eq('團主 ID', targetLeaderId)
-                .eq('所屬波段', targetWave);
-
-            const exists = existingBindings && existingBindings.length > 0;
-
-            if (checkError) {
-                console.error("Auto-register check error:", checkError);
-                // Do NOT insert if error, assume safe side
-                return NextResponse.json({ success: false, error: checkError.message });
+            if (updateError) {
+                console.error('[API] Unbind error:', updateError);
+                return NextResponse.json({ success: false, error: `解除失敗: ${updateError.message}` }, { status: 500 });
             }
 
-            if (!exists && leaderId) {
-                await adminSupabase.from('leaderbinding').insert({
-                    '所屬波段': targetWave,
-                    '團主 ID': targetLeaderId,
-                    '團主名稱': leaderName || '團購主',
-                    '綁定時間': new Date().toISOString(),
-                    '已啟用商品名單': ""
-                });
-            }
-            return NextResponse.json({ success: true });
+            console.log(`[API] Leader unbound: ${boundRow.Username} (was ${verifiedUserId})`);
+            return NextResponse.json({ success: true, unboundStation: boundRow.Username });
         }
 
         return NextResponse.json({ success: false, error: "Unknown action" });
