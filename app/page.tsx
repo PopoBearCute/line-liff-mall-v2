@@ -7,7 +7,7 @@ import { IGProductFeed } from "@/components/group-buy/ig-product-feed";
 import { StoriesBar } from "@/components/group-buy/stories-bar";
 import { StickyTabs } from "@/components/group-buy/sticky-tabs";
 
-import { SeedMode } from "@/components/group-buy/seed-mode";
+// [Seed Mode Removed] All features are now in LeaderManagementTab
 import Loading from "./loading";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -169,7 +169,7 @@ export default function GroupBuyPage() {
   const [leaderId, setLeaderId] = useState<string | null>(leaderIdFromUrl);
   const [leaderName, setLeaderName] = useState<string>("");
   const [leaderAvatar, setLeaderAvatar] = useState<string>(""); // New State
-  const [viewMode, setViewMode] = useState<'loading' | 'seed' | 'main' | 'select-leader'>(leaderIdFromUrl ? 'main' : 'loading');
+  const [viewMode, setViewMode] = useState<'loading' | 'main' | 'select-leader'>(leaderIdFromUrl ? 'main' : 'loading');
   const [activeWaves, setActiveWaves] = useState<ActiveWave[]>([]);
   const [cart, setCart] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -208,11 +208,7 @@ export default function GroupBuyPage() {
       const lId = urlParams.get('leaderId');
       const mode = urlParams.get('mode');
 
-      if (mode === 'seed') {
-        setViewMode('seed');
-        const targetId = lId || mockUserId;
-        loadData(targetId, targetId, 'Dev Tester', false);
-      } else if (!lId) {
+      if (!lId) {
         setViewMode('main');
         toast.error('請用 LINE 原生瀏覽器開啟');
       } else {
@@ -390,21 +386,7 @@ export default function GroupBuyPage() {
 
       // --- End Initialize ---
 
-      if (m === 'seed') {
-        setViewMode('seed');
-        // [Fix] In Seed Mode, the Leader is ALWAYS the current user.
-        // We override any persisted leaderId from other visits to "heal" contamination.
-        const selfId = profile.userId;
-
-        if (typeof window !== 'undefined') {
-          localStorage.setItem("liff_saved_leaderId", selfId);
-          sessionStorage.setItem("liff_saved_leaderId", selfId);
-        }
-
-        setLeaderId(selfId);
-        setLeaderName(profile.displayName);
-        loadData(selfId, selfId, profile.displayName, false);
-      } else if (!lId) {
+      if (!lId) {
         console.log('Missing leaderId, switching to Select Leader mode');
         setViewMode('select-leader');
       } else {
@@ -689,22 +671,9 @@ export default function GroupBuyPage() {
     const uid = userProfile?.userId || 'GUEST';
     const dname = userProfile?.displayName || 'Guest';
 
-    // If mode=seed, the user is a leader entering their own room
-    // [Bug #1 Fix] 不再「樂觀地」設定 isLeader，
-    // 改由 API 查詢 GroupLeaders 資料表後統一決定
-    if (mode === 'seed') {
-      sessionStorage.setItem("liff_saved_mode", mode);
-    }
-
     setIsLoading(true);
     await loadData(selectedLeaderId, uid, dname, true);
     setViewMode('main');
-
-    // If leader, auto-switch to management tab
-    // (isLeader 已由 loadData → API 回傳值正確設定)
-    if (mode === 'seed') {
-      setActiveTab(2);
-    }
   };
 
   const handleHome = () => {
@@ -718,6 +687,7 @@ export default function GroupBuyPage() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem("liff_saved_leaderId");
       sessionStorage.removeItem("liff_saved_leaderId");
+      sessionStorage.removeItem("liff_saved_mode"); // [Bug #4 Fix] 防止殭屍跳轉
 
       const url = new URL(window.location.href);
       url.searchParams.delete('leaderId');
@@ -1159,18 +1129,7 @@ export default function GroupBuyPage() {
     });
 
   if (viewMode === 'loading') return <Loading />;
-  if (viewMode === 'seed') return (
-    <SeedMode
-      onEnterShop={() => setViewMode('main')}
-      onShareCollecting={() => handleShare('collecting')}
-      onShareActive={() => handleShare('active')}
-      userName={userProfile?.displayName || leaderName}
-      collectingCount={collectingProducts.length}
-      activeCount={activeProducts.length}
-      products={[...activeProducts, ...collectingProducts]}
-      onRemoveVoter={handleRemoveVoter}
-    />
-  );
+  // [Seed Mode Removed] — viewMode === 'seed' no longer exists
 
   if (viewMode === 'select-leader') {
     return <LeaderSelector onSelect={handleLeaderSelect} lineUserId={userProfile?.userId} />;

@@ -74,7 +74,7 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
 
       if (existingLeader) {
         toast.success("歡迎回來，團購主！");
-        onSelect(existingLeader.Username, "seed");
+        onSelect(existingLeader.Username);
       } else {
         setShowBindDialog(true);
       }
@@ -91,7 +91,7 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
 
   const handleBindSuccess = (username: string) => {
     setShowBindDialog(false);
-    onSelect(username, "seed");
+    onSelect(username);
   };
 
   useEffect(() => {
