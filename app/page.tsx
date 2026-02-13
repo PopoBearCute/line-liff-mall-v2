@@ -952,7 +952,18 @@ export default function GroupBuyPage() {
       const validWaves = activeWaves.filter((w: ActiveWave) => w.phase !== 'closed');
 
       const collectingProds = validWaves.filter((w: ActiveWave) => w.phase === 'collecting').flatMap((w: ActiveWave) => w.products);
-      const activeProds = validWaves.filter((w: ActiveWave) => w.phase === 'active').flatMap((w: ActiveWave) => w.products);
+
+      // [Fix] Filter active products by enabled status (using snapshot for stability)
+      const activeProds = validWaves
+        .filter((w: ActiveWave) => w.phase === 'active')
+        .flatMap((w: ActiveWave) => w.products)
+        .filter((p: Product) => {
+          // If we have a snapshot, use it. Otherwise fall back to product property.
+          const isEnabled = enabledStatusSnapshot[p.name] !== undefined
+            ? enabledStatusSnapshot[p.name]
+            : (p.isEnabled === true || String(p.isEnabled).toLowerCase() === 'true' || Number(p.isEnabled) === 1);
+          return isEnabled;
+        });
 
       let candidateProducts: Product[] = [];
 
