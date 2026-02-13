@@ -137,6 +137,7 @@ export function LeaderBindDialog({
                             站號
                         </label>
                         <Input
+                            type="password"
                             placeholder="例如：D6146"
                             value={stationCode}
                             onChange={(e) => {
@@ -158,7 +159,8 @@ export function LeaderBindDialog({
                             工號
                         </label>
                         <Input
-                            placeholder="例如：810584"
+                            type="password"
+                            placeholder="例如：251025"
                             value={employeeId}
                             onChange={(e) => {
                                 const val = e.target.value.replace(/\D/g, "");
