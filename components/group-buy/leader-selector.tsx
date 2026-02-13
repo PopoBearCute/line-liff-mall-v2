@@ -45,7 +45,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 }
 
-export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
+export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }: LeaderSelectorProps) {
   const [leaders, setLeaders] = useState<Leader[]>([]);
   const [filteredLeaders, setFilteredLeaders] = useState<Leader[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
