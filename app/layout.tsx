@@ -9,11 +9,11 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: '團購主管理工具',
-  description: '專業團購管理助手：輕鬆管理商品進度、一鍵分享圖卡，讓您的開團操作更直覺、高效！',
+  title: '行動商城團購網',
+  description: '中油PAY行動商城團購網：輕鬆揪團、一鍵下單，享受最優惠的團購體驗！',
   openGraph: {
-    title: '團購主管理工具',
-    description: '專業團購管理助手：輕鬆管理商品進度、一鍵分享圖卡，讓您的開團操作更直覺、高效！',
+    title: '行動商城團購網',
+    description: '中油PAY行動商城團購網：輕鬆揪團、一鍵下單，享受最優惠的團購體驗！',
     images: [
       {
         url: 'https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png', // Temporary placeholder for reliable display
@@ -27,19 +27,18 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
+        url: '/mall-icon.png',
+        sizes: '32x32',
+        type: 'image/png',
       },
       {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
+        url: '/mall-icon.png',
+        sizes: '192x192',
+        type: 'image/png',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: '/mall-icon.png',
+    shortcut: '/mall-icon.png',
   },
 }
 
