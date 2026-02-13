@@ -437,10 +437,18 @@ export async function POST(request: Request) {
                 return NextResponse.json({ success: false, error: `身分驗證錯誤: ${verifiedUserId.replace('ERROR:', '')}` }, { status: 401 });
             }
 
-            const isLeaderAuthValid = verifiedUserId === cleanLeaderId;
+            // Security Check: Verify Leader Identity (Match Username + LineID)
+            const { data: leaderRow } = await adminSupabase
+                .from('GroupLeaders')
+                .select('Username, LineID')
+                .eq('Username', cleanLeaderId)
+                .eq('LineID', verifiedUserId)
+                .maybeSingle();
+
+            const isLeaderAuthValid = !!leaderRow;
 
             if (!isLeaderAuthValid) {
-                console.error(`[API Auth] 團主驗證失敗. Verified: ${verifiedUserId}, Expected Leader: ${cleanLeaderId}`);
+                console.error(`[API Auth] 團主驗證失敗 (不符綁定關係). User UID: ${verifiedUserId}, Target Station: ${cleanLeaderId}`);
                 return NextResponse.json({ success: false, error: "權限不足：您的身分不符 (Leader Auth Mismatch)" }, { status: 403 });
             }
 
@@ -513,9 +521,18 @@ export async function POST(request: Request) {
                 return NextResponse.json({ success: false, error: `身分驗證錯誤: ${verifiedUserId.replace('ERROR:', '')}` }, { status: 401 });
             }
 
-            const isAutoAuthValid = verifiedUserId === cleanLeaderId || verifiedUserId === cleanUserId;
+            // Security Check: Leader check (via GroupLeaders) OR User check (Self)
+            const { data: leaderCheckRow } = await adminSupabase
+                .from('GroupLeaders')
+                .select('Username, LineID')
+                .eq('Username', cleanLeaderId)
+                .eq('LineID', verifiedUserId)
+                .maybeSingle();
+
+            const isAutoAuthValid = !!leaderCheckRow || verifiedUserId === cleanUserId;
 
             if (!isAutoAuthValid) {
+                console.error(`[API Auth] 自動註冊驗證失敗. User: ${verifiedUserId}, Target Leader: ${cleanLeaderId}, Target User: ${cleanUserId}`);
                 return NextResponse.json({ success: false, error: "自動註冊失敗：身分驗證不符" }, { status: 403 });
             }
 
