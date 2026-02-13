@@ -152,16 +152,16 @@ export function ProductForm({ initialData, onSave, onCancel }: ProductFormProps)
                 <div className="space-y-2">
                     <Label>選品開始時間</Label>
                     <Input
-                        type="datetime-local"
-                        value={formData["選品開始時間"]?.slice(0, 16) || ""}
+                        type="date"
+                        value={formData["選品開始時間"]?.slice(0, 10) || ""}
                         onChange={e => handleChange("選品開始時間", e.target.value)}
                     />
                 </div>
                 <div className="space-y-2">
                     <Label>選品結束時間</Label>
                     <Input
-                        type="datetime-local"
-                        value={formData["選品結束時間"]?.slice(0, 16) || ""}
+                        type="date"
+                        value={formData["選品結束時間"]?.slice(0, 10) || ""}
                         onChange={e => handleChange("選品結束時間", e.target.value)}
                     />
                 </div>
@@ -172,16 +172,16 @@ export function ProductForm({ initialData, onSave, onCancel }: ProductFormProps)
                 <div className="space-y-2">
                     <Label>販售開始時間</Label>
                     <Input
-                        type="datetime-local"
-                        value={formData["販售開始時間"]?.slice(0, 16) || ""}
+                        type="date"
+                        value={formData["販售開始時間"]?.slice(0, 10) || ""}
                         onChange={e => handleChange("販售開始時間", e.target.value)}
                     />
                 </div>
                 <div className="space-y-2">
                     <Label>販售結束時間</Label>
                     <Input
-                        type="datetime-local"
-                        value={formData["販售結束時間"]?.slice(0, 16) || ""}
+                        type="date"
+                        value={formData["販售結束時間"]?.slice(0, 10) || ""}
                         onChange={e => handleChange("販售結束時間", e.target.value)}
                     />
                 </div>

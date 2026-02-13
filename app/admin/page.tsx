@@ -90,10 +90,16 @@ export default function AdminPage() {
         setIsLoading(true);
         try {
             // Helper to parse date string to ISO or null
+            // Helper to parse date string to ISO or null (Forces 00:00:00 Local/Taiwan Time)
             const toIso = (val: string) => {
                 if (!val) return null;
                 const d = new Date(val);
-                return isNaN(d.getTime()) ? null : d.toISOString();
+                if (isNaN(d.getTime())) return null;
+
+                // Force time to 00:00:00.000
+                d.setHours(0, 0, 0, 0);
+
+                return d.toISOString();
             };
 
             // Transform to Supabase Schema
