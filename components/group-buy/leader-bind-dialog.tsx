@@ -137,8 +137,7 @@ export function LeaderBindDialog({
                             站號
                         </label>
                         <Input
-                            type="password"
-                            placeholder="例如：D6146"
+                            placeholder="例如：D12345"
                             value={stationCode}
                             onChange={(e) => {
                                 setStationCode(e.target.value.toUpperCase());
@@ -159,8 +158,7 @@ export function LeaderBindDialog({
                             工號
                         </label>
                         <Input
-                            type="password"
-                            placeholder="例如：251025"
+                            placeholder="例如：123456"
                             value={employeeId}
                             onChange={(e) => {
                                 const val = e.target.value.replace(/\D/g, "");
