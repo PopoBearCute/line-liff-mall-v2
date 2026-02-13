@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, MapPin, Fuel } from "lucide-react";
+import { Search, MapPin, Fuel, Smartphone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -373,6 +373,38 @@ export function LeaderSelector({ onSelect, lineUserId }: LeaderSelectorProps) {
             </Button>
           </div>
         )}
+      </div>
+
+      {/* App Download Footer */}
+      <div className="mt-8 mb-12 px-4 py-6 bg-slate-50/80 rounded-3xl border border-slate-100 backdrop-blur-sm">
+        <div className="flex items-center gap-3 mb-4 justify-center">
+          <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+            <Smartphone className="h-6 w-6" />
+          </div>
+          <div className="text-left">
+            <h3 className="font-bold text-slate-800 text-lg leading-tight">還沒安裝中油Pay嗎？</h3>
+            <p className="text-xs text-slate-500 font-medium">現在下載，享受更便利的服務</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <a
+            href="https://play.google.com/store/apps/details?id=com.cpc.cpcpay&hl=zh_TW&pli=1"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center h-11 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-colors shadow-lg shadow-slate-200"
+          >
+            <span className="text-xs font-bold">Google Play</span>
+          </a>
+          <a
+            href="https://apps.apple.com/tw/app/%E4%B8%AD%E6%B2%B9pay/id1475467410"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center h-11 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-colors shadow-lg shadow-slate-200"
+          >
+            <span className="text-xs font-bold">App Store</span>
+          </a>
+        </div>
       </div>
 
       {/* Leader Bind Dialog */}
