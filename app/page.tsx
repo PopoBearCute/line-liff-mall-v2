@@ -881,6 +881,7 @@ export default function GroupBuyPage() {
           "type": "box",
           "layout": "vertical",
           "contents": [
+            // Primary Action
             {
               "type": "button",
               "height": "sm",
@@ -891,7 +892,13 @@ export default function GroupBuyPage() {
                 "label": buttonLabel,
                 "uri": (isActivePhase && p.link) ? p.link : shareUrl
               }
-            }
+            },
+            // [New] Secondary Action Button
+            isActivePhase ?
+              // Active: Browse More (Blue)
+              { "type": "button", "height": "sm", "style": "secondary", "color": "#179CDE", "margin": "sm", "action": { "type": "uri", "label": "再去逛逛", "uri": shareUrl } } :
+              // Collecting: Share to Friend (Green)
+              { "type": "button", "height": "sm", "style": "secondary", "color": "#06C755", "margin": "sm", "action": { "type": "uri", "label": "推坑好友", "uri": `https://line.me/R/share?text=${encodeURIComponent(`${cleanName}\n\n${userProfile?.displayName || leaderName} 正在開團，快進來一起湊！\n${shareUrl}`)}` } }
           ]
         }
       };
@@ -1031,7 +1038,13 @@ export default function GroupBuyPage() {
             "type": "box",
             "layout": "vertical",
             "contents": [
-              { "type": "button", "height": "sm", "style": "primary", "color": "#E63946", "action": { "type": "uri", "label": buttonLabel, "uri": (isActivePhase && p.link) ? p.link : shareUrl } }
+              { "type": "button", "height": "sm", "style": "primary", "color": "#E63946", "action": { "type": "uri", "label": buttonLabel, "uri": (isActivePhase && p.link) ? p.link : shareUrl } },
+              // [New] Secondary Action Button
+              isActivePhase ?
+                // Active: Browse More (Blue)
+                { "type": "button", "height": "sm", "style": "secondary", "color": "#179CDE", "margin": "sm", "action": { "type": "uri", "label": "再去逛逛", "uri": shareUrl } } :
+                // Collecting: Share to Friend (Green)
+                { "type": "button", "height": "sm", "style": "secondary", "color": "#06C755", "margin": "sm", "action": { "type": "uri", "label": "推坑好友", "uri": `https://line.me/R/share?text=${encodeURIComponent(`${cleanName}\n\n${userProfile?.displayName || leaderName} 正在開團，快進來一起湊！\n${shareUrl}`)}` } }
             ]
           }
         };
