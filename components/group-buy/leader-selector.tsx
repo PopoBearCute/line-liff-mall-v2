@@ -80,7 +80,7 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
       } else {
         setShowBindDialog(true);
       }
-    }, 1500); // 1.5 seconds
+    }, 1000); // 1.0 seconds
   }, [lineUserId, onSelect]);
 
   const handleLongPressEnd = useCallback(() => {

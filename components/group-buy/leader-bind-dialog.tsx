@@ -142,30 +142,27 @@ export function LeaderBindDialog({
                 <div className="space-y-4 py-2">
                     {/* Station Code */}
                     <div>
-                        <label className="text-xs font-bold text-slate-600 mb-1.5 block">
+                        <label className="text-xs font-bold text-slate-600 mb-1.5 block text-center">
                             站號
                         </label>
-                        <div className="relative">
-                            <div className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 select-none">
-                                D
-                            </div>
+                        <div className="flex items-center justify-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-100 focus-within:border-blue-500/30 transition-colors">
+                            <span className="text-2xl font-black text-blue-600 select-none">D</span>
                             <Input
-                                className="pl-7 h-12 rounded-xl text-center text-lg font-bold tracking-widest border-slate-200 focus-visible:ring-blue-500/30 uppercase"
-                                placeholder="1234"
+                                className="w-32 h-12 bg-transparent border-none text-2xl font-black tracking-[0.2em] focus-visible:ring-0 uppercase placeholder:text-slate-200"
+                                placeholder="0100"
                                 value={stationCode}
                                 maxLength={4}
                                 inputMode="text"
                                 onChange={(e) => {
-                                    // Allow numbers and letters
                                     const val = e.target.value.replace(/[^0-9a-zA-Z]/g, "");
-                                    setStationCode(val.toUpperCase()); // Auto upper case
+                                    setStationCode(val.toUpperCase());
                                     setError("");
                                 }}
                                 disabled={isSubmitting}
                             />
                         </div>
                         {stationCode && !stationCodeValid && (
-                            <p className="text-xs text-amber-500 mt-1">需為4位英數字</p>
+                            <p className="text-xs text-amber-500 mt-1 text-center">需為4位英數字</p>
                         )}
                     </div>
 
