@@ -40,7 +40,7 @@ export function LeaderBindDialog({
 
     // Validation
     const stationCodeValid = /^[0-9A-Za-z]{3,6}$/.test(stationCode); // Allow 3-6 alphanumeric
-    const employeeIdValid = /^[0-9A-Za-z-]{1,20}$/.test(employeeId); // Allow 1-20 alphanumeric + hyphen
+    const employeeIdValid = /^\d{4,8}$/.test(employeeId); // Numeric 4-8 digits
     const canSubmit = stationCode.length > 0 && employeeId.length > 0;
 
     const handleSubmit = async () => {
@@ -51,7 +51,7 @@ export function LeaderBindDialog({
             return;
         }
         if (!employeeIdValid) {
-            setError("工號格式不正確（1~20位英數字）");
+            setError("工號格式不正確（4~8位數字）");
             return;
         }
 
@@ -186,17 +186,17 @@ export function LeaderBindDialog({
                             placeholder="例如：123456"
                             value={employeeId}
                             onChange={(e) => {
-                                const val = e.target.value.replace(/[^0-9a-zA-Z-]/g, "");
+                                const val = e.target.value.replace(/\D/g, "");
                                 setEmployeeId(val);
                                 setError("");
                             }}
                             className="h-12 rounded-xl text-center text-lg font-bold tracking-widest border-slate-200 focus-visible:ring-blue-500/30"
-                            maxLength={20}
-                            inputMode="text"
+                            maxLength={8}
+                            inputMode="numeric"
                             disabled={isSubmitting}
                         />
                         {employeeId && !employeeIdValid && (
-                            <p className="text-xs text-amber-500 mt-1">1~20位英數字</p>
+                            <p className="text-xs text-amber-500 mt-1">4~8位數字</p>
                         )}
                     </div>
 
