@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 interface ProductFormData {
-    WaveID: number;
+    WaveID: string;
     "商品名稱": string;
     "原價": number;
     "團購價": number;
@@ -29,7 +29,7 @@ interface ProductFormProps {
 
 export function ProductForm({ initialData, onSave, onCancel }: ProductFormProps) {
     const [formData, setFormData] = useState<ProductFormData>({
-        WaveID: 1,
+        WaveID: "1",
         "商品名稱": "",
         "原價": 0,
         "團購價": 0,
@@ -67,9 +67,9 @@ export function ProductForm({ initialData, onSave, onCancel }: ProductFormProps)
                 <div className="space-y-2">
                     <Label>波段 (WaveID)</Label>
                     <Input
-                        type="number"
+                        type="text"
                         value={formData.WaveID}
-                        onChange={e => handleChange("WaveID", Number(e.target.value))}
+                        onChange={e => handleChange("WaveID", e.target.value)}
                         required
                     />
                 </div>

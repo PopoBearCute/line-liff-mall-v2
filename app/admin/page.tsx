@@ -17,7 +17,7 @@ import {
 
 interface Product {
     // id: number; // Removed as determined by debug script
-    "WaveID": number;
+    "WaveID": string;
     "商品名稱": string;
     "原價": number;
     "團購價": number;
@@ -39,7 +39,7 @@ export default function AdminPage() {
     // Edit/Add Modal State
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-    const [originalKey, setOriginalKey] = useState<{ wave: number, name: string } | null>(null);
+    const [originalKey, setOriginalKey] = useState<{ wave: string, name: string } | null>(null);
 
     // 1. PIN Auth
     const handleLogin = async (e: React.FormEvent) => {
@@ -86,7 +86,7 @@ export default function AdminPage() {
     };
 
     // 3. Batch Import
-    const handleBatchImport = async (parsedItems: { wave: number; name: string; origPrice: number; price: number; moq: number; img: string; desc: string; link: string; wishStart: string; wishEnd: string; saleStart: string; saleEnd: string }[]) => {
+    const handleBatchImport = async (parsedItems: { wave: string; name: string; origPrice: number; price: number; moq: number; img: string; desc: string; link: string; wishStart: string; wishEnd: string; saleStart: string; saleEnd: string }[]) => {
         setIsLoading(true);
         try {
             // Helper to parse date string to ISO or null
@@ -104,7 +104,7 @@ export default function AdminPage() {
 
             // Transform to Supabase Schema
             const rows = parsedItems.map(p => ({
-                "WaveID": Number(p.wave),
+                "WaveID": String(p.wave).trim(),
                 "商品名稱": p.name,
                 "原價": p.origPrice,
                 "團購價": p.price,
@@ -143,7 +143,7 @@ export default function AdminPage() {
     };
 
     // 4. Delete
-    const handleDelete = async (waveId: number, name: string) => {
+    const handleDelete = async (waveId: string, name: string) => {
         if (!confirm(`確定要刪除 [${name}] 嗎？`)) return;
 
         try {

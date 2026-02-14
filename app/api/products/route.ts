@@ -346,7 +346,7 @@ export async function POST(request: Request) {
                 return NextResponse.json({ success: false, error: "身分驗證失敗，請嘗試在本機重新整理或在手機重新登入" }, { status: 403 });
             }
 
-            const targetWave = Number(wave);
+            const targetWave = String(wave).trim();
             const targetUserId = String(userId).trim();
             // --- USE CLEAN LEADER ID ---
             const targetLeaderId = cleanLeaderId;
