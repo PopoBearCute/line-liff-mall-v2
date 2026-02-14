@@ -150,18 +150,19 @@ export async function GET(request: Request) {
         // 舊邏輯（錯誤）：leaderId === userId → 永遠 false，因為兩者是不同概念的 ID
         let isLeader = false;
         if (leaderId && userId) {
-            // [Fix] leaderId might be "D12345-123456" (Station-Employee)
-            // We need to extract the station part "D12345" to match the GroupLeaders.Username column
-            const stationPart = String(leaderId).split('-')[0].trim();
+            // [Fix] leaderId is "D12345-123456" (Station-Employee)
+            // GroupLeaders.Username stores the FULL string "D12345-123456"
+            // DO NOT SPLIT IT.
+            const targetUsername = String(leaderId).trim();
             const { data: leaderRow } = await supabaseInternal
                 .from('GroupLeaders')
                 .select('Username, LineID')
-                .eq('Username', stationPart)
+                .eq('Username', targetUsername)
                 .eq('LineID', String(userId).trim())
                 .maybeSingle();
 
             isLeader = !!leaderRow;
-            console.log(`[API GET] isLeader check: Username="${stationPart}", LineID="${userId}" → ${isLeader}`);
+            console.log(`[API GET] isLeader check: Username="${targetUsername}", LineID="${userId}" → ${isLeader}`);
         }
         let leaderName = '團購主';
         let leaderAvatar = '';
