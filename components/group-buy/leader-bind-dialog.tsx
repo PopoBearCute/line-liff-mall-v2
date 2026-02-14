@@ -67,24 +67,17 @@ export function LeaderBindDialog({
             // 1. Check Station Code (Prepend 'D' automatically)
             const fullStationCode = `D${stationCode}`;
 
-            const { data: stationData, error: stationError } = await supabase
-                .from("StationList")
-                .select("StationID")
-                .eq("StationCode", fullStationCode)
-                .single();
+            // Skip StationList check as the table does not exist
 
-            if (stationError || !stationData) {
-                setError("找不到此站號，請檢查是否正確");
-                setIsSubmitting(false);
-                return;
-            }
 
             // 2. Check if this username exists in GroupLeaders
+            // Username format in DB is "D[Station]-[EmployeeID]" (e.g., D0100-107930)
+            const targetUsername = `D${stationCode.toUpperCase()}-${employeeId}`;
+
             const { data: leader, error: fetchError } = await supabase
                 .from("GroupLeaders")
-                .select("id, Username, EmployeeID, LineID, 團主名稱")
-                .eq("Username", fullStationCode)
-                .eq("EmployeeID", employeeId)
+                .select("id, Username, LineID, 團主名稱")
+                .eq("Username", targetUsername)
                 .single();
 
             if (fetchError || !leader) {
@@ -108,8 +101,7 @@ export function LeaderBindDialog({
                     avatar_url: userAvatar || "", // [New] Update avatar
                     "暱稱": displayName || ""      // [New] Update nickname
                 })
-                .eq("Username", fullStationCode) // Use full station code with D prefix
-                .eq("EmployeeID", employeeId);
+                .eq("Username", targetUsername);
 
             if (updateError) {
                 console.error("Bind error:", updateError);
