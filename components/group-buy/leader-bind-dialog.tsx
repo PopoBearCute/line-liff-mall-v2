@@ -55,7 +55,7 @@ export function LeaderBindDialog({
             return;
         }
 
-        const username = `${stationCode.toUpperCase()}-${employeeId}`;
+        const username = `D${stationCode.toUpperCase()}-${employeeId}`;
         setIsSubmitting(true);
 
         try {
@@ -205,7 +205,7 @@ export function LeaderBindDialog({
                         <div className="text-center py-2 px-4 bg-slate-50 rounded-xl">
                             <span className="text-xs text-slate-400">將比對：</span>
                             <span className="ml-2 font-mono font-bold text-slate-700">
-                                {stationCode.toUpperCase()}-{employeeId}
+                                D{stationCode.toUpperCase()}-{employeeId}
                             </span>
                         </div>
                     )}
