@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { LeaderSelector } from "@/components/group-buy/leader-selector";
 import { LeaderManagementTab } from "@/components/group-buy/leader-management-tab";
+import { supabase } from "@/lib/supabase";
 
 const API_URL = "/api/products";
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2008798234-72bJqeYx";
@@ -1266,7 +1267,11 @@ export default function GroupBuyPage() {
               userName={userProfile?.displayName || leaderName}
               lineUserId={userProfile?.userId}
               // [Fix] Calculate ENABLED counts for the buttons to reflect actual "on sale" items
-              collectingCount={collectingProducts.filter(p => enabledStatusSnapshot[p.name] !== undefined ? enabledStatusSnapshot[p.name] : (p.isEnabled === true || String(p.isEnabled).toLowerCase() === 'true' || Number(p.isEnabled) === 1)).length}
+              // [Fix] Collecting products are shared by default (all available), so pass RAW count
+              collectingCount={collectingProducts.length}
+              // Active products require enabling, so keep using enabled count (or use raw if we want to show '0 enabled')
+              // For now, keep activeCount as enabled-only to reflect "Shareable" count, or change to raw?
+              // User specifically asked about "Collecting" (Pre-order). Let's fix Collecting first.
               activeCount={activeProducts.filter(p => enabledStatusSnapshot[p.name] !== undefined ? enabledStatusSnapshot[p.name] : (p.isEnabled === true || String(p.isEnabled).toLowerCase() === 'true' || Number(p.isEnabled) === 1)).length}
               products={[...activeProducts, ...collectingProducts]}
               onShareCollecting={() => handleShare('collecting')}
