@@ -39,7 +39,7 @@ export function LeaderBindDialog({
     const [error, setError] = useState("");
 
     // Validation
-    const stationCodeValid = /^[0-9A-Za-z]{3,6}$/.test(stationCode); // Allow 3-6 alphanumeric
+    const stationCodeValid = /^[0-9A-Za-z]{4}$/.test(stationCode); // Allow exactly 4 alphanumeric
     const employeeIdValid = /^\d{4,8}$/.test(employeeId); // Numeric 4-8 digits
     const canSubmit = stationCode.length > 0 && employeeId.length > 0;
 
@@ -47,7 +47,7 @@ export function LeaderBindDialog({
         setError("");
 
         if (!stationCodeValid) {
-            setError("站號格式不正確（3~6位英數字）");
+            setError("站號格式不正確（需為4位英數字）");
             return;
         }
         if (!employeeIdValid) {
@@ -159,9 +159,9 @@ export function LeaderBindDialog({
                             </div>
                             <Input
                                 className="pl-7 h-12 rounded-xl text-center text-lg font-bold tracking-widest border-slate-200 focus-visible:ring-blue-500/30 uppercase"
-                                placeholder="12345"
+                                placeholder="1234"
                                 value={stationCode}
-                                maxLength={6}
+                                maxLength={4}
                                 inputMode="text"
                                 onChange={(e) => {
                                     // Allow numbers and letters
@@ -173,7 +173,7 @@ export function LeaderBindDialog({
                             />
                         </div>
                         {stationCode && !stationCodeValid && (
-                            <p className="text-xs text-amber-500 mt-1">3~6位英數字</p>
+                            <p className="text-xs text-amber-500 mt-1">需為4位英數字</p>
                         )}
                     </div>
 
