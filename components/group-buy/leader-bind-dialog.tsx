@@ -39,8 +39,8 @@ export function LeaderBindDialog({
     const [error, setError] = useState("");
 
     // Validation
-    const stationCodeValid = /^\d{5,6}$/.test(stationCode); // Expecting 5-6 digits after D
-    const employeeIdValid = /^\d{4,8}$/.test(employeeId);
+    const stationCodeValid = /^[0-9A-Za-z]{3,6}$/.test(stationCode); // Allow 3-6 alphanumeric
+    const employeeIdValid = /^[0-9A-Za-z-]{1,20}$/.test(employeeId); // Allow 1-20 alphanumeric + hyphen
     const canSubmit = stationCode.length > 0 && employeeId.length > 0;
 
     const handleSubmit = async () => {
@@ -51,7 +51,7 @@ export function LeaderBindDialog({
             return;
         }
         if (!employeeIdValid) {
-            setError("工號格式不正確（4~8位數字）");
+            setError("工號格式不正確（1~20位英數字）");
             return;
         }
 
@@ -161,19 +161,19 @@ export function LeaderBindDialog({
                                 className="pl-7 h-12 rounded-xl text-center text-lg font-bold tracking-widest border-slate-200 focus-visible:ring-blue-500/30 uppercase"
                                 placeholder="12345"
                                 value={stationCode}
-                                maxLength={5}
-                                inputMode="numeric"
+                                maxLength={6}
+                                inputMode="text"
                                 onChange={(e) => {
-                                    // Allow only numbers
-                                    const val = e.target.value.replace(/\D/g, "");
-                                    setStationCode(val);
+                                    // Allow numbers and letters
+                                    const val = e.target.value.replace(/[^0-9a-zA-Z]/g, "");
+                                    setStationCode(val.toUpperCase()); // Auto upper case
                                     setError("");
                                 }}
                                 disabled={isSubmitting}
                             />
                         </div>
                         {stationCode && !stationCodeValid && (
-                            <p className="text-xs text-amber-500 mt-1">3~5位數字</p>
+                            <p className="text-xs text-amber-500 mt-1">3~6位英數字</p>
                         )}
                     </div>
 
@@ -186,17 +186,17 @@ export function LeaderBindDialog({
                             placeholder="例如：123456"
                             value={employeeId}
                             onChange={(e) => {
-                                const val = e.target.value.replace(/\D/g, "");
+                                const val = e.target.value.replace(/[^0-9a-zA-Z-]/g, "");
                                 setEmployeeId(val);
                                 setError("");
                             }}
                             className="h-12 rounded-xl text-center text-lg font-bold tracking-widest border-slate-200 focus-visible:ring-blue-500/30"
-                            maxLength={8}
-                            inputMode="numeric"
+                            maxLength={20}
+                            inputMode="text"
                             disabled={isSubmitting}
                         />
                         {employeeId && !employeeIdValid && (
-                            <p className="text-xs text-amber-500 mt-1">4~8位數字</p>
+                            <p className="text-xs text-amber-500 mt-1">1~20位英數字</p>
                         )}
                     </div>
 
