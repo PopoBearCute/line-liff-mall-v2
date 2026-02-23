@@ -59,58 +59,38 @@ export function LeaderBindDialog({
         setIsSubmitting(true);
 
         try {
-            if (!supabase) {
-                toast.error("系統錯誤：無法連接資料庫");
+            const idToken = window.liff?.getIDToken();
+            if (!idToken) {
+                toast.error("無法取得登入驗證碼，請確認是否已登入 LINE");
+                setIsSubmitting(false);
                 return;
             }
 
-            // 1. Check Station Code (Prepend 'D' automatically)
+            const payload = {
+                action: 'bind_leader',
+                stationCode,
+                employeeId,
+                lineUserId,
+                userAvatar,
+                displayName,
+                idToken
+            };
+
+            const res = await fetch("/api/products", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const resData = await res.json();
+
+            if (!res.ok || !resData.success) {
+                setError(resData.error || "綁定失敗，請稍後再試");
+                setIsSubmitting(false);
+                return;
+            }
+
             const fullStationCode = `D${stationCode}`;
-
-            // Skip StationList check as the table does not exist
-
-
-            // 2. Check if this username exists in GroupLeaders
-            // Username format in DB is "D[Station]-[EmployeeID]" (e.g., D0100-107930)
-            const targetUsername = `D${stationCode.toUpperCase()}-${employeeId}`;
-
-            const { data: leader, error: fetchError } = await supabase
-                .from("GroupLeaders")
-                .select("id, Username, LineID, 團主名稱")
-                .eq("Username", targetUsername)
-                .single();
-
-            if (fetchError || !leader) {
-                setError(`查無此站號工號組合「${fullStationCode}-${employeeId}」，請確認後重試`);
-                setIsSubmitting(false);
-                return;
-            }
-
-            // 2. Check if another person already bound to this leader
-            if (leader.LineID && leader.LineID !== lineUserId) {
-                setError("此站號工號已被其他帳號綁定，請聯絡管理員");
-                setIsSubmitting(false);
-                return;
-            }
-
-            // 3. Bind: write LineID
-            const { error: updateError } = await supabase
-                .from("GroupLeaders")
-                .update({
-                    LineID: lineUserId,
-                    avatar_url: userAvatar || "", // [New] Update avatar
-                    "暱稱": displayName || ""      // [New] Update nickname
-                })
-                .eq("Username", targetUsername);
-
-            if (updateError) {
-                console.error("Bind error:", updateError);
-                setError("綁定失敗，請稍後再試");
-                setIsSubmitting(false);
-                return;
-            }
-
-            toast.success(`綁定成功！歡迎，${leader.團主名稱}`);
+            toast.success(`綁定成功！歡迎，${resData.leaderName || "團長"}`);
             onBindSuccess(`${fullStationCode}-${employeeId}`);
         } catch (err) {
             console.error("Unexpected bind error:", err);

@@ -526,6 +526,60 @@ export async function POST(request: Request) {
             }
         }
 
+        // --- Action: Bind Leader Identity ---
+        if (data.action === 'bind_leader') {
+            const { idToken, stationCode, employeeId, lineUserId, userAvatar, displayName } = data;
+
+            // Security Check: Verify LIFF Token
+            const verifiedUserId = await verifyLiffToken(idToken);
+            if (!verifiedUserId) {
+                return NextResponse.json({ success: false, error: "身分驗證失敗：無法取得 Token" }, { status: 401 });
+            }
+            if (verifiedUserId.startsWith('ERROR:')) {
+                return NextResponse.json({ success: false, error: `身分驗證錯誤: ${verifiedUserId.replace('ERROR:', '')}` }, { status: 401 });
+            }
+            if (verifiedUserId !== lineUserId) {
+                return NextResponse.json({ success: false, error: "身分驗證失敗：使用者 ID 不符" }, { status: 403 });
+            }
+
+            const targetUsername = `D${String(stationCode).toUpperCase()}-${String(employeeId)}`;
+
+            // 1. Check if this username exists in GroupLeaders
+            const { data: leaderRow, error: fetchError } = await adminSupabase
+                .from("GroupLeaders")
+                .select("*")
+                .eq("Username", targetUsername)
+                .maybeSingle();
+
+            const leader: any = leaderRow;
+
+            if (fetchError || !leader) {
+                return NextResponse.json({ success: false, error: `查無此站號工號組合「D${String(stationCode).toUpperCase()}-${employeeId}」，請確認後重試` }, { status: 400 });
+            }
+
+            // 2. Check if another person already bound to this leader
+            if (leader.LineID && leader.LineID !== verifiedUserId) {
+                return NextResponse.json({ success: false, error: "此站號工號已被其他帳號綁定，請聯絡管理員" }, { status: 400 });
+            }
+
+            // 3. Bind: write LineID
+            const { error: updateError } = await adminSupabase
+                .from("GroupLeaders")
+                .update({
+                    LineID: verifiedUserId,
+                    avatar_url: userAvatar || "",
+                    "暱稱": displayName || ""
+                })
+                .eq("id", leader.id);
+
+            if (updateError) {
+                console.error("Bind error:", updateError);
+                return NextResponse.json({ success: false, error: "綁定失敗，請稍後再試" }, { status: 500 });
+            }
+
+            return NextResponse.json({ success: true, leaderName: leader.團主名稱 });
+        }
+
         // --- Action: Unbind Leader Identity ---
         if (data.action === 'unbind_leader') {
             // Security Check: Verify LIFF Token
