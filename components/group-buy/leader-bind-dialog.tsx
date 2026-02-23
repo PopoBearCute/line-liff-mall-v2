@@ -124,11 +124,11 @@ export function LeaderBindDialog({
             <AlertDialogContent className="max-w-[340px] rounded-3xl border-none shadow-2xl">
                 <AlertDialogHeader>
                     <AlertDialogTitle className="text-center text-xl font-extrabold text-slate-800">
-                        🔐 團主身分綁定
+                        👉 開通您的商城團購
                     </AlertDialogTitle>
                     <AlertDialogDescription className="text-center text-slate-500 text-sm leading-relaxed">
-                        請輸入您的站號與工號完成身分驗證<br />
-                        <span className="text-xs text-slate-400">綁定後下次長按即可直接進入</span>
+                        輸入站代號與工號。<br />
+                        <span className="text-xs text-slate-400">開通後，長按商城 Logo 即可進入您的商店！</span>
                     </AlertDialogDescription>
                 </AlertDialogHeader>
 
@@ -136,7 +136,7 @@ export function LeaderBindDialog({
                     {/* Station Code */}
                     <div>
                         <label className="text-xs font-bold text-slate-600 mb-1.5 block text-center">
-                            站號
+                            站代號
                         </label>
                         <div className="flex items-center justify-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-100 focus-within:border-blue-500/30 transition-colors">
                             <span className="text-2xl font-black text-blue-600 select-none">D</span>
@@ -182,15 +182,7 @@ export function LeaderBindDialog({
                         )}
                     </div>
 
-                    {/* Combined preview */}
-                    {stationCode && employeeId && (
-                        <div className="text-center py-2 px-4 bg-slate-50 rounded-xl">
-                            <span className="text-xs text-slate-400">將比對：</span>
-                            <span className="ml-2 font-mono font-bold text-slate-700">
-                                D{stationCode.toUpperCase()}-{employeeId}
-                            </span>
-                        </div>
-                    )}
+
 
                     {/* Error message */}
                     {error && (
@@ -212,7 +204,7 @@ export function LeaderBindDialog({
                                 驗證中...
                             </>
                         ) : (
-                            "確認綁定"
+                            "進入你的團購商店"
                         )}
                     </Button>
                     <AlertDialogCancel
