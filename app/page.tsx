@@ -164,6 +164,7 @@ export default function GroupBuyPage() {
   console.log(`[Persistence Fix] Build Time: ${DEPLOY_TIMESTAMP}`);
   const leaderIdFromUrl = searchParams.get('leaderId');
   const previewMode = searchParams.get('mode'); // 'consumer' for testing
+  const initialScrollTarget = searchParams.get('scrollTo'); // [Deep Link] Get anchor from URL
 
   // State
   const [isLeader, setIsLeader] = useState(false);
@@ -921,7 +922,7 @@ export default function GroupBuyPage() {
               "action": {
                 "type": "uri",
                 "label": buttonLabel,
-                "uri": (isActivePhase && p.link) ? p.link : shareUrl
+                "uri": (isActivePhase && p.link) ? p.link : `${shareUrl}&scrollTo=${encodeURIComponent(p.name)}`
               }
             },
             // [New] Secondary Action Button
@@ -929,7 +930,7 @@ export default function GroupBuyPage() {
               // Active: Browse More (Blue)
               { "type": "button", "height": "sm", "style": "secondary", "color": "#179CDE", "margin": "sm", "action": { "type": "uri", "label": "再去逛逛", "uri": shareUrl } } :
               // Collecting: Share to Friend (Green)
-              { "type": "button", "height": "sm", "style": "secondary", "color": "#06C755", "margin": "sm", "action": { "type": "uri", "label": "傳給好友", "uri": `https://line.me/R/share?text=${encodeURIComponent(`${cleanName}\n\n${userProfile?.displayName || leaderName} 正在開團，快進來一起湊！\n${shareUrl}`)}` } }
+              { "type": "button", "height": "sm", "style": "secondary", "color": "#06C755", "margin": "sm", "action": { "type": "uri", "label": "傳給好友", "uri": `https://line.me/R/share?text=${encodeURIComponent(`${cleanName}\n\n${userProfile?.displayName || leaderName} 正在開團，快進來一起湊！\n${shareUrl}&scrollTo=${encodeURIComponent(p.name)}`)}` } }
           ]
         }
       };
@@ -1069,13 +1070,13 @@ export default function GroupBuyPage() {
             "type": "box",
             "layout": "vertical",
             "contents": [
-              { "type": "button", "height": "sm", "style": "primary", "color": "#E63946", "action": { "type": "uri", "label": buttonLabel, "uri": (isActivePhase && p.link) ? p.link : shareUrl } },
+              { "type": "button", "height": "sm", "style": "primary", "color": "#E63946", "action": { "type": "uri", "label": buttonLabel, "uri": (isActivePhase && p.link) ? p.link : `${shareUrl}&scrollTo=${encodeURIComponent(p.name)}` } },
               // [New] Secondary Action Button
               isActivePhase ?
                 // Active: Browse More (Blue)
                 { "type": "button", "height": "sm", "style": "secondary", "color": "#179CDE", "margin": "sm", "action": { "type": "uri", "label": "再去逛逛", "uri": shareUrl } } :
                 // Collecting: Share to Friend (Green)
-                { "type": "button", "height": "sm", "style": "secondary", "color": "#06C755", "margin": "sm", "action": { "type": "uri", "label": "傳給好友", "uri": `https://line.me/R/share?text=${encodeURIComponent(`${cleanName}\n\n${userProfile?.displayName || leaderName} 正在開團，快進來一起湊！\n${shareUrl}`)}` } }
+                { "type": "button", "height": "sm", "style": "secondary", "color": "#06C755", "margin": "sm", "action": { "type": "uri", "label": "傳給好友", "uri": `https://line.me/R/share?text=${encodeURIComponent(`${cleanName}\n\n${userProfile?.displayName || leaderName} 正在開團，快進來一起湊！\n${shareUrl}&scrollTo=${encodeURIComponent(p.name)}`)}` } }
             ]
           }
         };
@@ -1167,6 +1168,46 @@ export default function GroupBuyPage() {
       const rateB = (b.currentQty || 0) / Math.max(b.moq || 1, 1);
       return rateB - rateA;
     });
+
+  // [Deep Link] Handle Auto-Scrolling Once Data Loads
+  useEffect(() => {
+    if (!isLoading && activeWaves.length > 0 && initialScrollTarget) {
+      // 1. Give DOM a moment to render the newly populated products
+      setTimeout(() => {
+        const targetName = decodeURIComponent(initialScrollTarget);
+        const isActive = activeProducts.some(p => p.name === targetName);
+        const isCollecting = collectingProducts.some(p => p.name === targetName);
+
+        if (isActive || isCollecting) {
+          // Switch tab if necessary
+          const targetTab = isActive ? 0 : 1;
+          if (activeTab !== targetTab) {
+            setActiveTab(targetTab);
+          }
+
+          // Wait another tick for tab render, then scroll
+          setTimeout(() => {
+            const element = document.getElementById(targetName);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              element.classList.add('ring-4', 'ring-blue-500', 'ring-opacity-50', 'transition-all', 'duration-500');
+              setTimeout(() => {
+                element.classList.remove('ring-4', 'ring-blue-500', 'ring-opacity-50');
+              }, 2000);
+              toast.success("已自動為您跳轉至該商品");
+            }
+          }, 150);
+        } else {
+          toast.error("該商品目前已結束團購或不存在", { description: "您可以看看其他熱門商品！" });
+        }
+
+        // Clear the URL parameter so it doesn't trigger again on re-renders
+        const url = new URL(window.location.href);
+        url.searchParams.delete('scrollTo');
+        window.history.replaceState({}, '', url.toString());
+      }, 300);
+    }
+  }, [isLoading, activeWaves.length]);
 
   if (viewMode === 'loading') return <Loading />;
   // [Seed Mode Removed] — viewMode === 'seed' no longer exists
