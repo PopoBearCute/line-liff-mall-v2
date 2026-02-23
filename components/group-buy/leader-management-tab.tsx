@@ -203,8 +203,8 @@ export function LeaderManagementTab({
                     }}
                     disabled={collectingCount === 0}
                     className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all active:scale-95 ${collectingCount === 0
-                            ? "bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed"
-                            : "bg-white border-slate-200 text-slate-700 hover:bg-amber-50 hover:border-amber-200 shadow-sm"
+                        ? "bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-amber-50 hover:border-amber-200 shadow-sm"
                         }`}
                 >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${collectingCount === 0 ? "bg-slate-100" : "bg-amber-100"
@@ -213,10 +213,10 @@ export function LeaderManagementTab({
                     </div>
                     <div className="flex-1 text-left">
                         <p className="font-bold text-sm">
-                            {collectingCount === 0 ? "暫無可產生 DM 的商品" : "產生紙本登記表 (DM)"}
+                            {collectingCount === 0 ? "暫無可產生 DM 的商品" : "生成紙本商品型錄"}
                         </p>
                         {collectingCount > 0 && (
-                            <p className="text-xs text-slate-400 mt-0.5">列印 {collectingCount} 件許願登記中商品</p>
+                            <p className="text-xs text-slate-400 mt-0.5">宣傳 {collectingCount} 件許願登記中商品</p>
                         )}
                     </div>
                 </button>
