@@ -4,6 +4,7 @@ import "./dm-print.css";
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
 const API_URL = "/api/products";
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2008798234-72bJqeYx";
@@ -65,7 +66,21 @@ function DMContent() {
     const storeUrl = `https://liff.line.me/${LIFF_ID}?leaderId=${leaderId}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(storeUrl)}`;
 
-    const handlePrint = () => window.print();
+    const handleEmailLink = () => {
+        const subject = encodeURIComponent(`[列印清單] 商城團購 DM - ${leaderName}`);
+        const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+        const body = encodeURIComponent(`您好，\n\n請在電腦上開啟以下連結並執行列印，以製作紙本 DM：\n${currentUrl}\n\n(此連結由手機管理後台寄出)`);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    };
+
+    const handleCopyLink = () => {
+        const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+        navigator.clipboard.writeText(currentUrl).then(() => {
+            toast.success("網址已複製！");
+        }).catch(() => {
+            toast.error("複製失敗，請手動複製網址");
+        });
+    };
 
     // Google Drive image handler
     const getDisplayImg = (src: string) => {
@@ -108,13 +123,21 @@ function DMContent() {
         <>
             {/* Print Control Bar — hidden when printing */}
             <div className="no-print dm-toolbar">
-                <div>
+                <div className="dm-toolbar-info">
                     <h1 className="dm-toolbar-title">📄 紙本 DM 預覽</h1>
                     <p className="dm-toolbar-sub">{leaderName} · {products.length} 件商品</p>
                 </div>
-                <button onClick={handlePrint} className="dm-toolbar-btn">
-                    🖨️ 列印 / 存為 PDF
-                </button>
+                <div className="dm-toolbar-actions">
+                    <button onClick={handleEmailLink} className="dm-toolbar-btn dm-btn-primary">
+                        📧 寄送連結至信箱 (電腦列印)
+                    </button>
+                    <button onClick={handleCopyLink} className="dm-toolbar-btn dm-btn-secondary">
+                        🔗 複製網址
+                    </button>
+                </div>
+            </div>
+            <div className="no-print dm-toolbar-guide">
+                💡 手機無法直連印表機？請將網址寄到公務信箱，再從電腦開啟列印。
             </div>
 
             {/* === Printable DM Flyer === */}
@@ -128,7 +151,7 @@ function DMContent() {
                             <h1 className="dm-banner-title">行動商城團購優惠特報</h1>
                         </div>
                         <p className="dm-banner-leader">{leaderName} 為您嚴選</p>
-                        <p className="dm-banner-cta">📱 用 LINE 掃描 QR Code 立即線上選購 →</p>
+                        <p className="dm-banner-cta">掃描 QR Code 線上選購 →</p>
                     </div>
                     <div className="dm-banner-right">
                         <img src={qrCodeUrl} alt="QR Code" className="dm-banner-qr" />
