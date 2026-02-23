@@ -1,0 +1,343 @@
+/* ============================
+   紙本 DM 宣傳單樣式
+   ============================ */
+
+/* === Loading & Error States === */
+.dm-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: #64748b;
+  font-size: 15px;
+}
+
+.dm-spinner {
+  width: 32px;
+  height: 32px;
+  border: 4px solid #3b82f6;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dm-error-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+/* === Toolbar (screen only) === */
+.dm-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dm-toolbar-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.dm-toolbar-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 2px 0 0;
+}
+
+.dm-toolbar-btn {
+  padding: 8px 20px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.dm-toolbar-btn:hover {
+  background: #1d4ed8;
+}
+
+.dm-toolbar-btn:active {
+  transform: scale(0.97);
+}
+
+/* === Flyer Container === */
+.dm-flyer {
+  max-width: 210mm;
+  /* A4 width */
+  margin: 0 auto;
+  background: #fff;
+  padding: 60px 20px 20px;
+  /* top padding for toolbar on screen */
+}
+
+/* === Banner with QR === */
+.dm-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  border-bottom: 3px solid #005EB8;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+  border-radius: 10px 10px 0 0;
+}
+
+.dm-banner-left {
+  flex: 1;
+}
+
+.dm-banner-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dm-banner-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.dm-banner-title {
+  font-size: 28px;
+  font-weight: 900;
+  color: #005EB8;
+  margin: 0;
+  letter-spacing: 2px;
+}
+
+.dm-banner-leader {
+  font-size: 14px;
+  color: #334155;
+  margin: 4px 0 0;
+  font-weight: 600;
+}
+
+.dm-banner-cta {
+  font-size: 12px;
+  color: #64748b;
+  margin: 8px 0 0;
+  font-weight: 500;
+}
+
+.dm-banner-right {
+  flex-shrink: 0;
+  margin-left: 16px;
+  text-align: center;
+}
+
+.dm-banner-qr {
+  width: 88px;
+  height: 88px;
+  border: 2px solid #005EB8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+/* === Product Grid === */
+.dm-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 0 4px;
+}
+
+/* === Product Card === */
+.dm-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  background: #fff;
+  page-break-inside: avoid;
+}
+
+.dm-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 2;
+  letter-spacing: 0.5px;
+}
+
+.dm-card-img-wrap {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dm-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.dm-card-img-placeholder {
+  font-size: 36px;
+}
+
+.dm-card-body {
+  padding: 6px 8px 8px;
+}
+
+.dm-card-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 28px;
+}
+
+.dm-card-desc {
+  font-size: 9px;
+  color: #94a3b8;
+  margin: 2px 0 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dm-card-pricing {
+  margin-top: 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.dm-card-orig {
+  font-size: 9px;
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+.dm-card-price {
+  font-size: 16px;
+  font-weight: 900;
+  color: #dc2626;
+  line-height: 1;
+}
+
+.dm-card-price-dollar {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dm-card-moq {
+  font-size: 9px;
+  color: #64748b;
+  margin-top: 2px;
+  background: #f1f5f9;
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+
+
+/* ============================
+   Print-Specific Overrides
+   ============================ */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: #fff !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+
+  .dm-flyer {
+    padding: 0;
+    max-width: 100%;
+  }
+
+  .dm-banner {
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%) !important;
+  }
+
+  .dm-banner-title {
+    font-size: 22px;
+  }
+
+  .dm-banner-qr {
+    border: 2px solid #005EB8 !important;
+  }
+
+  .dm-grid {
+    gap: 6px;
+  }
+
+  .dm-card {
+    border: 1px solid #ccc;
+    page-break-inside: avoid;
+  }
+
+  .dm-badge {
+    background: #dc2626 !important;
+    color: #fff !important;
+  }
+
+
+
+  .dm-card-img {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

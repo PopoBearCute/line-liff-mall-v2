@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Share2, BarChart3, LogOut, ShieldOff, Home, Loader2 } from "lucide-react";
+import { Share2, BarChart3, LogOut, ShieldOff, Home, Loader2, Printer } from "lucide-react";
 import { OrderSummaryDrawer } from "./order-summary-drawer";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 interface LeaderManagementTabProps {
     userName?: string;
     lineUserId?: string;
+    leaderId?: string;
     collectingCount: number;
     activeCount: number;
     products: any[];
@@ -21,6 +22,7 @@ interface LeaderManagementTabProps {
 export function LeaderManagementTab({
     userName,
     lineUserId,
+    leaderId,
     collectingCount,
     activeCount,
     products,
@@ -190,6 +192,32 @@ export function LeaderManagementTab({
                     <div className="flex-1 text-left">
                         <p className="font-bold text-sm">查看團購統計與明細</p>
                         <p className="text-xs text-emerald-500 mt-0.5">訂單匯總、明細報表</p>
+                    </div>
+                </button>
+
+                {/* Print DM */}
+                <button
+                    onClick={() => {
+                        const dmUrl = `/dm?leaderId=${leaderId || ''}`;
+                        window.open(dmUrl, '_blank');
+                    }}
+                    disabled={collectingCount === 0}
+                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all active:scale-95 ${collectingCount === 0
+                            ? "bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed"
+                            : "bg-white border-slate-200 text-slate-700 hover:bg-amber-50 hover:border-amber-200 shadow-sm"
+                        }`}
+                >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${collectingCount === 0 ? "bg-slate-100" : "bg-amber-100"
+                        }`}>
+                        <Printer className={`h-5 w-5 ${collectingCount === 0 ? "text-slate-300" : "text-amber-600"}`} />
+                    </div>
+                    <div className="flex-1 text-left">
+                        <p className="font-bold text-sm">
+                            {collectingCount === 0 ? "暫無可產生 DM 的商品" : "產生紙本登記表 (DM)"}
+                        </p>
+                        {collectingCount > 0 && (
+                            <p className="text-xs text-slate-400 mt-0.5">列印 {collectingCount} 件許願登記中商品</p>
+                        )}
                     </div>
                 </button>
 

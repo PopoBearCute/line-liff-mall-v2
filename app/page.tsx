@@ -1266,6 +1266,7 @@ export default function GroupBuyPage() {
             <LeaderManagementTab
               userName={userProfile?.displayName || leaderName}
               lineUserId={userProfile?.userId}
+              leaderId={leaderId || undefined}
               // [Fix] Calculate ENABLED counts for the buttons to reflect actual "on sale" items
               // [Fix] Collecting products are shared by default (all available), so pass RAW count
               collectingCount={collectingProducts.length}
