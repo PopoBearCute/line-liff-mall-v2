@@ -40,7 +40,7 @@ export function LeaderBindDialog({
 
     // Validation
     const stationCodeValid = /^[0-9A-Za-z]{4}$/.test(stationCode); // Allow exactly 4 alphanumeric
-    const employeeIdValid = /^\d{4,8}$/.test(employeeId); // Numeric 4-8 digits
+    const employeeIdValid = /^\d{6}$/.test(employeeId); // Numeric exactly 6 digits
     const canSubmit = stationCode.length > 0 && employeeId.length > 0;
 
     const handleSubmit = async () => {
@@ -51,7 +51,7 @@ export function LeaderBindDialog({
             return;
         }
         if (!employeeIdValid) {
-            setError("工號格式不正確（4~8位數字）");
+            setError("工號格式不正確（需為6位數字）");
             return;
         }
 
@@ -123,25 +123,26 @@ export function LeaderBindDialog({
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent className="max-w-[340px] rounded-3xl border-none shadow-2xl">
                 <AlertDialogHeader>
-                    <AlertDialogTitle className="text-center text-xl font-extrabold text-slate-800">
-                        👉 開通您的商城團購
+                    <AlertDialogTitle className="text-center text-2xl font-extrabold text-slate-800 flex items-center justify-center gap-2">
+                        進入團購主管理頁面
                     </AlertDialogTitle>
-                    <AlertDialogDescription className="text-center text-slate-500 text-sm leading-relaxed">
-                        輸入站代號與工號。<br />
-                        <span className="text-xs text-slate-400">開通後，長按商城 Logo 即可進入您的商店！</span>
+                    <AlertDialogDescription className="text-center mt-3 flex flex-col gap-1.5">
+                        <span className="text-lg font-bold text-slate-700">輸入站代號與工號。</span>
+                        <span className="text-base font-medium text-slate-500">開通後，長按商城 Logo 即可進入您的商店！</span>
                     </AlertDialogDescription>
                 </AlertDialogHeader>
 
                 <div className="space-y-4 py-2">
                     {/* Station Code */}
                     <div>
-                        <label className="text-xs font-bold text-slate-600 mb-1.5 block text-center">
+                        <label className="text-sm font-bold text-slate-700 mb-2 block">
                             站代號
                         </label>
-                        <div className="flex items-center justify-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-100 focus-within:border-blue-500/30 transition-colors">
-                            <span className="text-2xl font-black text-blue-600 select-none">D</span>
+                        <div className="flex items-center justify-center bg-slate-50/80 rounded-2xl border border-slate-200 focus-within:border-blue-500/50 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all h-14">
+                            <span className="font-black font-sans text-blue-600 select-none tracking-[0.1em]" style={{ fontSize: '32px', fontWeight: 900, fontFamily: 'inherit' }}>D</span>
                             <Input
-                                className="w-32 h-12 bg-transparent border-none text-2xl font-black tracking-[0.2em] focus-visible:ring-0 uppercase placeholder:text-slate-200"
+                                className="w-[4.8ch] bg-transparent border-none font-black font-sans text-blue-600 tracking-[0.1em] focus-visible:ring-0 uppercase placeholder:text-blue-300/50 p-0 text-left"
+                                style={{ fontSize: '32px', fontWeight: 900, fontFamily: 'inherit' }}
                                 placeholder="0100"
                                 value={stationCode}
                                 maxLength={4}
@@ -155,13 +156,16 @@ export function LeaderBindDialog({
                             />
                         </div>
                         {stationCode && !stationCodeValid && (
-                            <p className="text-xs text-amber-500 mt-1 text-center">需為4位英數字</p>
+                            <p className="text-sm text-red-500 mt-1.5 font-medium flex items-center gap-1">
+                                <span className="w-1 h-1 rounded-full bg-red-500 inline-block"></span>
+                                需為 4 位英數字
+                            </p>
                         )}
                     </div>
 
                     {/* Employee ID */}
                     <div>
-                        <label className="text-xs font-bold text-slate-600 mb-1.5 block">
+                        <label className="text-sm font-bold text-slate-700 mb-2 block">
                             工號
                         </label>
                         <Input
@@ -172,13 +176,17 @@ export function LeaderBindDialog({
                                 setEmployeeId(val);
                                 setError("");
                             }}
-                            className="h-12 rounded-xl text-center text-lg font-bold tracking-widest border-slate-200 focus-visible:ring-blue-500/30"
-                            maxLength={8}
+                            className="h-14 rounded-2xl text-center font-black font-sans text-blue-600 tracking-[0.1em] bg-slate-50/80 border-slate-200 focus-visible:border-blue-500/50 focus-visible:ring-4 focus-visible:ring-blue-500/10 transition-all placeholder:text-blue-300/50 placeholder:font-medium placeholder:tracking-normal"
+                            style={{ fontSize: '32px', fontWeight: 900, fontFamily: 'inherit' }}
+                            maxLength={6}
                             inputMode="numeric"
                             disabled={isSubmitting}
                         />
                         {employeeId && !employeeIdValid && (
-                            <p className="text-xs text-amber-500 mt-1">4~8位數字</p>
+                            <p className="text-sm text-red-500 mt-1.5 font-medium flex items-center gap-1">
+                                <span className="w-1 h-1 rounded-full bg-red-500 inline-block"></span>
+                                需為 6 位數字
+                            </p>
                         )}
                     </div>
 
