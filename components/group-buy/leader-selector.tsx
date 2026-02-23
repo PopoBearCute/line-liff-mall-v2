@@ -67,18 +67,19 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
         return;
       }
 
-      // Check if this LINE ID is already bound
-      const { data: existingLeader } = await supabase
-        .from("GroupLeaders")
-        .select("Username")
-        .eq("LineID", lineUserId)
-        .single();
+      try {
+        const res = await fetch(`/api/leaders?action=check_status&lineUserId=${encodeURIComponent(lineUserId)}`);
+        const result = await res.json();
+        const existingLeader = result.leader;
 
-      if (existingLeader) {
-        toast.success("歡迎回來，團購主！");
-        onSelect(existingLeader.Username);
-      } else {
-        setShowBindDialog(true);
+        if (existingLeader) {
+          toast.success("歡迎回來，團購主！");
+          onSelect(existingLeader.Username);
+        } else {
+          setShowBindDialog(true);
+        }
+      } catch (err) {
+        toast.error("驗證失敗，請稍待後再試");
       }
     }, 1000); // 1.0 seconds
   }, [lineUserId, onSelect]);
@@ -115,22 +116,14 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
 
     async function fetchLeaders() {
       try {
-        if (!supabase) {
-          console.error("Supabase client not initialized");
-          toast.error("系統錯誤：無法連接資料庫");
-          setLoading(false);
-          return;
-        }
+        const res = await fetch('/api/leaders');
+        const result = await res.json();
 
-        const { data, error } = await supabase
-          .from("GroupLeaders")
-          .select("id, name:團主名稱, avatar_url, store_name:加油站, station_code:站代號, username:Username, latitude:緯度, longitude:經度, address:指定地址, LineID")
-          .eq("IsGroupLeader", "Yes");
-
-        if (error) {
-          console.error("Error fetching leaders:", error);
+        if (!res.ok || !result.success) {
+          console.error("Error fetching leaders:", result.error);
           toast.error("無法載入團購主列表");
         } else {
+          const data = result.data || [];
           const formattedData = (data as any[]).map(item => ({
             id: item.id,
             name: item.name,
