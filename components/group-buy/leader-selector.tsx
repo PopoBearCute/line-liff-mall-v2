@@ -202,15 +202,15 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
   }
 
   return (
-    <div className="min-h-screen relative pb-10">
+    <div className="min-h-screen relative pb-10 flex flex-col">
       {/* Truly Fixed Background for Mobile */}
       <div
-        className="fixed inset-0 -z-10 bg-[url('/ocean-bg.png')] bg-cover bg-center bg-no-repeat"
+        className="fixed inset-0 z-0 pointer-events-none bg-[url('/ocean-bg.png')] bg-cover bg-center bg-no-repeat"
         style={{ height: '100vh', width: '100vw' }}
       />
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-[#00519E]/95 to-[#003B7E]/95 backdrop-blur-md rounded-b-[40px] pt-12 pb-20 px-6 relative overflow-hidden shadow-lg shadow-[#003B7E]/20">
+      <div className="bg-gradient-to-br from-[#00519E]/95 to-[#003B7E]/95 backdrop-blur-md rounded-b-[40px] pt-12 pb-20 px-6 relative z-10 overflow-hidden shadow-lg shadow-[#003B7E]/20">
         {/* Interactive Logo on the Right */}
         <div
           className={`absolute right-[-10px] top-[-5px] transition-all duration-150 transform rotate-12 select-none cursor-pointer z-20 ${isLongPressing
@@ -263,7 +263,7 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
         </div>
       </div>
 
-      <div className="container mx-auto px-5 max-w-md mt-6">
+      <div className="container mx-auto px-5 max-w-md mt-6 relative z-10">
         <div className="space-y-4 pb-4">
           {filteredLeaders.slice(0, showAllLeaders ? undefined : 5).map((leader) => (
             <div
@@ -380,7 +380,7 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
         </div>
 
         {/* App Download Footer */}
-        <div className="mt-4 mb-8 px-5 max-w-md mx-auto">
+        <div className="mt-4 mb-8 px-5 max-w-md mx-auto relative z-10">
           <div className="px-4 py-5 bg-white/70 backdrop-blur-lg rounded-3xl border border-white/20 shadow-sm">
             <div className="flex items-center gap-3 mb-4 justify-center">
               <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
