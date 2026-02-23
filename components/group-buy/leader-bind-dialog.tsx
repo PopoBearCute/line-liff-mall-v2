@@ -84,8 +84,21 @@ export function LeaderBindDialog({
             const resData = await res.json();
 
             if (!res.ok || !resData.success) {
-                setError(resData.error || "綁定失敗，請稍後再試");
-                setIsSubmitting(false);
+                const apiError = resData.error || "綁定失敗，請稍後再試";
+                if (apiError.toLowerCase().includes("expired") || apiError.toLowerCase().includes("token") || apiError.includes("身分驗證")) {
+                    toast.error("登入逾時，正在重新取得安全憑證...");
+                    if (typeof window !== 'undefined' && window.liff) {
+                        if (window.liff.isLoggedIn()) {
+                            window.liff.logout();
+                        }
+                        window.liff.login({ redirectUri: window.location.href });
+                    } else {
+                        setTimeout(() => window.location.reload(), 1500);
+                    }
+                } else {
+                    setError(apiError);
+                    setIsSubmitting(false);
+                }
                 return;
             }
 

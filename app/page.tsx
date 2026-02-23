@@ -774,7 +774,20 @@ export default function GroupBuyPage() {
 
     } catch (e) {
       console.error(e);
-      toast.error(e instanceof Error ? e.message : "送出失敗");
+      const errStr = e instanceof Error ? e.message : String(e);
+      if (errStr.includes("expired") || errStr.toLowerCase().includes("token") || errStr.includes("身分驗證")) {
+        toast.error("登入逾時，為保護您的安全，正在重新取得憑證...");
+        if (typeof window !== 'undefined' && window.liff) {
+          if (window.liff.isLoggedIn()) {
+            window.liff.logout();
+          }
+          window.liff.login({ redirectUri: window.location.href });
+        } else {
+          setTimeout(() => window.location.reload(), 1500);
+        }
+      } else {
+        toast.error(errStr || "送出失敗");
+      }
     } finally {
       setIsSubmitting(false);
       setSubmittingProduct(null);
@@ -801,7 +814,7 @@ export default function GroupBuyPage() {
         }
       }
 
-      await fetch(API_URL, {
+      const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -815,10 +828,27 @@ export default function GroupBuyPage() {
         })
       });
 
+      const resData = await res.json();
+      if (!res.ok) throw new Error(resData.error || "移除失敗");
+
       toast.success("已移除紀錄");
       await loadData(leaderId, userProfile.userId, userProfile.displayName, false, idTok);
     } catch (error) {
-      toast.error("移除失敗");
+      console.error("Remove order error:", error);
+      const errStr = error instanceof Error ? error.message : String(error);
+      if (errStr.includes("expired") || errStr.toLowerCase().includes("token") || errStr.includes("身分驗證")) {
+        toast.error("登入逾時，為保護您的安全，正在重新取得憑證...");
+        if (typeof window !== 'undefined' && window.liff) {
+          if (window.liff.isLoggedIn()) {
+            window.liff.logout();
+          }
+          window.liff.login({ redirectUri: window.location.href });
+        } else {
+          setTimeout(() => window.location.reload(), 1500);
+        }
+      } else {
+        toast.error(`移除失敗: ${errStr}`);
+      }
     }
   };
 
