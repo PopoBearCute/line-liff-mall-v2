@@ -344,3 +344,25 @@
   transform: rotate(45deg);
   animation: shimmer 4s infinite;
 }
+
+/* 瘋狂頻閃特效 (長按解鎖彩蛋) */
+@keyframes strobe-glow {
+  0% {
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4)) brightness(1.2);
+    transform: scale(0.92);
+  }
+
+  50% {
+    filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 60px rgba(100, 200, 255, 0.6)) brightness(2);
+    transform: scale(0.98);
+  }
+
+  100% {
+    filter: drop-shadow(0 0 50px rgba(255, 255, 255, 1)) drop-shadow(0 0 100px rgba(255, 255, 255, 0.8)) brightness(2.5);
+    transform: scale(0.95);
+  }
+}
+
+.animate-strobe-glow {
+  animation: strobe-glow 0.12s infinite alternate ease-in-out;
+}

@@ -202,12 +202,16 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-md min-h-screen bg-transparent">
-      {/* Logo with long-press trigger */}
-      <div className="flex justify-center pt-6 mb-2">
+    <div className="min-h-screen bg-slate-100 relative pb-10 bg-[url('/ocean-bg.png')] bg-cover bg-fixed bg-center">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-br from-[#00519E]/95 to-[#003B7E]/95 backdrop-blur-md rounded-b-[40px] pt-12 pb-16 px-6 relative overflow-hidden shadow-lg shadow-[#003B7E]/20">
+        {/* Interactive Logo on the Right */}
         <div
-          className={`relative select-none cursor-pointer transition-transform duration-300 ${isLongPressing ? "scale-90 opacity-70" : "scale-100"
+          className={`absolute right-[-10px] top-[-5px] transition-all duration-150 transform rotate-12 select-none cursor-pointer z-20 ${isLongPressing
+            ? "animate-strobe-glow"
+            : "scale-100 drop-shadow-2xl opacity-90"
             }`}
+          style={{ WebkitTapHighlightColor: 'transparent' }}
           onTouchStart={handleLongPressStart}
           onTouchEnd={handleLongPressEnd}
           onTouchCancel={handleLongPressEnd}
@@ -216,44 +220,44 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
           onMouseLeave={handleLongPressEnd}
           onContextMenu={(e) => e.preventDefault()}
         >
-          <div className="bg-white p-2 rounded-full shadow-lg border border-slate-100">
-            <Image
-              src="/mall-icon.png"
-              alt="CPC Mall"
-              width={80}
-              height={80}
-              className="rounded-full pointer-events-none"
-              draggable={false}
-              priority
-            />
+          <Image
+            src="/mall-icon.png"
+            alt="CPC Mall"
+            width={160}
+            height={160}
+            className="pointer-events-none"
+            draggable={false}
+            priority
+          />
+        </div>
+
+        <div className="relative z-10 flex flex-col justify-end min-h-[107px]">
+          <h1 className="text-[28px] sm:text-[30px] font-black text-white leading-tight tracking-tight drop-shadow-sm">
+            中油PAY行動商城
+          </h1>
+          <p className="text-blue-100/90 text-[15px] font-medium mt-1">
+            {userCoords ? "為您推薦距離最近的取貨據點" : "找你愛的站點，輕鬆到站取貨"}
+          </p>
+        </div>
+      </div>
+
+      {/* Overlapping Search Bar */}
+      <div className="px-5 -mt-8 relative z-20">
+        <div className="relative group mx-auto max-w-md">
+          <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-600 text-slate-400">
+            <Search className="h-5 w-5" />
           </div>
-          {isLongPressing && (
-            <div className="absolute inset-0 rounded-full border-4 border-blue-400 animate-ping" />
-          )}
+          <Input
+            type="text"
+            placeholder="搜尋姓名或站名稱..."
+            className="pl-12 pr-4 h-[60px] w-full rounded-2xl border-none bg-white/80 backdrop-blur-xl shadow-xl shadow-slate-950/10 focus-visible:ring-4 focus-visible:ring-blue-100/50 text-base font-medium transition-all"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
       </div>
 
-      <div className="text-center mb-8 px-4">
-        <h1 className="text-3xl font-extrabold mb-3 tracking-tight text-slate-800">選擇團購主</h1>
-        <p className="text-slate-500 text-sm font-medium">
-          {userCoords ? "已根據您的位置推薦鄰近站點" : "請選擇您所屬的團購主以進入賣場"}
-        </p>
-      </div>
-
-      <div className="relative mb-8 group">
-        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-500 text-slate-400">
-          <Search className="h-5 w-5" />
-        </div>
-        <Input
-          type="text"
-          placeholder="搜尋姓名或加油站名稱..."
-          className="pl-12 pr-4 h-14 w-full rounded-2xl border-none bg-white shadow-xl shadow-slate-200/50 focus-visible:ring-2 focus-visible:ring-blue-500/20 text-base"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
-
-      <div className="grid gap-4 pb-10">
+      <div className="container mx-auto px-5 max-w-md mt-6">
         {filteredLeaders.slice(0, showAllLeaders ? undefined : 5).map((leader) => (
           <div
             key={leader.id}
@@ -369,42 +373,44 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
       </div>
 
       {/* App Download Footer */}
-      <div className="mt-8 mb-12 px-4 py-6 bg-slate-50/80 rounded-3xl border border-slate-100 backdrop-blur-sm">
-        <div className="flex items-center gap-3 mb-4 justify-center">
-          <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
-            <Smartphone className="h-6 w-6" />
+      <div className="mt-4 mb-8 px-5 max-w-md mx-auto">
+        <div className="px-4 py-5 bg-white/70 backdrop-blur-lg rounded-3xl border border-white/20 shadow-sm">
+          <div className="flex items-center gap-3 mb-4 justify-center">
+            <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+              <Smartphone className="h-6 w-6" />
+            </div>
+            <div className="text-left">
+              <h3 className="font-bold text-slate-800 text-lg leading-tight">還沒安裝中油Pay嗎？</h3>
+              <p className="text-xs text-slate-500 font-medium">現在下載，享受更便利的服務</p>
+            </div>
           </div>
-          <div className="text-left">
-            <h3 className="font-bold text-slate-800 text-lg leading-tight">還沒安裝中油Pay嗎？</h3>
-            <p className="text-xs text-slate-500 font-medium">現在下載，享受更便利的服務</p>
-          </div>
-        </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-          <a
-            href="https://play.google.com/store/apps/details?id=com.cpc.cpcpay&hl=zh_TW"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition-transform hover:scale-105 active:scale-95"
-          >
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-              alt="Get it on Google Play"
-              className="h-10 w-auto"
-            />
-          </a>
-          <a
-            href="https://apps.apple.com/tw/app/%E4%B8%AD%E6%B2%B9pay/id1475467410"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition-transform hover:scale-105 active:scale-95"
-          >
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-              alt="Download on the App Store"
-              className="h-10 w-auto"
-            />
-          </a>
+          <div className="flex items-center justify-center gap-4">
+            <a
+              href="https://play.google.com/store/apps/details?id=com.cpc.cpcpay&hl=zh_TW"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-transform hover:scale-105 active:scale-95"
+            >
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
+                alt="Get it on Google Play"
+                className="h-10 w-auto"
+              />
+            </a>
+            <a
+              href="https://apps.apple.com/tw/app/%E4%B8%AD%E6%B2%B9pay/id1475467410"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-transform hover:scale-105 active:scale-95"
+            >
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
+                alt="Download on the App Store"
+                className="h-10 w-auto"
+              />
+            </a>
+          </div>
         </div>
       </div>
 
