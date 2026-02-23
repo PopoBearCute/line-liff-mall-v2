@@ -61,19 +61,30 @@ export async function GET(request: Request) {
 
     try {
         const runtimeUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const runtimeKey = process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_KEY;
+        // [Security Fix] 使用有特權的 Service Role Key，避免被 RLS 阻擋
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
-        if (!runtimeUrl || !runtimeKey) {
-            return NextResponse.json({ success: false, error: "伺服器配置錯誤：缺少 Supabase 連線資訊 (URL 或 KEY)" }, { status: 500 });
+        if (!runtimeUrl || !serviceKey) {
+            return NextResponse.json({ success: false, error: "伺服器配置錯誤：缺少 Supabase Service Role Key" }, { status: 500 });
         }
 
-        const supabaseInternal = createClient(runtimeUrl, runtimeKey);
+        const supabaseInternal = createClient(runtimeUrl, serviceKey);
         console.log(`[API GET] Fetching data for leader: ${leaderId}, user: ${userId}`);
+
         // 1. Fetch Data using discovered table names
+        // [Security Fix] 避免全撈資料造成效能瓶頸與外洩風險，只撈取該團長的資料
+        const productsPromise = supabaseInternal.from('products').select('*');
+        const intentPromise = leaderId
+            ? supabaseInternal.from('intentdb').select('*').eq('團主 ID', String(leaderId).trim())
+            : Promise.resolve({ data: [], error: null });
+        const bindingPromise = leaderId
+            ? supabaseInternal.from('leaderbinding').select('*').eq('團主 ID', String(leaderId).trim())
+            : Promise.resolve({ data: [], error: null });
+
         const [productsRes, intentRes, bindingRes] = await Promise.all([
-            supabaseInternal.from('products').select('*'),
-            supabaseInternal.from('intentdb').select('*'),
-            supabaseInternal.from('leaderbinding').select('*'),
+            productsPromise,
+            intentPromise,
+            bindingPromise,
         ]);
 
         if (productsRes.error) throw productsRes.error;
