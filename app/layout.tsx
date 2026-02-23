@@ -9,17 +9,18 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: '行動商城團購網',
-  description: '行動商城團購網：輕鬆揪團、一鍵下單，享受最優惠的團購體驗！',
+  metadataBase: new URL('https://cpcmall.shop'),
+  title: '行動商城團購',
+  description: '輕鬆揪團、一鍵下單，加油站取貨！',
   openGraph: {
-    title: '行動商城團購網',
-    description: '行動商城團購網：輕鬆揪團、一鍵下單，享受最優惠的團購體驗！',
+    title: '行動商城團購',
+    description: '輕鬆揪團、一鍵下單，加油站取貨！',
     images: [
       {
-        url: 'https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png', // Temporary placeholder for reliable display
-        width: 1200,
-        height: 630,
-        alt: '中油PAY行動商城團購',
+        url: '/mall-icon.png',
+        width: 800,
+        height: 800,
+        alt: '行動商城團購',
       },
     ],
   },
