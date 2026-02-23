@@ -171,6 +171,13 @@ export default function GroupBuyPage() {
   const [leaderId, setLeaderId] = useState<string | null>(leaderIdFromUrl);
   const [leaderName, setLeaderName] = useState<string>("");
   const [leaderAvatar, setLeaderAvatar] = useState<string>(""); // New State
+  const [leaderProfile, setLeaderProfile] = useState<{
+    name: string;
+    store: string;
+    stationCode: string;
+    address: string;
+    avatar: string;
+  } | null>(null);
   const [viewMode, setViewMode] = useState<'loading' | 'main' | 'select-leader'>(leaderIdFromUrl ? 'main' : 'loading');
   const [activeWaves, setActiveWaves] = useState<ActiveWave[]>([]);
   const [cart, setCart] = useState<Record<string, number>>({});
@@ -466,6 +473,7 @@ export default function GroupBuyPage() {
           }
         }
         setLeaderAvatar(data.leaderAvatar || ""); // Set Avatar
+        setLeaderProfile(data.leaderInfo || null); // [New] Store full profile
 
         setLeaderId(data.leaderId);
 
@@ -1254,11 +1262,9 @@ export default function GroupBuyPage() {
         {/* Stories Bar */}
         <div className="pt-3">
           <StoriesBar
-            // Logic: If I am the leader, show MY current profile avatar (most up to date).
-            // If I am a guest, show the fetched 'leaderAvatar'. If missing, let component show default icon.
-            // NEVER show guest's avatar as the leader.
             leaderAvatar={isLeader ? (userProfile?.pictureUrl || leaderAvatar) : leaderAvatar}
             leaderName={leaderName}
+            leaderProfile={leaderProfile}
             products={storiesProducts}
             onProductClick={(name: string) => {
               // Confirm which tab the product belongs to
@@ -1276,13 +1282,21 @@ export default function GroupBuyPage() {
                   const element = document.getElementById(name);
                   if (element) {
                     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  } else {
-                    console.warn(`Element ${name} not found after tab switch`);
+                    element.classList.add('ring-4', 'ring-blue-500', 'ring-opacity-50', 'transition-all', 'duration-500');
+                    setTimeout(() => {
+                      element.classList.remove('ring-4', 'ring-blue-500', 'ring-opacity-50');
+                    }, 2000);
                   }
                 }, 150);
               } else {
                 const element = document.getElementById(name);
-                element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  element.classList.add('ring-4', 'ring-blue-500', 'ring-opacity-50', 'transition-all', 'duration-500');
+                  setTimeout(() => {
+                    element.classList.remove('ring-4', 'ring-blue-500', 'ring-opacity-50');
+                  }, 2000);
+                }
               }
             }}
           />
@@ -1360,15 +1374,17 @@ export default function GroupBuyPage() {
       <StickyTabs activeTab={activeTab} onTabChange={setActiveTab} isLeader={isLeader} />
 
       {/* Debug Panel */}
-      {showDebug && debugInfo && (
-        <div className="fixed bottom-0 left-0 right-0 bg-black/90 text-green-400 p-4 text-xs font-mono z-50 overflow-auto max-h-[50vh] break-all">
-          <div className="flex justify-between items-center mb-2 border-b border-green-600 pb-1">
-            <h3 className="font-bold">LIFF Debugger</h3>
-            <button onClick={() => setShowDebug(false)} className="px-2 py-1 bg-green-900 rounded">Close</button>
+      {
+        showDebug && debugInfo && (
+          <div className="fixed bottom-0 left-0 right-0 bg-black/90 text-green-400 p-4 text-xs font-mono z-50 overflow-auto max-h-[50vh] break-all">
+            <div className="flex justify-between items-center mb-2 border-b border-green-600 pb-1">
+              <h3 className="font-bold">LIFF Debugger</h3>
+              <button onClick={() => setShowDebug(false)} className="px-2 py-1 bg-green-900 rounded">Close</button>
+            </div>
+            <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
           </div>
-          <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
-        </div>
-      )}
-    </Suspense>
+        )
+      }
+    </Suspense >
   );
 }

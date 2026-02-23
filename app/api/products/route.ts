@@ -155,52 +155,38 @@ export async function GET(request: Request) {
 
 
 
-        // 3. Leader Identity & Avatar Lookup
-        // [Bug #1 Fix] 正確的身分判定：查詢 GroupLeaders 資料表
-        // 比對「站點代號 (Username)」與「目前登入者的 LINE UID (LineID)」
-        // 舊邏輯（錯誤）：leaderId === userId → 永遠 false，因為兩者是不同概念的 ID
+        // 3. Leader Identity & Profile Lookup
         let isLeader = false;
-        if (leaderId && userId) {
-            // [Fix] leaderId is "D12345-123456" (Station-Employee)
-            // GroupLeaders.Username stores the FULL string "D12345-123456"
-            // DO NOT SPLIT IT.
-            const targetUsername = String(leaderId).trim();
-            const { data: leaderRow } = await supabaseInternal
-                .from('GroupLeaders')
-                .select('Username, LineID')
-                .eq('Username', targetUsername)
-                .eq('LineID', String(userId).trim())
-                .maybeSingle();
-
-            isLeader = !!leaderRow;
-            console.log(`[API GET] isLeader check: Username="${targetUsername}", LineID="${userId}" → ${isLeader}`);
-        }
         let leaderName = '團購主';
         let leaderAvatar = '';
+        let leaderStore = '';
+        let leaderStationCode = '';
+        let leaderAddress = '';
 
         if (leaderId) {
-            const targetId = String(leaderId).trim();
-            console.log(`[API GET] Resolving Leader Name for ID: "${targetId}"`);
+            const targetUsername = String(leaderId).trim();
+            // Fetch everything from GroupLeaders in one go
+            const { data: leaderRow } = await supabaseInternal
+                .from('GroupLeaders')
+                .select('Username, LineID, 團主名稱, avatar_url, 加油站, 站代號, 指定地址')
+                .eq('Username', targetUsername)
+                .maybeSingle();
 
-            // 3.1 Get Name from Binding
-            const matches = bindingData.filter((r: any) =>
-                String(r['團主 ID']).trim() === targetId
-            );
-            console.log(`[API GET] Binding Matches Found: ${matches.length}`, matches.map((m: any) => m['團主名稱']));
+            if (leaderRow) {
+                // Identity Check
+                if (userId && leaderRow.LineID === String(userId).trim()) {
+                    isLeader = true;
+                }
 
-            if (matches.length > 0) {
-                const lastMatch = matches[matches.length - 1];
-                leaderName = lastMatch['團主名稱'] || leaderName;
-                console.log(`[API GET] Resolved Name: ${leaderName}`);
+                // Profile Enrichment
+                leaderName = leaderRow['團主名稱'] || leaderName;
+                leaderAvatar = leaderRow.avatar_url || '';
+                leaderStore = leaderRow['加油站'] || '';
+                leaderStationCode = leaderRow['站代號'] || '';
+                leaderAddress = leaderRow['指定地址'] || '';
             }
 
-            // 3.2 Get Avatar from IntentDB (Look for any usage by this leader)
-            // Strategy: Find any order placed by this leader to get their avatar
-            // Since we already fetched intentData, we can just search in memory
-            const avatarMatch = intentData.find((r: any) => String(r['團員 ID']) === targetId && r.picurl);
-            if (avatarMatch) {
-                leaderAvatar = avatarMatch.picurl;
-            }
+            console.log(`[API GET] Leader Resolve: ID="${targetUsername}", Name="${leaderName}", isLeader=${isLeader}`);
         }
 
         // 4. Aggregation (Mapping IntentDB Chinese Columns)

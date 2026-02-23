@@ -1,26 +1,42 @@
 "use client";
 
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus } from "lucide-react";
+import { Plus, Info } from "lucide-react";
+import { LeaderInfoDialog } from "./leader-info-dialog";
 
 interface Product {
     name: string;
     img: string;
 }
 
+interface LeaderProfile {
+    name: string;
+    store: string;
+    stationCode: string;
+    address: string;
+    avatar: string;
+}
+
 interface StoriesBarProps {
     leaderAvatar?: string;
     leaderName?: string;
+    leaderProfile?: LeaderProfile | null;
     products?: Product[];
     onProductClick?: (productName: string) => void;
 }
 
-export function StoriesBar({ leaderAvatar, leaderName, products = [], onProductClick }: StoriesBarProps) {
+export function StoriesBar({ leaderAvatar, leaderName, leaderProfile, products = [], onProductClick }: StoriesBarProps) {
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+
     return (
         <div className="w-full max-w-md mx-auto pt-2 pb-2">
             <div className="flex gap-4 overflow-x-auto px-4 scrollbar-none snap-x">
                 {/* 1. Leader Story (Fixed) */}
-                <div className="flex flex-col items-center gap-1 min-w-[72px] snap-center cursor-pointer group">
+                <div
+                    className="flex flex-col items-center gap-1 min-w-[72px] snap-center cursor-pointer group"
+                    onClick={() => setIsProfileOpen(true)}
+                >
                     <div className="relative p-[3px] rounded-full group-hover:scale-105 transition-transform duration-300">
                         <div className="rounded-full bg-white dark:bg-black p-[2px] border border-gray-100 dark:border-gray-800">
                             <Avatar className="w-16 h-16">
@@ -28,11 +44,11 @@ export function StoriesBar({ leaderAvatar, leaderName, products = [], onProductC
                                 <AvatarFallback>Leader</AvatarFallback>
                             </Avatar>
                         </div>
-                        <div className="absolute bottom-0 right-0 bg-primary-blue text-white rounded-full p-0.5 border-2 border-white dark:border-black">
-                            <Plus className="w-3.5 h-3.5" />
+                        <div className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-1 border-2 border-white dark:border-black shadow-sm">
+                            <Info className="w-3 h-3" />
                         </div>
                     </div>
-                    <span className="text-xs text-center font-medium text-gray-900 dark:text-white truncate w-full px-1">
+                    <span className="text-[11px] text-center font-bold text-slate-700 dark:text-white truncate w-full px-1">
                         {leaderName || "團購主"}
                     </span>
                 </div>
@@ -55,6 +71,13 @@ export function StoriesBar({ leaderAvatar, leaderName, products = [], onProductC
                     </div>
                 ))}
             </div>
+
+            {/* Leader Info Popup */}
+            <LeaderInfoDialog
+                isOpen={isProfileOpen}
+                onOpenChange={setIsProfileOpen}
+                profile={leaderProfile || null}
+            />
         </div>
     );
 }
