@@ -1162,7 +1162,7 @@ export default function GroupBuyPage() {
         const isEnabled = p.isEnabled === true || String(p.isEnabled).toLowerCase() === 'true' || Number(p.isEnabled) === 1;
         return isEnabled;
       })
-      .map(p => ({ ...p, waveId: w.wave })) // Attach Wave ID
+      .map(p => ({ ...p, waveId: w.wave, mode: 'active' })) // Attach Wave ID & mode
     )
     .sort((a: Product, b: Product) => {
       if (isLeader) {
@@ -1180,7 +1180,7 @@ export default function GroupBuyPage() {
   // [Stability Fix] Use snapshot order to prevent cards jumping after submit
   const collectingProductsRaw = activeWaves
     .filter((w: ActiveWave) => w.phase === 'collecting' || w.phase === 'preparing')
-    .flatMap((w: ActiveWave) => w.products.map(p => ({ ...p, waveId: w.wave })));
+    .flatMap((w: ActiveWave) => w.products.map(p => ({ ...p, waveId: w.wave, mode: 'collecting' })));
 
   const collectingProducts = collectingOrderSnapshot.length > 0
     ? [
