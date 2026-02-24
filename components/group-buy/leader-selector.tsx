@@ -210,15 +210,15 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
         style={{ height: '100vh', width: '100vw', transform: 'translateZ(0)', imageRendering: 'auto' }}
       />
 
-      {/* Hero Section (New Design) */}
-      <div className="relative z-10 mx-4 mt-8 mb-4 max-w-lg sm:mx-auto">
-        <div className="bg-[#00519E] rounded-[24px] pt-8 pb-14 px-5 relative overflow-visible shadow-lg shadow-[#00519E]/20 transform-gpu" style={{ transform: 'translateZ(0)' }}>
+      {/* Hero Section (New Design matching User Spec) */}
+      <div className="relative z-10 mx-5 mt-8 mb-6 max-w-lg sm:mx-auto">
+        <div className="bg-gradient-to-b from-[#00529F] to-[#01488E] rounded-[24px] px-6 pt-6 pb-6 relative shadow-lg shadow-[#004e9a]/30" style={{ transform: 'translateZ(0)' }}>
 
-          {/* Overlapping Store Icon */}
+          {/* Overlapping Original Logo */}
           <div
-            className={`absolute right-[-12px] top-[-16px] w-[110px] h-[110px] z-20 transition-all duration-300 select-none cursor-pointer ${isLongPressing
+            className={`absolute right-[5px] top-[25px] w-[124px] h-[124px] z-20 transition-all duration-300 select-none cursor-pointer ${isLongPressing
               ? "animate-strobe-glow scale-95"
-              : "hover:scale-105 drop-shadow-xl opacity-100"
+              : "hover:scale-105 drop-shadow-xl"
               }`}
             style={{ WebkitTapHighlightColor: 'transparent' }}
             onTouchStart={handleLongPressStart}
@@ -229,40 +229,47 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
             onMouseLeave={handleLongPressEnd}
             onContextMenu={(e) => e.preventDefault()}
           >
-            <StoreSvg className="w-full h-full drop-shadow-[0_8px_16px_rgba(0,0,0,0.25)]" />
+            <div className="w-full h-full relative group">
+              <Image
+                src="/mall-icon.png"
+                alt="CPC Mall Logo"
+                fill
+                className="object-contain pointer-events-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
+                draggable={false}
+                priority
+              />
+            </div>
           </div>
 
-          <div className="relative z-10 flex flex-col justify-start">
-            <h1 className="text-[26px] sm:text-[28px] font-black text-white leading-tight tracking-tight drop-shadow-sm min-w-max sm:min-w-0 pr-20">
+          <div className="relative z-10 flex flex-col justify-start pb-6">
+            <h1 className="text-[25px] sm:text-[30px] font-black text-white leading-tight tracking-tight drop-shadow-sm pr-20">
               中油PAY行動商城
             </h1>
-            <p className="text-blue-50/90 text-[14px] sm:text-[15px] font-medium mt-2 tracking-wide pr-24">
+            <p className="text-blue-50/95 text-[14px] sm:text-[15px] font-medium mt-1.5 tracking-wide pr-24">
               {userCoords ? "為您推薦距離最近的取貨據點" : "找你愛的站點，輕鬆到站取貨"}
             </p>
           </div>
 
-          {/* Embedded Search Bar (overlaps the bottom bound) */}
-          <div className="absolute left-5 right-5 bottom-[-24px] z-30">
-            <div className="relative w-full max-w-sm mx-auto group">
-              <div className="absolute inset-y-0 left-4 flex flex-col justify-center pointer-events-none">
-                <Search className="h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-              </div>
-              <Input
-                type="text"
-                placeholder="搜尋姓名或站名稱..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-[52px] pl-11 pr-12 rounded-[16px] bg-[#f0f4f8] border-0 shadow-[0_4px_15px_rgba(0,0,0,0.1)] text-base transition-all focus-visible:ring-2 focus-visible:ring-blue-500 font-medium text-slate-700 placeholder:font-normal placeholder:text-slate-400"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute inset-y-0 right-4 flex flex-col justify-center text-slate-400 hover:text-slate-600 font-medium text-sm transition-colors"
-                >
-                  清除
-                </button>
-              )}
+          {/* Embedded Search Bar (Fully nested, logo overlaps its right end) */}
+          <div className="relative w-full z-10">
+            <div className="absolute inset-y-0 left-4 flex flex-col justify-center pointer-events-none">
+              <Search className="h-[22px] w-[22px] text-gray-400" />
             </div>
+            <Input
+              type="text"
+              placeholder="搜尋姓名或站名稱..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-[54px] pl-[52px] pr-[90px] rounded-[14px] bg-[#f5f7fa] border-0 text-[16px] transition-all focus-visible:ring-2 focus-visible:ring-white/30 font-medium text-slate-700 placeholder:font-normal placeholder:text-gray-400 shadow-inner"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute inset-y-0 right-[90px] flex flex-col justify-center text-slate-400 hover:text-slate-600 font-medium text-sm transition-colors"
+              >
+                清除
+              </button>
+            )}
           </div>
         </div>
       </div>
