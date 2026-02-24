@@ -210,11 +210,17 @@ export async function GET(request: Request) {
         });
 
         intentData.forEach((row: any) => {
-            const rowWave = String(row['波段'] || "");
+            const prodName = row['商品名稱'] || "";
+            const normalizedName = superNormalize(prodName);
             const rowLeader = String(row['團主 ID'] || "");
-            if (activeWaves.some((w: any) => w.wave === rowWave) && rowLeader === String(leaderId || '')) {
-                const prodName = row['商品名稱'] || "";
-                const normalizedName = superNormalize(prodName);
+
+            // [Fix] 放寬過濾邏輯：只要該商品出現在「目前任何活耀波段」中，就顯示其所有登記資料
+            // 不再限定 intentdb 裡的「波段」必須完全等於 waveObj.wave，避免因為波段 ID 些微差異導致資料消失
+            const isProductInActiveWaves = activeWaves.some((w: any) =>
+                w.products.some((p: any) => superNormalize(p.name) === normalizedName)
+            );
+
+            if (isProductInActiveWaves && rowLeader === String(leaderId || '')) {
                 const qty = Number(row['數量'] || 0);
                 if (qty > 0) {
                     progressMap[normalizedName] = (progressMap[normalizedName] || 0) + qty;
