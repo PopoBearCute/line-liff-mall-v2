@@ -180,6 +180,11 @@ export async function GET(request: Request) {
 
                 if (targetUID && (rowLineID === targetUID || rowUsername === targetUID)) {
                     isLeader = true;
+                } else if (process.env.NODE_ENV === 'development') {
+                    // [Dev Bypass] On local dev, allow leader access for the selected station 
+                    // even if userId doesn't match/exist yet.
+                    isLeader = true;
+                    console.log(`[DEV MODE] Bypassing isLeader check for leaderId: ${leaderId}`);
                 }
 
                 // Profile Enrichment
