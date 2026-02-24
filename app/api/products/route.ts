@@ -179,11 +179,10 @@ export async function GET(request: Request) {
                 }
 
                 // Profile Enrichment
-                leaderName = leaderRow['團主名稱'] || leaderName;
-                leaderAvatar = leaderRow.avatar_url || '';
-                leaderStore = leaderRow['加油站'] || '';
-                leaderStationCode = leaderRow['站代號'] || '';
-                leaderAddress = leaderRow['指定地址'] || '';
+                const rowAny = leaderRow as any;
+                leaderName = rowAny['團主名稱'] || leaderName;
+                leaderAvatar = rowAny.avatar_url || '';
+                leaderStore = rowAny['加油站'] || '';
             }
 
             console.log(`[API GET] Leader Resolve: ID="${targetUsername}", Name="${leaderName}", isLeader=${isLeader}`);
@@ -239,7 +238,13 @@ export async function GET(request: Request) {
             });
         });
 
-        return NextResponse.json({ success: true, leaderId, leaderName, leaderAvatar, isLeader, activeWaves });
+        const leaderInfo = leaderId ? {
+            name: leaderName,
+            store: leaderStore,
+            avatar: leaderAvatar
+        } : null;
+
+        return NextResponse.json({ success: true, leaderId, leaderName, leaderAvatar, isLeader, activeWaves, leaderInfo });
 
     } catch (err) {
         console.error('API Error:', err);

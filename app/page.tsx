@@ -1214,7 +1214,7 @@ export default function GroupBuyPage() {
               element.classList.add('ring-4', 'ring-blue-500', 'ring-opacity-50', 'transition-all', 'duration-500');
               setTimeout(() => {
                 element.classList.remove('ring-4', 'ring-blue-500', 'ring-opacity-50');
-              }, 2000);
+              }, 500);
               toast.success("已自動為您跳轉至該商品");
             }
           }, 150);
