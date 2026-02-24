@@ -211,25 +211,13 @@ export function LeaderManagementTab({
                     </div>
                 </button>
 
-                {/* Divider */}
-                <div className="h-px bg-slate-100 my-4" />
-
-                {/* Return to Lobby */}
-                <Button
-                    variant="outline"
-                    onClick={onReturnToLobby}
-                    className="w-full h-12 rounded-2xl border-slate-200 text-slate-600 font-bold hover:bg-slate-50"
-                >
-                    <Home className="h-4 w-4 mr-2" />
-                    回到大廳首頁
-                </Button>
-
-                {/* Unbind - uses native window.confirm (reliable in LINE WebView) */}
+                {/* Unbind - Red Glassmorphism Style */}
                 <Button
                     variant="ghost"
                     onClick={handleUnbindClick}
                     disabled={isUnbinding}
-                    className="w-full h-10 rounded-2xl text-red-400 hover:text-red-600 hover:bg-red-50 font-medium text-sm"
+                    className="w-full h-12 rounded-2xl bg-red-500/10 backdrop-blur-md border border-red-500/20 text-red-500 hover:bg-red-500/20 hover:text-red-600 transition-all active:scale-[0.98] font-bold text-sm transform-gpu mt-4"
+                    style={{ transform: 'translateZ(0)', willChange: 'backdrop-filter' }}
                 >
                     {isUnbinding ? (
                         <>
