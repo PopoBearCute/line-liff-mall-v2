@@ -180,8 +180,8 @@ export function LeaderManagementTab({
                         <BarChart3 className="h-5 w-5 text-emerald-600" />
                     </div>
                     <div className="flex-1 text-left">
-                        <p className="font-bold text-sm">查看團購統計與明細</p>
-                        <p className="text-xs text-emerald-500 mt-0.5">訂單匯總、明細報表</p>
+                        <p className="font-bold text-sm">看看有誰登記了？</p>
+                        <p className="text-xs text-emerald-500 mt-0.5">點這裡複製名單，發到 LINE 群組</p>
                     </div>
                 </button>
 
@@ -216,7 +216,7 @@ export function LeaderManagementTab({
                     variant="ghost"
                     onClick={handleUnbindClick}
                     disabled={isUnbinding}
-                    className="w-full h-12 rounded-2xl bg-red-500/10 backdrop-blur-md border border-red-500/20 text-red-500 hover:bg-red-500/20 hover:text-red-600 transition-all active:scale-[0.98] font-bold text-sm transform-gpu mt-4"
+                    className="w-full h-12 rounded-2xl bg-red-500/30 backdrop-blur-md border border-red-500/40 text-red-500 hover:bg-red-500/40 hover:text-red-600 transition-all active:scale-[0.98] font-bold text-sm transform-gpu mt-4"
                     style={{ transform: 'translateZ(0)', willChange: 'backdrop-filter' }}
                 >
                     {isUnbinding ? (

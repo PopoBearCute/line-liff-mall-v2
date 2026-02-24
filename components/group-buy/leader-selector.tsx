@@ -203,14 +203,14 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
 
   return (
     <div className="min-h-screen relative pb-10 flex flex-col">
-      {/* Truly Fixed Background for Mobile */}
+      {/* Responsive Fixed Background for 4K Clarity - Using User Sunset Image */}
       <div
-        className="fixed inset-0 z-0 pointer-events-none bg-[url('/ocean-bg.png')] bg-cover bg-center bg-no-repeat"
-        style={{ height: '100vh', width: '100vw' }}
+        className="fixed inset-0 z-0 pointer-events-none bg-[url('/ocean-bg-user.jpg')] bg-cover bg-center bg-no-repeat transform-gpu"
+        style={{ height: '100vh', width: '100vw', transform: 'translateZ(0)', imageRendering: 'auto' }}
       />
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-[#00519E]/95 to-[#003B7E]/95 backdrop-blur-md rounded-b-[40px] pt-12 pb-20 px-6 relative z-10 overflow-hidden shadow-lg shadow-[#003B7E]/20">
+      <div className="bg-gradient-to-br from-[#00519E]/90 to-[#003B7E]/90 backdrop-blur-md rounded-b-[40px] pt-12 pb-20 px-6 relative z-10 overflow-hidden shadow-lg shadow-[#003B7E]/20 transform-gpu" style={{ transform: 'translateZ(0)', willChange: 'backdrop-filter' }}>
         {/* Interactive Logo on the Right */}
         <div
           className={`absolute right-[-10px] top-[-5px] transition-all duration-150 transform rotate-12 select-none cursor-pointer z-20 ${isLongPressing

@@ -121,7 +121,7 @@ export function LeaderBindDialog({
 
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
-            <AlertDialogContent className="max-w-[340px] rounded-3xl border-none shadow-2xl">
+            <AlertDialogContent className="max-w-[340px] rounded-3xl border-none shadow-2xl bg-white/95 backdrop-blur-xl">
                 <AlertDialogHeader>
                     <AlertDialogTitle className="text-center text-2xl font-extrabold text-slate-800 flex items-center justify-center gap-2">
                         進入團購主管理頁面
