@@ -187,6 +187,7 @@ export default function GroupBuyPage() {
   const [isEnabling, setIsEnabling] = useState(false);
   const [submittingProduct, setSubmittingProduct] = useState<string | null>(null);
   const [enabledStatusSnapshot, setEnabledStatusSnapshot] = useState<Record<string, boolean>>({});
+  const [collectingOrderSnapshot, setCollectingOrderSnapshot] = useState<string[]>([]);
   const [debugInfo, setDebugInfo] = useState<any>(null); // Debug info state
   const [currentMember, setCurrentMember] = useState<any>(null); // Member data state
   const [showDebug, setShowDebug] = useState(false);
@@ -489,13 +490,18 @@ export default function GroupBuyPage() {
 
         if (refreshSnapshot) {
           const newSnapshot: Record<string, boolean> = {};
+          const collectingOrder: string[] = [];
           data.activeWaves?.forEach((wave: ActiveWave) => {
             wave.products.forEach(p => {
               const isEnabled = p.isEnabled === true || String(p.isEnabled).toLowerCase() === 'true' || Number(p.isEnabled) === 1;
               newSnapshot[p.name] = isEnabled;
             });
+            if (wave.phase === 'collecting' || wave.phase === 'preparing') {
+              wave.products.forEach(p => collectingOrder.push(p.name));
+            }
           });
           setEnabledStatusSnapshot(newSnapshot);
+          setCollectingOrderSnapshot(collectingOrder);
         }
 
         setIsLoading(false);
@@ -775,11 +781,8 @@ export default function GroupBuyPage() {
       toast.success("登記成功！");
       setCart({}); // Clear Cart
 
-      // [Fix] Add consistency delay to allow DB write propagation
-      await new Promise(r => setTimeout(r, 500));
-
-      // Auto-refresh (Silent update: showLoader=false)
-      await loadData(leaderId || userProfile.userId, userProfile.userId, userProfile.displayName, false, idToken);
+      // Auto-refresh (Silent, no re-sort so card stays in place)
+      await loadData(leaderId || userProfile.userId, userProfile.userId, userProfile.displayName, false, idToken, false);
 
     } catch (e) {
       console.error(e);
@@ -1167,11 +1170,21 @@ export default function GroupBuyPage() {
     });
 
   // 2. collectingProducts: Phase=collecting OR Phase=preparing
-  // Show ALL products in these phases, sorted by achievement rate descending
-  const collectingProducts = activeWaves
+  // [Stability Fix] Use snapshot order to prevent cards jumping after submit
+  const collectingProductsRaw = activeWaves
     .filter((w: ActiveWave) => w.phase === 'collecting' || w.phase === 'preparing')
-    .flatMap((w: ActiveWave) => w.products.map(p => ({ ...p, waveId: w.wave }))) // Attach Wave ID
-    .sort((a: Product, b: Product) => {
+    .flatMap((w: ActiveWave) => w.products.map(p => ({ ...p, waveId: w.wave })));
+
+  const collectingProducts = collectingOrderSnapshot.length > 0
+    ? [
+      // First: products in snapshot order
+      ...collectingOrderSnapshot
+        .map(name => collectingProductsRaw.find((p: Product) => p.name === name))
+        .filter(Boolean) as Product[],
+      // Then: any new products not in the snapshot yet
+      ...collectingProductsRaw.filter((p: Product) => !collectingOrderSnapshot.includes(p.name)),
+    ]
+    : collectingProductsRaw.sort((a: Product, b: Product) => {
       const rateA = (a.currentQty || 0) / Math.max(a.moq || 1, 1);
       const rateB = (b.currentQty || 0) / Math.max(b.moq || 1, 1);
       return rateB - rateA;
