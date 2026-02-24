@@ -1273,7 +1273,7 @@ export default function GroupBuyPage() {
         style={{ height: '100vh', width: '100vw', transform: 'translateZ(0)', imageRendering: 'auto' }}
       />
 
-      <div className="relative z-10 min-h-screen w-full pb-36 overflow-y-auto overflow-x-hidden bg-[#0c1e3a]/30">
+      <div className="relative z-10 min-h-screen w-full pb-36 overflow-y-auto overflow-x-hidden">
         <Header
           wave={activeWaves[activeTab]?.wave || ""}
           roleTag={isLeader ? "團購主端" : "消費者端"}
@@ -1286,7 +1286,7 @@ export default function GroupBuyPage() {
 
 
         {/* Stories Bar */}
-        <div className="pt-3 pb-2 mb-4 bg-white/10 backdrop-blur-sm shadow-[0_4px_30px_rgba(0,0,0,0.05)] border-b border-white/20 sticky top-[60px] z-20 rounded-b-xl mx-2 transform-gpu" style={{ transform: 'translateZ(0)', willChange: 'backdrop-filter' }}>
+        <div className="pt-3 pb-2 mb-4 bg-white/10 backdrop-blur-sm shadow-[0_4px_30px_rgba(0,0,0,0.05)] border-b border-white/20 relative z-20 rounded-b-xl mx-2 transform-gpu" style={{ transform: 'translateZ(0)', willChange: 'backdrop-filter' }}>
           <StoriesBar
             leaderAvatar={leaderAvatar || userProfile?.pictureUrl || "/leader-avatar.png"}
             leaderName={leaderName}

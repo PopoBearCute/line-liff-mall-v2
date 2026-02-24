@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import Image from "next/image";
 import { LeaderBindDialog } from "./leader-bind-dialog";
+import StoreSvg from "./store-svg";
 
 interface Leader {
   id: string;
@@ -209,57 +210,60 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
         style={{ height: '100vh', width: '100vw', transform: 'translateZ(0)', imageRendering: 'auto' }}
       />
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-[#00519E]/90 to-[#003B7E]/90 backdrop-blur-md rounded-b-[40px] pt-12 pb-20 px-6 relative z-10 overflow-hidden shadow-lg shadow-[#003B7E]/20 transform-gpu" style={{ transform: 'translateZ(0)', willChange: 'backdrop-filter' }}>
-        {/* Interactive Logo on the Right */}
-        <div
-          className={`absolute right-[-10px] top-[-5px] transition-all duration-150 transform rotate-12 select-none cursor-pointer z-20 ${isLongPressing
-            ? "animate-strobe-glow"
-            : "scale-100 drop-shadow-2xl opacity-90"
-            }`}
-          style={{ WebkitTapHighlightColor: 'transparent' }}
-          onTouchStart={handleLongPressStart}
-          onTouchEnd={handleLongPressEnd}
-          onTouchCancel={handleLongPressEnd}
-          onMouseDown={handleLongPressStart}
-          onMouseUp={handleLongPressEnd}
-          onMouseLeave={handleLongPressEnd}
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          <Image
-            src="/mall-icon.png"
-            alt="CPC Mall"
-            width={160}
-            height={160}
-            className="pointer-events-none"
-            draggable={false}
-            priority
-          />
-        </div>
+      {/* Hero Section (New Design) */}
+      <div className="relative z-10 mx-4 mt-8 mb-4 max-w-lg sm:mx-auto">
+        <div className="bg-[#00519E] rounded-[24px] pt-8 pb-14 px-5 relative overflow-visible shadow-lg shadow-[#00519E]/20 transform-gpu" style={{ transform: 'translateZ(0)' }}>
 
-        <div className="relative z-10 flex flex-col justify-end min-h-[107px] max-w-[80%] sm:max-w-full">
-          <h1 className="text-[28px] sm:text-[30px] font-black text-white leading-tight tracking-tight drop-shadow-sm min-w-max sm:min-w-0">
-            中油PAY行動商城
-          </h1>
-          <p className="text-blue-100/90 text-[15px] font-medium mt-1">
-            {userCoords ? "為您推薦距離最近的取貨據點" : "找你愛的站點，輕鬆到站取貨"}
-          </p>
-        </div>
-      </div>
-
-      {/* Overlapping Search Bar */}
-      <div className="px-5 -mt-8 relative z-20">
-        <div className="relative group mx-auto max-w-md">
-          <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-600 text-slate-400">
-            <Search className="h-5 w-5" />
+          {/* Overlapping Store Icon */}
+          <div
+            className={`absolute right-[-12px] top-[-16px] w-[110px] h-[110px] z-20 transition-all duration-300 select-none cursor-pointer ${isLongPressing
+              ? "animate-strobe-glow scale-95"
+              : "hover:scale-105 drop-shadow-xl opacity-100"
+              }`}
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+            onTouchStart={handleLongPressStart}
+            onTouchEnd={handleLongPressEnd}
+            onTouchCancel={handleLongPressEnd}
+            onMouseDown={handleLongPressStart}
+            onMouseUp={handleLongPressEnd}
+            onMouseLeave={handleLongPressEnd}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <StoreSvg className="w-full h-full drop-shadow-[0_8px_16px_rgba(0,0,0,0.25)]" />
           </div>
-          <Input
-            type="text"
-            placeholder="搜尋姓名或站名稱..."
-            className="pl-12 pr-4 h-[60px] w-full rounded-2xl border-none bg-white/80 backdrop-blur-xl shadow-xl shadow-slate-950/10 focus-visible:ring-4 focus-visible:ring-blue-100/50 text-base font-medium transition-all"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+
+          <div className="relative z-10 flex flex-col justify-start">
+            <h1 className="text-[26px] sm:text-[28px] font-black text-white leading-tight tracking-tight drop-shadow-sm min-w-max sm:min-w-0 pr-20">
+              中油PAY行動商城
+            </h1>
+            <p className="text-blue-50/90 text-[14px] sm:text-[15px] font-medium mt-2 tracking-wide pr-24">
+              {userCoords ? "為您推薦距離最近的取貨據點" : "找你愛的站點，輕鬆到站取貨"}
+            </p>
+          </div>
+
+          {/* Embedded Search Bar (overlaps the bottom bound) */}
+          <div className="absolute left-5 right-5 bottom-[-24px] z-30">
+            <div className="relative w-full max-w-sm mx-auto group">
+              <div className="absolute inset-y-0 left-4 flex flex-col justify-center pointer-events-none">
+                <Search className="h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+              </div>
+              <Input
+                type="text"
+                placeholder="搜尋姓名或站名稱..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-[52px] pl-11 pr-12 rounded-[16px] bg-[#f0f4f8] border-0 shadow-[0_4px_15px_rgba(0,0,0,0.1)] text-base transition-all focus-visible:ring-2 focus-visible:ring-blue-500 font-medium text-slate-700 placeholder:font-normal placeholder:text-slate-400"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute inset-y-0 right-4 flex flex-col justify-center text-slate-400 hover:text-slate-600 font-medium text-sm transition-colors"
+                >
+                  清除
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
