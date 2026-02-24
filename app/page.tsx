@@ -211,7 +211,7 @@ export default function GroupBuyPage() {
       setUserProfile({
         userId: mockUserId,
         displayName: 'Dev Tester',
-        pictureUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dev', // Mock avatar
+        pictureUrl: '', // No mock avatar
       });
 
       const urlParams = new URLSearchParams(window.location.search);
@@ -219,15 +219,14 @@ export default function GroupBuyPage() {
       const mode = urlParams.get('mode');
 
       if (!lId) {
-        setViewMode('main');
-        toast.error('請用 LINE 原生瀏覽器開啟');
+        setViewMode('select-leader');
       } else {
         setLeaderId(lId);
         // [Local Fix] Treat the provided leaderId as the current user to enable "Leader View" locally
         setUserProfile({
           userId: lId,
           displayName: '本地測試團主',
-          pictureUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Leader',
+          pictureUrl: '', // No mock avatar
         });
         setLeaderName('本地測試團主'); // Ensure state is set for immediate UI update
         setViewMode('main');
@@ -475,6 +474,14 @@ export default function GroupBuyPage() {
         }
         setLeaderAvatar(data.leaderAvatar || ""); // Set Avatar
         setLeaderProfile(data.leaderInfo || null); // [New] Store full profile
+
+        // [Sync Profil] If current user IS the leader, sync their profile picture with the official avatar
+        if (data.isLeader && data.leaderAvatar && userProfile) {
+          setUserProfile({
+            ...userProfile,
+            pictureUrl: data.leaderAvatar
+          });
+        }
 
         setLeaderId(data.leaderId);
 
@@ -1260,7 +1267,7 @@ export default function GroupBuyPage() {
     <Suspense fallback={<Loading />}>
       {isLoading && <Loading />}
 
-      <div className="mesh-gradient min-h-screen w-full pb-36 overflow-y-auto">
+      <div className="bg-[url('/ocean-bg.png')] bg-cover bg-fixed bg-center bg-no-repeat min-h-screen w-full pb-36 overflow-y-auto">
         <Header
           wave={activeWaves[activeTab]?.wave || ""}
           roleTag={isLeader ? "團購主端" : "消費者端"}
@@ -1273,9 +1280,9 @@ export default function GroupBuyPage() {
 
 
         {/* Stories Bar */}
-        <div className="pt-3">
+        <div className="pt-3 pb-2 mb-4 bg-white/10 backdrop-blur-sm shadow-[0_4px_30px_rgba(0,0,0,0.05)] border-b border-white/20 sticky top-0 z-10 rounded-b-xl mx-2">
           <StoriesBar
-            leaderAvatar={isLeader ? (userProfile?.pictureUrl || leaderAvatar) : leaderAvatar}
+            leaderAvatar={leaderAvatar || userProfile?.pictureUrl || "/leader-avatar.png"}
             leaderName={leaderName}
             leaderProfile={leaderProfile}
             products={storiesProducts}

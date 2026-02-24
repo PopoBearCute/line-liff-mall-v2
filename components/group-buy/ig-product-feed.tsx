@@ -73,9 +73,9 @@ export function IGProductFeed({
 
     if (products.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                <span className="material-symbols-outlined text-4xl mb-2">inbox</span>
-                <p>目前沒有商品</p>
+            <div className="flex flex-col items-center justify-center py-16 px-6 mx-4 mt-8 rounded-2xl bg-white/20 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/30 text-white text-center">
+                <p className="font-bold text-xl mb-2 drop-shadow-sm">團長補貨中...</p>
+                <p className="text-sm text-white/90 drop-shadow-sm">超值精選好物即將上架，敬請期待！</p>
             </div>
         );
     }

@@ -12,6 +12,7 @@ import { MapPin, Store, User, Hash } from "lucide-react";
 interface LeaderProfile {
     name: string;
     store: string;
+    address?: string;
     avatar: string;
 }
 
@@ -41,19 +42,20 @@ export function LeaderInfoDialog({ isOpen, onOpenChange, profile }: LeaderInfoDi
                 </div>
 
                 <div className="pt-16 pb-8 px-6 text-center">
-                    <h2 className="text-2xl font-bold text-slate-800">{profile.name}</h2>
-                    <p className="text-sm text-slate-500 mt-1">集單團購主身分卡</p>
-
-                    <div className="mt-8 space-y-4 text-left bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                        <div className="flex items-start gap-3">
-                            <div className="mt-1 p-1.5 bg-blue-100 rounded-lg text-blue-600">
-                                <Store className="w-4 h-4" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-slate-400 font-medium">取貨站點</p>
-                                <p className="text-sm font-semibold text-slate-700">{profile.store || "未設定站點"}</p>
-                            </div>
-                        </div>
+                    <div className="mt-2 space-y-3 text-left bg-slate-50/50 p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <p className="text-base font-semibold text-slate-800">
+                            <span className="text-slate-500 mr-2 text-sm font-medium">中油直營加油站:</span>
+                            {profile.store || "無法取得資料"}
+                        </p>
+                        <p className="text-base font-semibold text-slate-800">
+                            <span className="text-slate-500 mr-2 text-sm font-medium">團購主:</span>
+                            {profile.name}
+                        </p>
+                        <p className="text-sm font-medium text-slate-700 leading-relaxed mt-1">
+                            <span className="text-slate-500 mr-1 text-sm font-medium">取貨地址:</span>
+                            <br />
+                            {profile.address || "無法取得資料"}
+                        </p>
                     </div>
 
                     <div className="mt-8">

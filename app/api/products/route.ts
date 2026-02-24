@@ -168,21 +168,26 @@ export async function GET(request: Request) {
             // Fetch everything from GroupLeaders in one go
             const { data: leaderRow } = await supabaseInternal
                 .from('GroupLeaders')
-                .select('Username, LineID, 團主名稱, avatar_url, 加油站, 站代號, 指定地址')
+                .select('*')
                 .eq('Username', targetUsername)
                 .maybeSingle();
 
             if (leaderRow) {
-                // Identity Check
-                if (userId && leaderRow.LineID === String(userId).trim()) {
+                // Identity Check (Allow LineID or Username match for local dev convenience)
+                const rowLineID = String(leaderRow.LineID || "").trim();
+                const rowUsername = String(leaderRow.Username || "").trim();
+                const targetUID = String(userId || "").trim();
+
+                if (targetUID && (rowLineID === targetUID || rowUsername === targetUID)) {
                     isLeader = true;
                 }
 
                 // Profile Enrichment
                 const rowAny = leaderRow as any;
-                leaderName = rowAny['團主名稱'] || leaderName;
+                leaderName = rowAny['暱稱'] || leaderName;
                 leaderAvatar = rowAny.avatar_url || '';
                 leaderStore = rowAny['加油站'] || '';
+                leaderAddress = rowAny['指定地址'] || '';
             }
 
             console.log(`[API GET] Leader Resolve: ID="${targetUsername}", Name="${leaderName}", isLeader=${isLeader}`);
@@ -241,6 +246,7 @@ export async function GET(request: Request) {
         const leaderInfo = leaderId ? {
             name: leaderName,
             store: leaderStore,
+            address: leaderAddress,
             avatar: leaderAvatar
         } : null;
 

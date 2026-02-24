@@ -95,9 +95,9 @@ export function LeaderManagementTab({
 
     return (
         <div className="animate-in fade-in zoom-in-95 px-4 py-6 max-w-md mx-auto">
-            {/* Welcome Header */}
+            {/* Secret Admin Trigger Area (Invisible Header) */}
             <div
-                className="text-center mb-6 cursor-pointer"
+                className="w-full h-8 mb-2 cursor-pointer"
                 onClick={() => {
                     const now = Date.now();
                     if (now - lastClickTime > 1000) {
@@ -111,17 +111,7 @@ export function LeaderManagementTab({
                         setClickCount(0);
                     }
                 }}
-            >
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-200 mb-3">
-                    <span className="text-2xl">👑</span>
-                </div>
-                <h2 className="text-xl font-extrabold text-slate-800">
-                    團購主管理
-                </h2>
-                <p className="text-sm text-slate-500 mt-1">
-                    {userName || "團主"}，這是您的管理面板
-                </p>
-            </div>
+            />
 
             {/* Admin button (hidden until 5-click) */}
             {showAdmin && (
