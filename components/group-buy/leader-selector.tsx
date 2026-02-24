@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, MapPin, Fuel, Smartphone } from "lucide-react";
+import { Search, MapPin, Fuel, Smartphone, Flame } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,6 +23,7 @@ interface Leader {
   distance?: number; // Calculated distance in km
   address?: string;
   LineID?: string;
+  total_qty?: number; // Total intent quantity
 }
 
 interface LeaderSelectorProps {
@@ -134,7 +135,8 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
             latitude: item.latitude,
             longitude: item.longitude,
             address: item.address,
-            LineID: item.LineID
+            LineID: item.LineID,
+            total_qty: item.total_qty || 0
           }))
             .filter(item => item.LineID && item.LineID.trim() !== ""); // Keep only bound leaders
           setLeaders(formattedData);
@@ -192,6 +194,17 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
 
     setFilteredLeaders(result);
   }, [searchQuery, leaders, userCoords]);
+
+  // 4. Derive Popular Leaders
+  const popularLeaders = [...leaders]
+    .filter(l => (l.total_qty || 0) > 0)
+    .sort((a, b) => (b.total_qty || 0) - (a.total_qty || 0))
+    .slice(0, 3);
+
+  // Filter out popular ones from regular list ONLY if not searching, so they don't appear twice
+  const regularLeadersToDisplay = searchQuery
+    ? filteredLeaders
+    : filteredLeaders.filter(l => !popularLeaders.find(p => p.id === l.id));
 
   if (loading) {
     return (
@@ -265,7 +278,110 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
 
       <div className="container mx-auto px-5 max-w-md mt-6 relative z-10">
         <div className="space-y-4 pb-4">
-          {filteredLeaders.slice(0, showAllLeaders ? undefined : 5).map((leader) => (
+
+          {/* --- TOP 3 POPULAR LEADERS --- */}
+          {!searchQuery && popularLeaders.length > 0 && (
+            <div className="mb-6 space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 shadow-sm">
+                    <Flame className="h-4 w-4" />
+                  </div>
+                  <h2 className="text-lg font-black text-slate-800 tracking-tight">人氣推薦站點</h2>
+                </div>
+                <span className="text-xs font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded-md border border-orange-100">Top 3</span>
+              </div>
+
+              {popularLeaders.map((leader, index) => (
+                <div
+                  key={`popular-${leader.id}`}
+                  onClick={() => onSelect(leader.username)}
+                  className="group relative cursor-pointer active:scale-95 transition-all duration-300"
+                >
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-400 to-rose-400 rounded-[24px] opacity-[0.15] group-hover:opacity-[0.25] transition duration-300"></div>
+                  <Card className="relative overflow-hidden border border-orange-100 bg-gradient-to-br from-white to-orange-50/30 rounded-[20px] shadow-sm hover:shadow-md transition-all duration-300">
+                    {/* Rank Badge */}
+                    <div className="absolute top-0 left-0 bg-gradient-to-br from-orange-500 to-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-br-xl rounded-tl-[20px] shadow-sm z-10">
+                      NO.{index + 1}
+                    </div>
+
+                    <div className="pt-3 pb-0.5 px-4 flex flex-col gap-3">
+                      {/* Header Row */}
+                      <div className="flex items-center gap-3">
+                        <div className="relative shrink-0 mt-2">
+                          <Avatar className="h-14 w-14 border-2 border-white shadow-sm shrink-0 ring-2 ring-orange-100">
+                            <AvatarImage src={leader.avatar_url || "/leader-avatar.png"} className="object-cover" />
+                            <AvatarFallback className="bg-orange-100 text-orange-600 font-bold text-lg">
+                              {leader.name.slice(0, 1)}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-center mt-2">
+                          <div className="inline-flex items-center gap-1.5 mb-0.5">
+                            <span className="bg-orange-100 text-orange-600 text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide">
+                              熱門團主
+                            </span>
+                            <span className="text-orange-500 text-[11px] font-bold flex items-center gap-0.5">
+                              ⭐ 累計接單 {leader.total_qty} 件
+                            </span>
+                          </div>
+                          <h3 className="font-bold text-base text-slate-900 leading-tight truncate">
+                            {leader.name}
+                          </h3>
+                        </div>
+                        <div className="shrink-0 mt-2">
+                          <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-3 h-9 font-bold shadow-sm shadow-orange-200">
+                            選我
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="h-px w-full bg-gradient-to-r from-transparent via-orange-100 to-transparent" />
+                      {/* Context Row */}
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-8 w-8 rounded-full bg-rose-50 flex items-center justify-center shrink-0 text-rose-500">
+                            <Fuel className="h-4 w-4" />
+                          </div>
+                          <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+                            <span className="font-bold text-slate-700 truncate text-[14px]">
+                              {leader.store_name || "中油加油站"}
+                            </span>
+                            {leader.distance !== undefined && (
+                              <span className="text-slate-400 text-xs whitespace-nowrap font-medium shrink-0">
+                                | 距您 {leader.distance.toFixed(1)} km
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 text-slate-400">
+                            <MapPin className="h-4 w-4" />
+                          </div>
+                          <div className="flex-1 min-w-0 py-0.5">
+                            <p className="text-[13px] text-slate-500 leading-snug break-words">
+                              取貨地址：{leader.address || "請洽團購主確認"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* --- REGULAR LEADERS LIST --- */}
+          <div className="flex items-center gap-2 mb-2 px-1 mt-2">
+            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
+              {searchQuery ? <Search className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
+            </div>
+            <h2 className="text-lg font-bold text-slate-800">
+              {searchQuery ? "搜尋結果" : (userCoords ? "附近站點" : "所有站點")}
+            </h2>
+          </div>
+
+          {regularLeadersToDisplay.slice(0, showAllLeaders ? undefined : 5).map((leader) => (
             <div
               key={leader.id}
               onClick={() => onSelect(leader.username)}
@@ -349,7 +465,7 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
             </div>
           ))}
 
-          {!showAllLeaders && filteredLeaders.length > 5 && (
+          {!showAllLeaders && regularLeadersToDisplay.length > 5 && (
             <Button
               variant="outline"
               className="w-full h-12 rounded-2xl border-slate-200 text-slate-500 font-bold hover:bg-slate-50 hover:text-blue-600 transition-all"
@@ -358,11 +474,11 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
                 setShowAllLeaders(true);
               }}
             >
-              展開顯示更多站點 ({filteredLeaders.length - 5})
+              展開顯示更多站點 ({regularLeadersToDisplay.length - 5})
             </Button>
           )}
 
-          {filteredLeaders.length === 0 && (
+          {regularLeadersToDisplay.length === 0 && (
             <div className="text-center py-20 bg-white/50 rounded-[2rem] border-2 border-dashed border-slate-200">
               <div className="mx-auto w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
                 <Search className="h-8 w-8 text-slate-400" />
