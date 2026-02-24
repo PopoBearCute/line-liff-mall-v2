@@ -1267,7 +1267,13 @@ export default function GroupBuyPage() {
     <Suspense fallback={<Loading />}>
       {isLoading && <Loading />}
 
-      <div className="bg-[url('/ocean-bg.png')] bg-cover bg-fixed bg-center bg-no-repeat min-h-screen w-full pb-36 overflow-y-auto">
+      {/* Truly Fixed Background for iOS/Mobile */}
+      <div
+        className="fixed inset-0 z-0 pointer-events-none bg-[url('/ocean-bg.png')] bg-cover bg-center bg-no-repeat"
+        style={{ height: '100vh', width: '100vw', transform: 'translateZ(0)' }}
+      />
+
+      <div className="relative z-10 min-h-screen w-full pb-36 overflow-y-auto overflow-x-hidden">
         <Header
           wave={activeWaves[activeTab]?.wave || ""}
           roleTag={isLeader ? "團購主端" : "消費者端"}
@@ -1280,7 +1286,7 @@ export default function GroupBuyPage() {
 
 
         {/* Stories Bar */}
-        <div className="pt-3 pb-2 mb-4 bg-white/10 backdrop-blur-sm shadow-[0_4px_30px_rgba(0,0,0,0.05)] border-b border-white/20 sticky top-0 z-10 rounded-b-xl mx-2">
+        <div className="pt-3 pb-2 mb-4 bg-white/10 backdrop-blur-sm shadow-[0_4px_30px_rgba(0,0,0,0.05)] border-b border-white/20 sticky top-0 z-20 rounded-b-xl mx-2 transform-gpu" style={{ transform: 'translateZ(0)', willChange: 'backdrop-filter' }}>
           <StoriesBar
             leaderAvatar={leaderAvatar || userProfile?.pictureUrl || "/leader-avatar.png"}
             leaderName={leaderName}
