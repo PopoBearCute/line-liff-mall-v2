@@ -189,7 +189,7 @@ export async function GET(request: Request) {
 
                 // Profile Enrichment
                 const rowAny = leaderRow as any;
-                leaderName = rowAny['暱稱'] || leaderName;
+                leaderName = rowAny['暱稱'] || rowAny['團主名稱'] || leaderName;
                 leaderAvatar = rowAny.avatar_url || '';
                 leaderStore = rowAny['加油站'] || '';
                 leaderAddress = rowAny['指定地址'] || '';

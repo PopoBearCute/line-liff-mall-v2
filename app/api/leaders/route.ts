@@ -31,12 +31,18 @@ export async function GET(request: Request) {
         // Default: Fetch all active leaders
         const { data, error } = await adminSupabase
             .from("GroupLeaders")
-            .select("id, name:團主名稱, avatar_url, store_name:加油站, station_code:站代號, username:Username, latitude:緯度, longitude:經度, address:指定地址, LineID")
+            .select("id, fullName:團主名稱, nickname:暱稱, avatar_url, store_name:加油站, station_code:站代號, username:Username, latitude:緯度, longitude:經度, address:指定地址, LineID")
             .eq("IsGroupLeader", "Yes");
 
         if (error) throw error;
 
-        return NextResponse.json({ success: true, data });
+        // Map data to use nickname if available, fallback to fullName
+        const mappedData = data.map(item => ({
+            ...item,
+            name: item.nickname || item.fullName || '團購主'
+        }));
+
+        return NextResponse.json({ success: true, data: mappedData });
 
     } catch (err: any) {
         console.error('API Leaders Error:', err);

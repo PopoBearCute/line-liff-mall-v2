@@ -83,6 +83,24 @@ export function IGFeedCard({
         Number(product.isEnabled) === 1;
 
 
+    // --- Deep Link Handler to prevent blank pages ---
+    const handleDeepLink = (url?: string) => {
+        if (!url) return;
+
+        // 1. If inside LINE LIFF, use the native openWindow API for best integration
+        if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
+            // Note: external: true tells LINE to open the external browser/app instead of an in-app browser
+            (window.liff as any).openWindow({ url, external: true });
+            return;
+        }
+
+        // 2. Fallback for normal browsers (Chrome, Safari, etc.)
+        // Instead of window.open() which creates a blank tab in Chrome before passing to OS,
+        // we use location.href to try and trigger the app intent directly from the current page.
+        // The OS will intercept the scheme (e.g., intent:// or custom-scheme://) and open the app.
+        window.location.href = url;
+    };
+
     // --- Dynamic Configuration based on Mode ---
     const config = {
         active: {
@@ -92,7 +110,7 @@ export function IGFeedCard({
             btnText: "來去下單",
             progressColor: "bg-primary-green",
             statusText: `剩餘庫存: 充足`, // Placeholder logic
-            action: () => window.open(product.link, '_blank'),
+            action: () => handleDeepLink(product.link),
             priceColor: "text-black dark:text-white"
         },
         collecting: {
