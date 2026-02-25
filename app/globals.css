@@ -366,3 +366,68 @@
 .animate-strobe-glow {
   animation: strobe-glow 0.12s infinite alternate ease-in-out;
 }
+
+/* Logo Long-press Glowing Animation */
+.logo-glow-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  height: 150px;
+  /* Adjusted to match mall-icon size roughly */
+  width: 150px;
+  animation: rotate_logo_glow 0.4s linear infinite;
+  background-color: #ede9ee;
+  background-image: linear-gradient(#9b59b6, #84cdfa, #5ad1cd);
+  z-index: -1;
+  /* Behind the actual logo image */
+  pointer-events: none;
+}
+
+.logo-glow-container span {
+  position: absolute;
+  border-radius: 50%;
+  height: 100%;
+  width: 100%;
+  background-color: #9b59b6;
+  background-image: linear-gradient(#9b59b6, #84cdfa, #5ad1cd);
+}
+
+.logo-glow-container span:nth-of-type(1) {
+  filter: blur(15px);
+}
+
+.logo-glow-container span:nth-of-type(2) {
+  filter: blur(15px);
+}
+
+.logo-glow-container span:nth-of-type(3) {
+  filter: blur(30px);
+}
+
+.logo-glow-container span:nth-of-type(4) {
+  filter: blur(60px);
+}
+
+.logo-glow-container::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  background-color: white;
+  opacity: 0.1;
+  /* Semi-transparent to let some color bleed through */
+  border-radius: 50%;
+}
+
+@keyframes rotate_logo_glow {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}

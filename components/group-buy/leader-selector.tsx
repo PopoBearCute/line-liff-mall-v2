@@ -217,7 +217,7 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
           {/* Overlapping Original Logo */}
           <div
             className={`absolute right-[5px] top-[25px] w-[124px] h-[124px] z-20 transition-all duration-300 select-none cursor-pointer ${isLongPressing
-              ? "animate-strobe-glow scale-95"
+              ? "scale-95"
               : "hover:scale-105 drop-shadow-xl"
               }`}
             style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -229,7 +229,15 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
             onMouseLeave={handleLongPressEnd}
             onContextMenu={(e) => e.preventDefault()}
           >
-            <div className="w-full h-full relative group">
+            <div className="w-full h-full relative group flex items-center justify-center">
+              {isLongPressing && (
+                <div className="logo-glow-container">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              )}
               <Image
                 src="/mall-icon.png"
                 alt="CPC Mall Logo"

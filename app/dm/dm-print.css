@@ -128,6 +128,14 @@
   }
 }
 
+/* Desktop: hide toolbar — user arrived via email link, just Ctrl+P to print */
+@media screen and (min-width: 768px) {
+  .dm-toolbar,
+  .dm-toolbar-guide {
+    display: none !important;
+  }
+}
+
 /* === Flyer Container === */
 .dm-flyer {
   max-width: 210mm;
@@ -383,5 +391,19 @@
   .dm-card-img {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  /* Show full product name & description on print — no truncation */
+  .dm-card-name {
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow: visible;
+    min-height: auto;
+  }
+
+  .dm-card-desc {
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow: visible;
   }
 }

@@ -1269,7 +1269,7 @@ export default function GroupBuyPage() {
 
       {/* Responsive Fixed Background for 4K Clarity - Using User Sunset Image */}
       <div
-        className="fixed inset-0 z-0 pointer-events-none bg-[url('/ocean-bg-user.jpg')] bg-cover bg-center bg-no-repeat"
+        className="fixed inset-0 z-0 pointer-events-none bg-[url('/ocean-bg-user.jpg')] bg-cover bg-center bg-no-repeat transform-gpu"
         style={{ height: '100vh', width: '100vw', transform: 'translateZ(0)', imageRendering: 'auto' }}
       />
 
