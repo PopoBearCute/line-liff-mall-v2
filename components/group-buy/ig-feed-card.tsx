@@ -385,30 +385,14 @@ export function IGFeedCard({
                                             e.preventDefault();
                                             return;
                                         }
-                                        // 1. If inside LINE LIFF, intercept and use native API
-                                        if (typeof window !== 'undefined' && (window as any).liff && (window as any).liff.isLoggedIn()) {
-                                            e.preventDefault();
+                                        e.preventDefault();
+                                        // Inside LINE's built-in browser → use native API to open externally
+                                        if (typeof window !== 'undefined' && (window as any).liff?.isInClient?.()) {
                                             ((window as any).liff as any).openWindow({ url: product.link, external: true });
                                             return;
                                         }
-
-                                        // 2. Fix for iOS Chrome/Android Webview: Prevents "white blank page" dead end
-                                        // We intercept the navigation, manually open the tab so we hold a reference to it
-                                        e.preventDefault();
-                                        const newWindow = window.open(product.link, '_blank');
-                                        if (newWindow) {
-                                            // Attempt to auto-close the tab after 3 seconds while the user is inside the native App.
-                                            setTimeout(() => {
-                                                try {
-                                                    newWindow.close();
-                                                } catch (err) {
-                                                    console.error('Failed to auto-close window:', err);
-                                                }
-                                            }, 3000);
-                                        } else {
-                                            // Fallback if popup blocker is active
-                                            window.location.href = product.link || '';
-                                        }
+                                        // External browser (Chrome/Safari) → navigate in-place to avoid blank tab
+                                        window.location.href = product.link || '';
                                     }}
                                 >
                                     {config.btnText}
