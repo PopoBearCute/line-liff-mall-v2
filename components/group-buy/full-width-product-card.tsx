@@ -200,8 +200,14 @@ export function FullWidthProductCard({
             {product.isEnabled ? (
               <a
                 href={product.link}
-                target="_blank"
+                target="_top"
                 rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (typeof window !== 'undefined' && (window as any).liff && (window as any).liff.isLoggedIn()) {
+                    e.preventDefault();
+                    ((window as any).liff as any).openWindow({ url: product.link, external: true });
+                  }
+                }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-bold text-primary-foreground shadow-lg active:scale-95 transition-all"
               >
                 <ExternalLink className="h-4 w-4" />

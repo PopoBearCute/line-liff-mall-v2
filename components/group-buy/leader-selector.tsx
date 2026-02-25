@@ -418,7 +418,7 @@ export function LeaderSelector({ onSelect, lineUserId, userAvatar, displayName }
               </a>
               <a
                 href="https://apps.apple.com/tw/app/%E4%B8%AD%E6%B2%B9pay/id1475467410"
-                target="_blank"
+                target="_top"
                 rel="noopener noreferrer"
                 className="transition-transform hover:scale-105 active:scale-95"
               >

@@ -189,7 +189,13 @@ export function LeaderManagementTab({
                 <button
                     onClick={() => {
                         const dmUrl = `/dm?leaderId=${leaderId || ''}`;
-                        window.open(dmUrl, '_blank');
+                        // Attempt to open native LINE App first
+                        window.location.href = dmUrl;
+
+                        setTimeout(() => {
+                            // Since target="_top" or location.href will just navigate, we simply show toast.
+                            toast.success("已開啟私訊邀請！");
+                        }, 1000);
                     }}
                     disabled={collectingCount === 0}
                     className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all active:scale-95 ${collectingCount === 0
