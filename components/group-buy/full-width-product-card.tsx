@@ -200,12 +200,29 @@ export function FullWidthProductCard({
             {product.isEnabled ? (
               <a
                 href={product.link}
-                target="_top"
+                target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => {
+                  // 1. If inside LINE LIFF, intercept and use native API
                   if (typeof window !== 'undefined' && (window as any).liff && (window as any).liff.isLoggedIn()) {
                     e.preventDefault();
                     ((window as any).liff as any).openWindow({ url: product.link, external: true });
+                    return;
+                  }
+
+                  // 2. Fix for iOS Chrome/Android Webview: Prevents "white blank page" dead end
+                  e.preventDefault();
+                  const newWindow = window.open(product.link, '_blank');
+                  if (newWindow) {
+                    setTimeout(() => {
+                      try {
+                        newWindow.close();
+                      } catch (err) {
+                        console.error('Failed to auto-close window:', err);
+                      }
+                    }, 3000);
+                  } else {
+                    window.location.href = product.link || '';
                   }
                 }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-bold text-primary-foreground shadow-lg active:scale-95 transition-all"

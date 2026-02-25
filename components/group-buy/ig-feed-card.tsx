@@ -377,7 +377,7 @@ export function IGFeedCard({
                             (mode === 'active' && product.link) ? (
                                 <a
                                     href={product.link}
-                                    target="_top"
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     className={`${isLeader && mode === 'active' && !isEnabled ? 'bg-gray-400 cursor-not-allowed pointer-events-none' : config.btnColor} text-white text-xs font-bold px-6 py-2.5 rounded-full transition-colors shadow-sm whitespace-nowrap active:scale-95 flex items-center justify-center`}
                                     onClick={(e) => {
@@ -386,11 +386,29 @@ export function IGFeedCard({
                                             return;
                                         }
                                         // 1. If inside LINE LIFF, intercept and use native API
-                                        if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
+                                        if (typeof window !== 'undefined' && (window as any).liff && (window as any).liff.isLoggedIn()) {
                                             e.preventDefault();
-                                            (window.liff as any).openWindow({ url: product.link, external: true });
+                                            ((window as any).liff as any).openWindow({ url: product.link, external: true });
+                                            return;
                                         }
-                                        // 2. Otherwise let the browser's native <a> tag handling do OS-level Intent/Universal Link routing
+
+                                        // 2. Fix for iOS Chrome/Android Webview: Prevents "white blank page" dead end
+                                        // We intercept the navigation, manually open the tab so we hold a reference to it
+                                        e.preventDefault();
+                                        const newWindow = window.open(product.link, '_blank');
+                                        if (newWindow) {
+                                            // Attempt to auto-close the tab after 3 seconds while the user is inside the native App.
+                                            setTimeout(() => {
+                                                try {
+                                                    newWindow.close();
+                                                } catch (err) {
+                                                    console.error('Failed to auto-close window:', err);
+                                                }
+                                            }, 3000);
+                                        } else {
+                                            // Fallback if popup blocker is active
+                                            window.location.href = product.link || '';
+                                        }
                                     }}
                                 >
                                     {config.btnText}
