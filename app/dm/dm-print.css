@@ -183,6 +183,18 @@
   letter-spacing: 2px;
 }
 
+.dm-banner-dates {
+  margin: 6px 0 0;
+}
+
+.dm-banner-date {
+  font-size: 16px;
+  font-weight: 800;
+  color: #dc2626;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
 .dm-banner-leader {
   font-size: 14px;
   color: #334155;

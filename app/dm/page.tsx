@@ -17,6 +17,11 @@ interface Product {
     img: string;
     description: string;
     endDate?: string;
+    wishStartDate?: string | null;
+    wishEndDate?: string | null;
+    saleStartDate?: string | null;
+    saleEndDate?: string | null;
+    waveId?: string;
 }
 
 interface ActiveWave {
@@ -62,6 +67,24 @@ function DMContent() {
             setIsLoading(false);
         }
     };
+
+    // 從有日期的商品中，取 WaveID 最大者的日期作為 Banner 日期
+    const bannerDates = (() => {
+        const withDates = products.filter(p => p.wishStartDate || p.wishEndDate || p.saleStartDate || p.saleEndDate);
+        if (withDates.length === 0) return null;
+        const maxWaveProduct = withDates.reduce((a, b) =>
+            Number(b.waveId || 0) > Number(a.waveId || 0) ? b : a
+        );
+        const dateOnly = (s: string) => s.split(" ")[0];
+        const formatRange = (start?: string | null, end?: string | null) => {
+            if (start && end) return `${dateOnly(start)} ~ ${dateOnly(end)}`;
+            return start ? dateOnly(start) : end ? dateOnly(end) : "";
+        };
+        return {
+            wish: formatRange(maxWaveProduct.wishStartDate, maxWaveProduct.wishEndDate),
+            sale: formatRange(maxWaveProduct.saleStartDate, maxWaveProduct.saleEndDate),
+        };
+    })();
 
     const storeUrl = `https://liff.line.me/${LIFF_ID}?leaderId=${leaderId}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(storeUrl)}`;
@@ -151,10 +174,16 @@ function DMContent() {
                             <h1 className="dm-banner-title">行動商城團購優惠特報</h1>
                         </div>
                         <p className="dm-banner-leader">{leaderName} 為您嚴選</p>
-                        <p className="dm-banner-cta">掃描 QR Code 線上選購 →</p>
+                        {bannerDates && (
+                            <div className="dm-banner-dates">
+                                {bannerDates.wish && <p className="dm-banner-date">登記期間：{bannerDates.wish}</p>}
+                                {bannerDates.sale && <p className="dm-banner-date">下單期間：{bannerDates.sale}</p>}
+                            </div>
+                        )}
                     </div>
                     <div className="dm-banner-right">
                         <img src={qrCodeUrl} alt="QR Code" className="dm-banner-qr" />
+                        <p className="dm-banner-cta">掃描 QR Code 線上選購</p>
                     </div>
                 </div>
 

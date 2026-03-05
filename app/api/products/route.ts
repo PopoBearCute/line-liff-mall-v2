@@ -146,6 +146,10 @@ export async function GET(request: Request) {
                     link: row['商城連結'] || "",
                     moq: Number(row.MOQ || 0),
                     endDate: displayDate || "無日期",
+                    wishStartDate: formatDate(wishStart) || null,
+                    wishEndDate: formatDate(wishEnd) || null,
+                    saleStartDate: formatDate(saleStart) || null,
+                    saleEndDate: formatDate(saleEnd) || null,
                     waveId: waveId
                 });
             }
