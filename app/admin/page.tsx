@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/dialog";
 
 interface Product {
-    // id: number; // Removed as determined by debug script
     "WaveID": string;
     "商品名稱": string;
     "原價": number;
@@ -25,6 +24,8 @@ interface Product {
     "圖片網址": string;
     "商品描述": string;
     "商城連結": string;
+    "選品開始時間"?: string;
+    "選品結束時間"?: string;
     "販售開始時間"?: string;
     "販售結束時間"?: string;
 }
@@ -326,7 +327,7 @@ export default function AdminPage() {
                                         <Plus className="w-4 h-4 mr-1" />
                                         新增單筆
                                     </Button>
-                                    <Button size="sm" variant="outline" onClick={fetchProducts}>
+                                    <Button size="sm" variant="outline" onClick={fetchProducts} className="bg-white text-black border-slate-300 hover:bg-slate-100">
                                         {isLoading ? <Loader2 className="animate-spin w-4 h-4" /> : "重新整理"}
                                     </Button>
                                 </div>
@@ -338,24 +339,36 @@ export default function AdminPage() {
                                         <tr>
                                             <th className="p-3 border-b">波段</th>
                                             <th className="p-3 border-b">圖片</th>
-                                            <th className="p-3 border-b w-[30%]">名稱</th>
+                                            <th className="p-3 border-b w-[16%]">名稱</th>
+                                            <th className="p-3 border-b">原價</th>
                                             <th className="p-3 border-b">團購價</th>
                                             <th className="p-3 border-b">MOQ</th>
+                                            <th className="p-3 border-b w-[12%]">商品描述</th>
+                                            <th className="p-3 border-b">選品開始</th>
+                                            <th className="p-3 border-b">選品結束</th>
+                                            <th className="p-3 border-b">販售開始</th>
+                                            <th className="p-3 border-b">販售結束</th>
                                             <th className="p-3 border-b text-right">操作</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {products.map((p, idx) => (
                                             <tr key={`${p.WaveID}_${p["商品名稱"]}_${idx}`} className="hover:bg-gray-50 group border-b last:border-0">
-                                                <td className="p-3">{p.WaveID}</td>
+                                                <td className="p-3 text-gray-500">{p.WaveID}</td>
                                                 <td className="p-3">
                                                     {p["圖片網址"] && (
                                                         <img src={p["圖片網址"]} className="w-10 h-10 object-cover rounded bg-gray-100" />
                                                     )}
                                                 </td>
                                                 <td className="p-3 font-medium">{p["商品名稱"]}</td>
+                                                <td className="p-3 text-gray-400 line-through text-xs">{p["原價"] ? `$${p["原價"]}` : '-'}</td>
                                                 <td className="p-3 text-red-600 font-bold">${p["團購價"]}</td>
                                                 <td className="p-3">{p.MOQ}</td>
+                                                <td className="p-3 text-gray-500 text-xs max-w-[120px] truncate" title={p["商品描述"]}>{p["商品描述"] || '-'}</td>
+                                                <td className="p-3 text-xs text-gray-500 whitespace-nowrap">{p["選品開始時間"] ? p["選品開始時間"].slice(0, 10) : '-'}</td>
+                                                <td className="p-3 text-xs text-gray-500 whitespace-nowrap">{p["選品結束時間"] ? p["選品結束時間"].slice(0, 10) : '-'}</td>
+                                                <td className="p-3 text-xs text-gray-500 whitespace-nowrap">{p["販售開始時間"] ? p["販售開始時間"].slice(0, 10) : '-'}</td>
+                                                <td className="p-3 text-xs text-gray-500 whitespace-nowrap">{p["販售結束時間"] ? p["販售結束時間"].slice(0, 10) : '-'}</td>
                                                 <td className="p-3 text-right whitespace-nowrap">
                                                     <Button
                                                         size="icon"
@@ -393,7 +406,7 @@ export default function AdminPage() {
 
             {/* Add/Edit Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-lg">
+                <DialogContent className="max-w-lg bg-white text-slate-900 border-slate-200">
                     <DialogHeader>
                         <DialogTitle>{editingProduct ? "編輯商品" : "新增商品"}</DialogTitle>
                     </DialogHeader>

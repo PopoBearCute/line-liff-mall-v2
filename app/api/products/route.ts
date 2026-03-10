@@ -40,11 +40,22 @@ const formatDate = (date: Date | null): string | null => {
         const parts = df.formatToParts(date);
         const part = (type: string) => parts.find(p => p.type === type)?.value;
 
-        const h = parseInt(part('hour') || '0', 10);
-        const m = parseInt(part('minute') || '0', 10);
+        let h = parseInt(part('hour') || '0', 10);
+        let m = parseInt(part('minute') || '0', 10);
+
+        // [Fix] Node sometimes formats midnight as 24:00, or it's 00:00 of the next day.
+        // For deadlines like 3/11 00:00, users expect "3/10 24:00" or just the date.
+        // Let's standardise midnight to 23:59 of the PREVIOUS day if the time is exactly 00:00 or 24:00
+        if ((h === 24 || h === 0) && m === 0) {
+            // Subtract 1 millisecond from original date to push it back to previous day
+            const prevDayParts = df.formatToParts(new Date(date.getTime() - 1));
+            const pMonth = prevDayParts.find(p => p.type === 'month')?.value;
+            const pDay = prevDayParts.find(p => p.type === 'day')?.value;
+            return `${pMonth}/${pDay} 23:59`;
+        }
 
         if (h === 23 && m === 59) {
-            return `${part('month')}/${part('day')}`;
+            return `${part('month')}/${part('day')} 23:59`;
         }
         return `${part('month')}/${part('day')} ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     } catch (e) {

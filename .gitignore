@@ -5,8 +5,11 @@ build/
 dist/
 .env
 .env.local
+.env.production
 .vscode/
+.claude/
 *.log
 check_db.js
 check_db_ipv6.js
 build_log.txt
+商品爬蟲界面/

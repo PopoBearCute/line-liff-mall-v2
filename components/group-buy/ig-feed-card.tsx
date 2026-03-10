@@ -216,7 +216,7 @@ export function IGFeedCard({
                                 </span>
                             </span>
                             <span className="text-[11px] text-gray-500 font-medium">
-                                {product.endDate ? `截止日期: ${product.endDate}` : "長期開團"}
+                                {product.endDate ? `截止日期: ${product.endDate.split(' ')[0]}` : "長期開團"}
                             </span>
                         </div>
 

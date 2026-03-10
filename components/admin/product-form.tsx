@@ -53,12 +53,34 @@ export function ProductForm({ initialData, onSave, onCancel }: ProductFormProps)
         setFormData(prev => ({
             ...prev,
             [field]: value
-        }));
+        } as ProductFormData));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave(formData);
+
+        // [Fix] Enforce Taiwan Timezone (+08:00) during save
+        // User inputs DATE only. We automatically pad:
+        // - 開始時間 → T00:00:00+08:00 (start of day TPE)
+        // - 結束時間 → T23:59:59+08:00 (end of day TPE)
+        const formattedData = { ...formData };
+
+        const processDate = (field: keyof ProductFormData, timeSuffix: string) => {
+            const val = formattedData[field];
+            if (typeof val === 'string' && val.length > 0) {
+                if (!val.includes('+') && !val.endsWith('Z')) {
+                    const datePart = val.slice(0, 10); // ensure only YYYY-MM-DD
+                    formattedData[field] = `${datePart}${timeSuffix}`;
+                }
+            }
+        };
+
+        processDate("選品開始時間", "T00:00:00+08:00");
+        processDate("販售開始時間", "T00:00:00+08:00");
+        processDate("選品結束時間", "T23:59:59+08:00");
+        processDate("販售結束時間", "T23:59:59+08:00");
+
+        onSave(formattedData);
     };
 
     return (
@@ -188,7 +210,7 @@ export function ProductForm({ initialData, onSave, onCancel }: ProductFormProps)
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={onCancel}>取消</Button>
+                <Button type="button" variant="outline" className="bg-white text-black hover:bg-slate-100 border border-slate-300" onClick={onCancel}>取消</Button>
                 <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
                     {initialData ? "儲存修改" : "新增商品"}
                 </Button>
