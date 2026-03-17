@@ -290,14 +290,14 @@ export function IGFeedCard({
                 )}
 
                 <div className="text-[14px] text-gray-900 dark:text-white leading-relaxed mb-1">
-                    <span className="font-bold mr-2">{product.name}</span>
-                    <span className={isExpanded ? "" : "line-clamp-2"}>
+                    <div className="font-bold">{product.name}</div>
+                    <div className={`break-words whitespace-pre-line ${isExpanded ? "" : "line-clamp-2"}`}>
                         {product.description}
-                    </span>
+                    </div>
                     {!isExpanded && typeof product.description === 'string' && product.description.length > 30 && (
                         <button
                             onClick={() => setIsExpanded(true)}
-                            className="text-gray-500 ml-1 hover:text-gray-700 text-[13px]"
+                            className="text-gray-500 hover:text-gray-700 text-[13px] mt-1"
                         >
                             ... 更多
                         </button>
