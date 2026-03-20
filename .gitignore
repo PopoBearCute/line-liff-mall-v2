@@ -13,3 +13,5 @@ check_db.js
 check_db_ipv6.js
 build_log.txt
 商品爬蟲界面/
+中油團購主系統操作導引/node_modules/
+中油團購主系統操作導引/dist/
