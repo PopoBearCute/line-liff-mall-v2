@@ -68,13 +68,13 @@ const getImageWidth = (image: string, stepId?: number): string => {
 
   // Specific widths requested by the user
   const fixedWidths: Record<string, string> = {
-    "/step1_login.png": "420px",
-    "/step1_create.png": "420px",
-    "/step1_final.png": "420px",
-    "/step1_edit.png": "420px",
-    "/step1_edit_expanded.png": "420px",
-    "/QrCode.jpg": "170px",
-    "/liffQRcode.png": "170px",
+    "./step1_login.png": "420px",
+    "./step1_create.png": "420px",
+    "./step1_final.png": "420px",
+    "./step1_edit.png": "420px",
+    "./step1_edit_expanded.png": "420px",
+    "./QrCode.jpg": "170px",
+    "./liffQRcode.png": "170px",
   };
 
   if (fixedWidths[image]) return fixedWidths[image];
@@ -201,7 +201,7 @@ const STEPS: Step[] = [
     content: [
       {
         subtitle: "1. 登入加油站帳號",
-        image: "/step1_login.png",
+        image: "./step1_login.png",
         highlights: [
           { top: "59.3%", left: "16.4%", width: "63%", height: "7.5%", label: "帳號：輸入您的「站代號」" },
           { top: "68.4%", left: "15.3%", width: "63%", height: "7.5%", label: "密碼：預設為「站代號」" }
@@ -209,8 +209,8 @@ const STEPS: Step[] = [
       },
       {
         subtitle: "2. 填寫帳號基本資訊",
-        image: "/step1_create.png",
-        helpMedia: "/manual_nav.gif",
+        image: "./step1_create.png",
+        helpMedia: "./manual_nav.gif",
         highlights: [
           { top: "38.7%", left: "-40%", width: "60%", height: "5%", label: "輸入「工號」" },
           { top: "48%", left: "-35.4%", width: "60%", height: "5%", label: "設定您的「密碼」" },
@@ -221,22 +221,22 @@ const STEPS: Step[] = [
       },
       {
         subtitle: "3. 找到帳號並點擊編輯",
-        image: "/step1_final.png",
-        helpMedia: "/step1_final.gif",
+        image: "./step1_final.png",
+        helpMedia: "./step1_final.gif",
         highlights: [
           { top: "90%", left: "13%", width: "70%", height: "10%", label: "找到剛剛建立的帳號 (如 DXXXX-123456) 並點擊「編輯」" }
         ]
       },
       {
         subtitle: "4. 開啟團購主開關",
-        image: "/step1_edit.png",
+        image: "./step1_edit.png",
         highlights: [
           { top: "75.4%", left: "57.9%", width: "10%", height: "3.5%", label: "開啟「是否為團購主」開關" }
         ]
       },
       {
         subtitle: "5. 填寫資訊並儲存",
-        image: "/step1_edit_expanded.png",
+        image: "./step1_edit_expanded.png",
         highlights: [
           { top: "16.3%", left: "-27.4%", width: "70%", height: "40%", label: "填寫團主名稱、卡號、電話等必填資訊" },
           { top: "91.2%", left: "-32.4%", width: "74%", height: "6%", label: "點擊「儲存」完成設定" }
@@ -250,7 +250,7 @@ const STEPS: Step[] = [
     description: "使用步驟 A 建立的「團購主帳號」登入。帳號格式為「站代號-工號」，密碼為您自行設定的密碼。",
     content: [
       {
-        image: "/step1_login.png",
+        image: "./step1_login.png",
         highlights: [
           { top: "59.7%", left: "18.6%", width: "63%", height: "7.5%", label: "帳號：DXXXX-123456" },
           { top: "68.4%", left: "18.7%", width: "63%", height: "7.5%", label: "密碼：您設定的密碼" }
@@ -267,7 +267,7 @@ const STEPS: Step[] = [
     description: "進入選品頁挑選商品，點擊「推薦作業」後進入商品頁，按下底部的「我要推薦」按鈕即可完成。",
     content: [
       {
-        image: "/step3_selection.gif",
+        image: "./step3_selection.gif",
         highlights: [
           { top: "47.5%", left: "-30%", width: "30%", height: "8%", label: "選擇要推薦的商品" },
           { top: "68.7%", left: "-24.5%", width: "15%", height: "6%", label: "點擊「推薦作業」按鈕" },
@@ -300,7 +300,7 @@ const STEPS: Step[] = [
     content: [
       {
         subtitle: "滿足最小訂購量後，可進行「結單作業」",
-        image: "/結單作業.gif",
+        image: "./結單作業.gif",
         link: { label: "團購訂單管理 (結單)", url: "https://ecm.cpc.com.tw/omotest/groupbuyselection/settlementlist" },
         highlights: [
           { top: "24%", left: "-27%", width: "40%", height: "8%", label: "1. 選擇結單商品" },
@@ -329,7 +329,7 @@ const STEPS: Step[] = [
       },
       {
         subtitle: "1.物流送貨到站，簽收並取得「到站取貨單」",
-        image: "/到站取貨單.gif",
+        image: "./到站取貨單.gif",
         link: { label: "團購待收貨頁面", url: "https://ecm.cpc.com.tw/omotest/groupbuyinbound/list" },
         linkFirst: true,
         highlights: [],
@@ -350,7 +350,7 @@ const STEPS: Step[] = [
       },
       {
         subtitle: "2.清點貨品數量，進行「收貨作業」",
-        image: "/收貨作業.gif",
+        image: "./收貨作業.gif",
         highlights: [
           { top: "85%", left: "85%", width: "30%", height: "15%", label: "點擊確認到貨" }
         ],
@@ -371,7 +371,7 @@ const STEPS: Step[] = [
       },
       {
         subtitle: "3. 消費者到站，進行「取貨作業」",
-        image: "/取貨作業.gif",
+        image: "./取貨作業.gif",
         link: { label: "團購待取貨頁面 (發貨)", url: "https://ecm.cpc.com.tw/omotest/groupbuypickup/list" },
         linkFirst: true,
         highlights: [],
@@ -401,7 +401,7 @@ const STEPS: Step[] = [
       {
         subtitle: "1. 加入官方社群",
         description: "掌握商品動態，提供各類反饋與服務。",
-        image: "/QrCode.jpg",
+        image: "./QrCode.jpg",
         highlights: [
           { top: "50.0%", left: "-90.7%", width: "20%", height: "20%", label: "手機掃碼加入官方社群" }
         ],
@@ -415,7 +415,7 @@ const STEPS: Step[] = [
       {
         subtitle: "2. 社群分享工具",
         description: "分享工具，快速產生推廣圖文與連結，讓社群經營更輕鬆。",
-        image: "/liffQRcode.png",
+        image: "./liffQRcode.png",
         highlights: [
           { top: "50%", left: "-84.5%", width: "20%", height: "20%", label: "掃碼開啟工具" }
         ],
@@ -434,7 +434,7 @@ const STEPS: Step[] = [
     title: "獎勵辦法",
     description: "詳情請見連結",
     links: [
-      { label: "獎勵辦法", url: "/團購業務推廣獎勵辦法.pdf" }
+      { label: "獎勵辦法", url: "./團購業務推廣獎勵辦法.pdf" }
     ],
     content: [
       {
