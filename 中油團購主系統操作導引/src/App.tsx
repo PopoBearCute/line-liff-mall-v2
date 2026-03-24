@@ -17,7 +17,8 @@ import {
   Settings,
   Users,
   ShieldCheck,
-  HelpCircle
+  HelpCircle,
+  XCircle
 } from 'lucide-react';
 
 // --- Types ---
@@ -37,14 +38,16 @@ interface Step {
 }
 
 interface StepContent {
-  image: string;
+  image?: string;
   subtitle?: string;
   description?: string;
   highlights: Highlight[];
   helpMedia?: string;
   link?: { label: string; url: string };
   linkFirst?: boolean;
+  midQa?: QA[];
   qa?: QA[];
+  customComponent?: 'AccumulationFlow' | 'ClosingFlow' | 'RuleExplanationFlow';
 }
 
 interface Highlight {
@@ -62,7 +65,9 @@ interface EditorTarget {
 }
 
 // --- Utils ---
-const getImageWidth = (image: string, stepId?: number): string => {
+const getImageWidth = (image?: string, stepId?: number): string => {
+  if (!image) return "100%";
+  if (image === "./rule_example.png") return "400px";
   const isPng = image.toLowerCase().endsWith('.png');
   const factor = isPng ? (2 / 3) : 1;
 
@@ -73,6 +78,7 @@ const getImageWidth = (image: string, stepId?: number): string => {
     "./step1_final.png": "420px",
     "./step1_edit.png": "420px",
     "./step1_edit_expanded.png": "420px",
+    "./結單作業.png": "750px",
     "./QrCode.jpg": "170px",
     "./liffQRcode.png": "170px",
   };
@@ -273,6 +279,10 @@ const STEPS: Step[] = [
           { top: "68.7%", left: "-24.5%", width: "15%", height: "6%", label: "點擊「推薦作業」按鈕" },
           { top: "97.6%", left: "-27%", width: "20%", height: "8%", label: "頁面底部「我要推薦」" }
         ]
+      },
+      {
+        customComponent: 'AccumulationFlow' as const,
+        highlights: []
       }
     ],
     links: [
@@ -290,20 +300,38 @@ const STEPS: Step[] = [
       {
         question: "什麼時候要來推薦?",
         answer: "官方社群會定期通知新品上架，您可以在團購檔期中任何時間前來點擊我要推薦，並通知您的團員、好友。"
+      },
+      {
+        question: "不喜歡這個商品嗎?",
+        answer: "請在商品推薦頁面中，點擊「意見反饋」功能，您的意見都將被彙整反應至供應商端，後續會視情況調整售價與出貨條件。"
       }
     ]
   },
   {
     id: 4,
-    title: "結單與取貨",
-    description: "完成結單、收貨與發貨流程。",
+    title: "出貨門檻與規則",
     content: [
       {
-        subtitle: "滿足最小訂購量後，可進行「結單作業」",
-        image: "./結單作業.gif",
+        customComponent: 'RuleExplanationFlow' as const,
+        highlights: []
+      }
+    ]
+  },
+  {
+    id: 5,
+    title: "結單、收貨與取貨",
+    description: "",
+    content: [
+      {
+        customComponent: 'ClosingFlow' as const,
+        highlights: []
+      },
+      {
+        subtitle: "1. 滿足門檻後，進行「結單作業」",
+        image: "./結單作業.png",
         link: { label: "團購訂單管理 (結單)", url: "https://ecm.cpc.com.tw/omotest/groupbuyselection/settlementlist" },
         highlights: [
-          { top: "24%", left: "-27%", width: "40%", height: "8%", label: "1. 選擇結單商品" },
+          { top: "20%", left: "-27%", width: "40%", height: "8%", label: "1. 選擇結單商品" },
           { top: "35%", left: "-27%", width: "40%", height: "8%", label: "2. 勾選欲結訂單" },
           { top: "48%", left: "-27%", width: "40%", height: "8%", label: "3. 確認結單" },
           { top: "61.5%", left: "-32%", width: "50%", height: "10%", label: "4. 結單完成廠商開始出貨" }
@@ -328,7 +356,7 @@ const STEPS: Step[] = [
         ]
       },
       {
-        subtitle: "1.物流送貨到站，簽收並取得「到站取貨單」",
+        subtitle: "2. 物流送貨到站，簽收並取得「到站取貨單」",
         image: "./到站取貨單.gif",
         link: { label: "團購待收貨頁面", url: "https://ecm.cpc.com.tw/omotest/groupbuyinbound/list" },
         linkFirst: true,
@@ -349,7 +377,7 @@ const STEPS: Step[] = [
         ]
       },
       {
-        subtitle: "2.清點貨品數量，進行「收貨作業」",
+        subtitle: "3. 清點貨品數量，進行「收貨作業」",
         image: "./收貨作業.gif",
         highlights: [
           { top: "85%", left: "85%", width: "30%", height: "15%", label: "點擊確認到貨" }
@@ -370,7 +398,7 @@ const STEPS: Step[] = [
         ]
       },
       {
-        subtitle: "3. 消費者到站，進行「取貨作業」",
+        subtitle: "4. 消費者到站，進行「取貨作業」",
         image: "./取貨作業.gif",
         link: { label: "團購待取貨頁面 (發貨)", url: "https://ecm.cpc.com.tw/omotest/groupbuypickup/list" },
         linkFirst: true,
@@ -394,7 +422,7 @@ const STEPS: Step[] = [
     qa: []
   },
   {
-    id: 5,
+    id: 6,
     title: "社群與工具",
     description: "掌握最新消息，使用工具快速分享。",
     content: [
@@ -430,7 +458,7 @@ const STEPS: Step[] = [
     qa: []
   },
   {
-    id: 6,
+    id: 7,
     title: "獎勵辦法",
     description: "詳情請見連結",
     links: [
@@ -581,6 +609,164 @@ const HighlightGroup = ({
   );
 };
 
+const AccumulationFlow = () => {
+  return (
+    <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0 my-8 relative max-w-4xl mx-auto px-6 py-12 bg-slate-50 rounded-[2.5rem] border-2 border-slate-100 shadow-sm overflow-hidden">
+      {/* Background connector line */}
+      <div className="hidden md:block absolute top-[5.2rem] left-[15%] right-[15%] h-1.5 bg-slate-200 -z-0 rounded-full" />
+
+      {/* Node 1: Recommended */}
+      <div className="flex flex-col items-center gap-3 w-40 relative z-10">
+        <div className="w-16 h-16 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30 flex items-center justify-center border-4 border-white">
+          <CheckCircle2 className="text-white w-8 h-8" />
+        </div>
+        <div className="text-center">
+          <p className="font-bold text-slate-800 text-sm">1. 點擊推薦</p>
+          <p className="text-xs text-slate-500 mt-1">您完成推薦動作</p>
+        </div>
+      </div>
+
+      {/* Node 2: Live */}
+      <div className="flex flex-col items-center gap-3 w-40 relative z-10">
+        <div className="w-16 h-16 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30 flex items-center justify-center border-4 border-white">
+          <Layout className="text-white w-7 h-7" />
+        </div>
+        <div className="text-center">
+          <p className="font-bold text-slate-800 text-sm">2. 站點上架</p>
+          <p className="text-xs text-slate-500 mt-1">商品於 APP 曝光</p>
+        </div>
+      </div>
+
+      {/* Node 3: Accumulating (PULSING YELLOW) */}
+      <div className="flex flex-col items-center gap-3 w-48 relative z-10">
+        <div className="w-20 h-20 rounded-full bg-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.6)] flex items-center justify-center border-4 border-white relative z-10">
+          <div className="absolute inset-0 rounded-full border-[6px] border-amber-300 animate-ping opacity-75" />
+          <Users className="text-white w-9 h-9 relative z-10" />
+        </div>
+        <div className="text-center bg-amber-100 px-4 py-2.5 rounded-2xl border border-amber-200/50 shadow-sm relative z-20">
+          <p className="font-black text-amber-700 text-sm whitespace-nowrap">3. 累積訂單中</p>
+          <p className="text-xs text-amber-600/80 mt-1">等待消費者下單</p>
+        </div>
+      </div>
+
+      {/* Node 4: Target Reached */}
+      <div className="flex flex-col items-center gap-3 w-40 relative z-10">
+        <div className="w-16 h-16 rounded-full bg-slate-200 shadow-inner flex items-center justify-center border-4 border-white transition-all hover:bg-slate-300">
+          <CheckCircle2 className="text-slate-400 w-8 h-8" />
+        </div>
+        <div className="text-center text-slate-400">
+          <p className="font-bold text-sm">4. 達最小訂購量</p>
+          <p className="text-xs mt-1">此時方可結單出貨</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ClosingFlow = () => {
+  return (
+    <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0 my-8 relative max-w-4xl mx-auto px-6 py-12 bg-slate-50 rounded-[2.5rem] border-2 border-slate-100 shadow-sm overflow-hidden">
+      {/* Background connector line */}
+      <div className="hidden md:block absolute top-[5.2rem] left-[15%] right-[15%] h-1.5 bg-slate-200 -z-0 rounded-full" />
+
+      {/* Node 1: Target Reached (COMPLETED GREEN) */}
+      <div className="flex flex-col items-center gap-3 w-40 relative z-10">
+        <div className="w-16 h-16 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30 flex items-center justify-center border-4 border-white">
+          <CheckCircle2 className="text-white w-8 h-8" />
+        </div>
+        <div className="text-center">
+          <p className="font-bold text-slate-800 text-sm tracking-tight">1. 達最小訂購量</p>
+          <p className="text-xs text-emerald-600 font-bold mt-1">已達標 ✓</p>
+        </div>
+      </div>
+
+      {/* Node 2: Closing (PULSING AMBER) */}
+      <div className="flex flex-col items-center gap-3 w-48 relative z-10">
+        <div className="w-20 h-20 rounded-full bg-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.6)] flex items-center justify-center border-4 border-white relative z-10">
+          <div className="absolute inset-0 rounded-full border-[6px] border-amber-300 animate-ping opacity-75" />
+          <MousePointer2 className="text-white w-9 h-9 relative z-10" />
+        </div>
+        <div className="text-center bg-amber-100 px-4 py-2.5 rounded-2xl border border-amber-200/50 shadow-sm relative z-20">
+          <p className="font-black text-amber-700 text-sm whitespace-nowrap tracking-tight">2. 結單作業中</p>
+          <p className="text-xs text-amber-600/80 mt-1 italic">進行結算與出單</p>
+        </div>
+      </div>
+
+      {/* Node 3: Receiving (GRAY) */}
+      <div className="flex flex-col items-center gap-3 w-40 relative z-10">
+        <div className="w-16 h-16 rounded-full bg-slate-200 shadow-inner flex items-center justify-center border-4 border-white">
+          <BookOpen className="text-slate-400 w-7 h-7" />
+        </div>
+        <div className="text-center text-slate-400">
+          <p className="font-bold text-sm tracking-tight">3. 收貨與核對</p>
+          <p className="text-xs mt-1">下一步：收貨</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RuleExplanationFlow = () => {
+  const Node = ({ value, isOk }: { value: number | string, isOk: boolean }) => (
+    <div className="flex flex-col items-center gap-4 w-32 relative group">
+      <div className={`w-20 h-20 rounded-[1.5rem] flex items-center justify-center shadow-md relative transition-all group-hover:scale-110 group-hover:-translate-y-1 ${isOk ? 'bg-indigo-50 border-4 border-indigo-200' : 'bg-white border-2 border-slate-100'}`}>
+        <span className={`font-black text-3xl ${isOk ? 'text-indigo-600' : 'text-slate-400'}`}>
+          {value}<span className="text-base font-bold ml-0.5">包</span>
+        </span>
+        {isOk ? (
+          <CheckCircle2 className="absolute -bottom-2 -right-2 text-emerald-500 w-8 h-8 bg-white rounded-full border-2 border-white shadow-sm" />
+        ) : (
+          <XCircle className="absolute -bottom-2 -right-2 text-rose-500 w-8 h-8 bg-white rounded-full border-2 border-white shadow-sm" />
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="w-full flex flex-col gap-10 my-8 max-w-5xl mx-auto px-4">
+
+      {/* Case A: Coffee (Any quantity OK) */}
+      <div className="bg-[#f8fafc] rounded-[2.5rem] border-2 border-slate-100 p-8 shadow-sm">
+        <div className="flex flex-col md:flex-row items-center gap-6 mb-10">
+          <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 text-2xl font-black shrink-0">A</div>
+          <div className="text-center md:text-left">
+            <h4 className="text-xl font-black text-slate-800">是否成箱出貨：否</h4>
+            <p className="text-slate-500 text-sm mt-1">訂單共幾包都可以結單，系統會全部出貨。以下以最小團購量 1 舉例</p>
+          </div>
+        </div>
+
+        <div className="relative flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0 px-4">
+          <div className="hidden md:block absolute top-[2.5rem] left-[10%] right-[10%] h-1 bg-slate-200 -z-0" />
+          <Node value={1} isOk={true} />
+          <Node value={2} isOk={true} />
+          <Node value={3} isOk={true} />
+          <Node value={4} isOk={true} />
+        </div>
+      </div>
+
+      {/* Case B: Congyoubing (Multiples of box size) */}
+      <div className="bg-[#f8fafc] rounded-[2.5rem] border-2 border-slate-100 p-8 shadow-sm">
+        <div className="flex flex-col md:flex-row items-center gap-6 mb-10">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center text-indigo-600 text-2xl font-black shrink-0">B</div>
+          <div className="text-center md:text-left">
+            <h4 className="text-xl font-black text-slate-800">是否成箱出貨：是</h4>
+            <p className="text-slate-500 text-sm mt-1">訂單數量需為最小訂購量的倍數，才可結單出貨。以下以最小團購量 10 舉例。</p>
+          </div>
+        </div>
+
+        <div className="relative flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0 px-4">
+          <div className="hidden md:block absolute top-[2.5rem] left-[10%] right-[10%] h-1 bg-slate-200 -z-0" />
+          <Node value={9} isOk={false} />
+          <Node value={10} isOk={true} />
+          <Node value={15} isOk={false} />
+          <Node value={20} isOk={true} />
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
 export default function App() {
   const [activeStepId, setActiveStepId] = useState(1);
   const [stepsData, setStepsData] = useState<Step[]>(loadStoredSteps);
@@ -727,7 +913,7 @@ export default function App() {
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          <h4 className="text-3xl font-black text-slate-900 tracking-tight">{step.title}</h4>
+                          {step.id !== 5 && <h4 className="text-3xl font-black text-slate-900 tracking-tight">{step.title}</h4>}
                           {step.description && (
                             <p className="text-slate-600 text-lg leading-relaxed max-w-2xl mx-auto">{step.description}</p>
                           )}
@@ -747,7 +933,29 @@ export default function App() {
                                     {c.linkFirst ? null : (
                                       c.subtitle && <h5 className="text-2xl font-bold text-slate-800">{c.subtitle}</h5>
                                     )}
-                                    <div className="relative group/link-inline inline-block" style={{ width }}>
+
+                                    {/* Mid-content QA with spacing */}
+                                    {c.midQa && (
+                                      <div className="my-8 flex flex-row flex-wrap gap-4 items-center justify-center w-full">
+                                        {c.midQa.map((item, qIdx) => (
+                                          <div key={qIdx} className="relative group/qa">
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 w-72 opacity-0 group-hover/qa:opacity-100 pointer-events-none transition-all duration-300 z-[100]">
+                                              <div className="bg-emerald-600 text-white p-5 rounded-2xl shadow-2xl text-sm leading-relaxed relative border border-emerald-400/30">
+                                                <div className="font-bold mb-1 text-emerald-100 flex items-center gap-2"><HelpCircle size={14} />說明</div>
+                                                {item.answer}<div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-emerald-600" />
+                                              </div>
+                                            </div>
+                                            <button className="flex items-center gap-3 px-6 py-4 bg-emerald-50/40 hover:bg-emerald-100 border border-emerald-100 rounded-2xl text-emerald-700 text-sm font-bold shadow-sm transition-all active:scale-[0.98]">
+                                              <HelpCircle size={18} className="text-emerald-500 shrink-0" />
+                                              <span>{item.question}</span>
+                                              <ChevronRight size={16} className="ml-auto text-emerald-300" />
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    <div className="relative group/link-inline inline-block mt-8 mb-4" style={{ width }}>
                                       <a href={c.link.url} target="_blank" rel="noopener noreferrer" className="relative block overflow-hidden px-6 py-4 bg-slate-900 text-white rounded-2xl font-black text-lg shadow-lg shadow-slate-900/20 hover:bg-emerald-600 transition-all hover:scale-[1.02] active:scale-[0.98] border-2 border-slate-700/50 w-full text-center hover:shadow-[0_15px_30px_rgba(16,185,129,0.3)] group">
                                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
                                         <div className="flex items-center justify-center gap-2 relative z-10">
@@ -784,6 +992,9 @@ export default function App() {
                             )}
 
                             <div className="relative w-full flex flex-col items-center">
+                              {c.customComponent === 'AccumulationFlow' && <AccumulationFlow />}
+                              {c.customComponent === 'ClosingFlow' && <ClosingFlow />}
+                              {c.customComponent === 'RuleExplanationFlow' && <RuleExplanationFlow />}
                               {c.image && (
                                 <div className="relative mx-auto w-fit">
                                   <div className="absolute inset-0 z-40">
