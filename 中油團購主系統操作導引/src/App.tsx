@@ -302,8 +302,8 @@ const STEPS: Step[] = [
         answer: "官方社群會定期通知新品上架，您可以在團購檔期中任何時間前來點擊我要推薦，並通知您的團員、好友。"
       },
       {
-        question: "不喜歡這個商品嗎?",
-        answer: "請在商品推薦頁面中，點擊「意見反饋」功能，您的意見都將被彙整反應至供應商端，後續會視情況調整售價與出貨條件。"
+        question: "開團條件優化建議",
+        answer: "如果您對目前商品的價格、出貨數量或其他合作條件有更具競爭力的反饋，歡迎隨時向多角化室同仁反應。我們會彙整您的專業見解，作為未來與廠商議價、挑選品項的重要參考，讓團購更貼切前線需求。"
       }
     ]
   },
@@ -731,16 +731,16 @@ const RuleExplanationFlow = () => {
           <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 text-2xl font-black shrink-0">A</div>
           <div className="text-center md:text-left">
             <h4 className="text-xl font-black text-slate-800">是否成箱出貨：否</h4>
-            <p className="text-slate-500 text-sm mt-1">訂單共幾包都可以結單，系統會全部出貨。以下以最小團購量 1 舉例</p>
+            <p className="text-slate-500 text-sm mt-1">訂單共幾包都可以結單，系統會全部出貨。以下以最小團購量 10 舉例</p>
           </div>
         </div>
 
         <div className="relative flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0 px-4">
           <div className="hidden md:block absolute top-[2.5rem] left-[10%] right-[10%] h-1 bg-slate-200 -z-0" />
-          <Node value={1} isOk={true} />
-          <Node value={2} isOk={true} />
-          <Node value={3} isOk={true} />
-          <Node value={4} isOk={true} />
+          <Node value={9} isOk={false} />
+          <Node value={10} isOk={true} />
+          <Node value={11} isOk={true} />
+          <Node value={12} isOk={true} />
         </div>
       </div>
 
