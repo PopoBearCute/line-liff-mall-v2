@@ -190,6 +190,13 @@ export function LeaderBindDialog({
                         )}
                     </div>
 
+                    {/* Data sync notice */}
+                    <div className="flex gap-2 px-3 py-2.5 bg-amber-50 rounded-xl border border-amber-200/80">
+                        <span className="text-amber-500 text-base leading-none mt-0.5 shrink-0">⚠️</span>
+                        <p className="text-xs text-amber-700 leading-relaxed">
+                            後台資料非即時同步至此團購主工具，如綁定失敗請過兩天再嘗試。此工具綁定不影響團購之功能。
+                        </p>
+                    </div>
 
 
                     {/* Error message */}
