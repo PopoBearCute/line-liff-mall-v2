@@ -1,60 +1,58 @@
+require('dotenv').config({ path: '.env.local' });
 
-const SUPABASE_URL = 'https://icrmiwopkmfzbryykwli.supabase.co';
-const SERVICE_KEY = 'sb_secret_ftJ5J1r1WPMTKMllL936MQ_dA6IMs69';
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const TARGET_LEADER_ID = process.env.TARGET_LEADER_ID;
+const TARGET_WAVE_ID = process.env.TARGET_WAVE_ID || '3';
+
+if (!SUPABASE_URL || !SERVICE_KEY || !TARGET_LEADER_ID) {
+    console.error('Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, or TARGET_LEADER_ID in .env.local');
+    process.exit(1);
+}
 
 async function main() {
     const headers = {
-        'apikey': SERVICE_KEY,
-        'Authorization': `Bearer ${SERVICE_KEY}`,
-        'Content-Type': 'application/json'
+        apikey: SERVICE_KEY,
+        Authorization: `Bearer ${SERVICE_KEY}`,
+        'Content-Type': 'application/json',
     };
 
     try {
-        console.log('--- 正在檢查資料庫 (Checking DB) ---');
-
-        // 1. Check LeaderBinding for duplicates
-        // Encode column names
+        console.log('--- Checking leader bindings ---');
         const colLeader = encodeURIComponent('團主 ID');
         const colWave = encodeURIComponent('所屬波段');
+        const bindingUrl = `${SUPABASE_URL}/rest/v1/leaderbinding?select=*&${colLeader}=eq.${encodeURIComponent(TARGET_LEADER_ID)}&${colWave}=eq.${encodeURIComponent(TARGET_WAVE_ID)}`;
+        const bindingRes = await fetch(bindingUrl, { headers });
 
-        // Target specific user and wave 3
-        const url = `${SUPABASE_URL}/rest/v1/leaderbinding?select=*&${colLeader}=eq.Ub6e6a2d6e6358bd68b656638e974b1c6&${colWave}=eq.3`;
-
-        console.log('Querying:', url);
-        const res = await fetch(url, { headers });
-
-        if (!res.ok) {
-            throw new Error(`HTTP Error: ${res.status} ${res.statusText} ${await res.text()}`);
+        if (!bindingRes.ok) {
+            throw new Error(`HTTP ${bindingRes.status}: ${await bindingRes.text()}`);
         }
 
-        const bindings = await res.json();
-        console.log('--- 綁定資料 (Leader Bindings) ---');
-        console.log(`找到 ${bindings.length} 筆資料 (Found ${bindings.length} rows):`);
-        console.log(JSON.stringify(bindings, null, 2));
+        const bindings = await bindingRes.json();
+        console.log(`Found ${bindings.length} binding rows.`);
+        bindings.forEach((binding) => {
+            const enabledCount = String(binding['已啟用商品名單'] || '')
+                .split(',')
+                .map((item) => item.trim())
+                .filter(Boolean)
+                .length;
+            console.log(`Binding ${binding.id}: ${enabledCount} enabled products`);
+        });
 
-        if (bindings.length > 0) {
-            const row = bindings[0];
-            const rawList = row['已啟用商品名單'] || "";
-            const list = rawList.split(',').map(s => s.trim());
-            console.log(`\n[Enabled List] Count: ${list.length}`);
-            console.log(list);
+        console.log('\n--- Checking product names for commas ---');
+        const productRes = await fetch(`${SUPABASE_URL}/rest/v1/products?select=商品名稱`, { headers });
+        if (!productRes.ok) {
+            throw new Error(`HTTP ${productRes.status}: ${await productRes.text()}`);
         }
 
-        // 2. Check Products for Commas
-        console.log('\n--- 檢查商品名稱是否有逗號 (Checking Products for Commas) ---');
-        const prodRes = await fetch(`${SUPABASE_URL}/rest/v1/products?select=商品名稱`, { headers });
-        const products = await prodRes.json();
-
-        const dangerousProducts = products.filter(p => p['商品名稱'] && p['商品名稱'].includes(','));
-        if (dangerousProducts.length > 0) {
-            console.log('[!!!] 發現危險商品！名稱包含逗號 (Found products with commas):');
-            console.log(JSON.stringify(dangerousProducts, null, 2));
-        } else {
-            console.log('[OK] 沒有商品包含逗號 (No commas in product names)');
-        }
-
+        const products = await productRes.json();
+        const namesWithCommas = products
+            .map((product) => product['商品名稱'])
+            .filter((name) => name && name.includes(','));
+        console.log(`Found ${namesWithCommas.length} product names containing commas.`);
     } catch (err) {
         console.error('Error:', err);
+        process.exitCode = 1;
     }
 }
 

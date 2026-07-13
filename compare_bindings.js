@@ -1,48 +1,50 @@
-require('dotenv').config({ path: '.env.production' });
+require('dotenv').config({ path: '.env.local' });
 const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const targetLeaderId = process.env.TARGET_LEADER_ID;
+
+if (!supabaseUrl || !supabaseKey || !targetLeaderId) {
+    console.error('Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, or TARGET_LEADER_ID in .env.local');
+    process.exit(1);
+}
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const LEADER_ID = "Ub6e6a2d6e6358bd68b656638e974b1c6";
-const WAVE = 3; // The "Sea Products" wave ID (Assuming it's 3 or 4 based on user context)
-// Wait, user said "Sea Product", let's check ALL waves for this leader.
-
 async function check() {
-    console.log(`Checking bindings for Leader: ${LEADER_ID}`);
     const { data, error } = await supabase
         .from('leaderbinding')
-        .select('*')
-        .eq('團主 ID', LEADER_ID);
+        .select('id, 所屬波段, 已啟用商品名單')
+        .eq('團主 ID', targetLeaderId);
 
-    if (error) {
-        console.error("Error:", error);
+    if (error) throw error;
+
+    console.log(`Found ${data.length} bindings.`);
+    const counts = {};
+    data.forEach((row) => {
+        const wave = String(row['所屬波段']);
+        const enabledCount = String(row['已啟用商品名單'] || '')
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean)
+            .length;
+        counts[wave] = (counts[wave] || 0) + 1;
+        console.log(`Binding ${row.id}: wave ${wave}, ${enabledCount} enabled products`);
+    });
+
+    const duplicates = Object.entries(counts).filter(([, count]) => count > 1);
+    if (duplicates.length === 0) {
+        console.log('No duplicate waves found.');
         return;
     }
 
-    console.log(`Found ${data.length} bindings:`);
-    data.forEach(row => {
-        console.log(`[ID: ${row.id}] Wave: ${row['所屬波段']} | Enabled: ${row['已啟用商品名單']}`);
+    duplicates.forEach(([wave, count]) => {
+        console.log(`Duplicate warning: wave ${wave} has ${count} rows.`);
     });
-
-    // Check for duplicates
-    const counts = {};
-    data.forEach(row => {
-        const key = row['所屬波段'];
-        counts[key] = (counts[key] || 0) + 1;
-    });
-
-    console.log("--- Duplicates check ---");
-    let hasDup = false;
-    for (const [wave, count] of Object.entries(counts)) {
-        if (count > 1) {
-            console.log(`❌ WARNING: Wave ${wave} has ${count} duplicate rows!`);
-            hasDup = true;
-        } else {
-            console.log(`✅ Wave ${wave} is clean (1 row).`);
-        }
-    }
 }
 
-check();
+check().catch((err) => {
+    console.error('Error:', err);
+    process.exitCode = 1;
+});

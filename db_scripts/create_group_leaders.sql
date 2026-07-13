@@ -29,22 +29,11 @@ CREATE TABLE "GroupLeaders" (
 -- 3. Enable Row Level Security (RLS)
 ALTER TABLE "GroupLeaders" ENABLE ROW LEVEL SECURITY;
 
--- 4. Create policy to allow public read access
-CREATE POLICY "Public read access"
-ON "GroupLeaders"
-FOR SELECT
-TO public
-USING (true);
+-- 4. No public policies are created here. The application reads and writes
+-- GroupLeaders through server-side API routes using the service role. Add a
+-- narrowly scoped policy only after reviewing the exact client-side need.
 
--- 5. Create policy to allow public update of LineID column only
-CREATE POLICY "Public update LineID"
-ON "GroupLeaders"
-FOR UPDATE
-TO public
-USING (true)
-WITH CHECK (true);
-
--- 6. Comments
+-- 5. Comments
 COMMENT ON TABLE "GroupLeaders" IS 'Stores information about group leaders using Chinese column names for easy CSV import.';
 COMMENT ON COLUMN "GroupLeaders"."Username" IS 'Used as the leaderId in the application. Format: StationCode-EmployeeID';
 COMMENT ON COLUMN "GroupLeaders"."加油站" IS 'Gas Station Name';
@@ -55,4 +44,5 @@ COMMENT ON COLUMN "GroupLeaders"."LineID" IS 'LINE User ID bound to this leader 
 -- MIGRATION: Run this on existing database (DO NOT run full script above)
 -- ============================================================
 -- ALTER TABLE "GroupLeaders" ADD COLUMN IF NOT EXISTS "LineID" text UNIQUE;
--- CREATE POLICY "Public update LineID" ON "GroupLeaders" FOR UPDATE TO public USING (true) WITH CHECK (true);
+-- DROP POLICY IF EXISTS "Public update LineID" ON "GroupLeaders";
+-- DROP POLICY IF EXISTS "Public read access" ON "GroupLeaders";

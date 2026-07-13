@@ -3,15 +3,29 @@ node_modules/
 out/
 build/
 dist/
-.env
-.env.local
-.env.production
+*.tsbuildinfo
+*.log
+
+# Local environment and credentials
+.env*
+!.env.example
+
+# Local deployment exports and diagnostic output
+env_vars*.json
+env_vars*.txt
+service_config.json
+service_export.yaml
+triggers.json
+build_log.txt
+result.txt
+dup_results.txt
+test_minimal_carousel.txt
+
+# Editors and local agent state
 .vscode/
 .claude/
-*.log
 check_db.js
 check_db_ipv6.js
-build_log.txt
 商品爬蟲界面/
 中油團購主系統操作導引/node_modules/
 中油團購主系統操作導引/dist/

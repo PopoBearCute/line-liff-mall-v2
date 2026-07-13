@@ -1,31 +1,35 @@
-const LEADER_ID = "Ub6e6a2d6e6358bd68b656638e974b1c6";
-const URL = `https://line-liff-mall-v2-939192288922.asia-east1.run.app/api/products?leaderId=${LEADER_ID}`;
+require('dotenv').config({ path: '.env.local' });
 
-async function verify() {
-    console.log(`Verifying API at: ${URL}`);
-    try {
-        const response = await fetch(URL);
-        const data = await response.json();
-        const allProducts = data.activeWaves.flatMap(w => w.products);
+const targetLeaderId = process.env.TARGET_LEADER_ID;
+const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
 
-        console.log("Total Products:", allProducts.length);
-
-        const sample = allProducts.find(p => p.name.includes('花枝排'));
-        if (sample) {
-            console.log("--- Sample Product ---");
-            console.log("Name:", sample.name);
-            console.log("WaveId Field:", sample.waveId);
-            if (sample.waveId) {
-                console.log("✅ SUCCESS: WaveId found in API!");
-            } else {
-                console.log("❌ FAILURE: WaveId is MISSING in API. (Needs redeploy of route.ts)");
-            }
-        } else {
-            console.log("❌ Could not find '花枝排' in API response.");
-        }
-    } catch (err) {
-        console.error("Error fetching API:", err);
-    }
+if (!targetLeaderId) {
+    console.error('Missing TARGET_LEADER_ID in .env.local');
+    process.exit(1);
 }
 
-verify();
+const url = new URL('/api/products', siteUrl);
+url.searchParams.set('leaderId', targetLeaderId);
+
+async function verify() {
+    console.log(`Verifying API at ${url.origin}`);
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    const waves = Array.isArray(data.activeWaves) ? data.activeWaves : [];
+    const products = waves.flatMap((wave) => wave.products || []);
+    const missingWaveId = products.filter((product) => !product.waveId).length;
+
+    console.log(`Waves: ${waves.length}`);
+    console.log(`Products: ${products.length}`);
+    console.log(`Products missing waveId: ${missingWaveId}`);
+}
+
+verify().catch((err) => {
+    console.error('Error:', err);
+    process.exitCode = 1;
+});

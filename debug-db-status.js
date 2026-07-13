@@ -1,52 +1,60 @@
 const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config({ path: '.env.local' });
 
-const SUPABASE_URL = 'https://icrmiwopkmfzbryykwli.supabase.co';
-const SERVICE_KEY = 'sb_secret_ftJ5J1r1WPMTKMllL936MQ_dA6IMs69';
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const TARGET_LEADER_ID = process.env.TARGET_LEADER_ID;
+const TARGET_WAVE_ID = process.env.TARGET_WAVE_ID || '3';
+
+if (!SUPABASE_URL || !SERVICE_KEY || !TARGET_LEADER_ID) {
+    console.error('Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, or TARGET_LEADER_ID in .env.local');
+    process.exit(1);
+}
 
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
+const superNormalize = (value) => String(value || '')
+    .replace(/\s+/g, '')
+    .replace(/[（(]/g, '(')
+    .replace(/[）)]/g, ')')
+    .replace(/[【\[]/g, '[')
+    .replace(/[】\]]/g, ']')
+    .replace(/['’]/g, "'")
+    .toLowerCase();
+
 async function main() {
-    console.log('--- Inspecting Wave 3 Products ---');
+    console.log(`--- Inspecting Wave ${TARGET_WAVE_ID} Products ---`);
     const { data: products, error: prodError } = await supabase
         .from('products')
         .select('*')
-        .eq('WaveID', 3);
+        .eq('WaveID', TARGET_WAVE_ID);
 
-    if (prodError) console.error(prodError);
-    console.log(`Found ${products?.length} products in Wave 3.`);
-    if (products && products.length > 0) {
-        products.forEach(p => {
-            console.log(`[${p.id}] Name: "${p['商品名稱']}" (Norm: ${superNormalize(p['商品名稱'])})`);
-        });
-    }
+    if (prodError) throw prodError;
+    console.log(`Found ${products?.length || 0} products.`);
+    products?.forEach((product) => {
+        console.log(`[${product.id}] Name: "${product['商品名稱']}" (Norm: ${superNormalize(product['商品名稱'])})`);
+    });
 
-    console.log('\n--- Inspecting Leader Binding for Leader Ub6... ---');
-    const targetLeaderId = 'Ub6e6a2d6e6358bd68b656638e974b1c6';
-    const { data: binding, error: bindError } = await supabase
+    console.log('\n--- Inspecting Leader Binding ---');
+    const { data: bindings, error: bindError } = await supabase
         .from('leaderbinding')
         .select('*')
-        .eq('團主 ID', targetLeaderId)
-        .eq('所屬波段', 3);
+        .eq('團主 ID', TARGET_LEADER_ID)
+        .eq('所屬波段', TARGET_WAVE_ID);
 
-    if (bindError) console.error(bindError);
-    console.log(`Found ${binding?.length} bindings.`);
-    if (binding && binding.length > 0) {
-        binding.forEach(b => {
-            console.log(`Binding ID: ${b.id}`);
-            console.log(`Enabled List: "${b['已啟用商品名單']}"`);
-        });
-    }
+    if (bindError) throw bindError;
+    console.log(`Found ${bindings?.length || 0} bindings.`);
+    bindings?.forEach((binding) => {
+        const enabledCount = String(binding['已啟用商品名單'] || '')
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean)
+            .length;
+        console.log(`Binding ${binding.id}: ${enabledCount} enabled products`);
+    });
 }
 
-const superNormalize = (s) => {
-    return String(s || "")
-        .replace(/\s+/g, "")
-        .replace(/[（(]/g, "(")
-        .replace(/[）)]/g, ")")
-        .replace(/[【\[]/g, "[")
-        .replace(/[】\]]/g, "]")
-        .replace(/['’]/g, "'")
-        .toLowerCase();
-};
-
-main();
+main().catch((err) => {
+    console.error('Error:', err);
+    process.exitCode = 1;
+});
