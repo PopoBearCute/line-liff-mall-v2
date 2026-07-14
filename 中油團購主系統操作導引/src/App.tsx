@@ -18,7 +18,10 @@ import {
   Users,
   ShieldCheck,
   HelpCircle,
-  XCircle
+  XCircle,
+  ClipboardCopy,
+  Eye,
+  X
 } from 'lucide-react';
 
 // --- Types ---
@@ -35,6 +38,7 @@ interface Step {
   links?: { label: string; url: string }[];
   completionTip?: string;
   qa?: QA[];
+  customHeader?: boolean;
 }
 
 interface StepContent {
@@ -47,7 +51,7 @@ interface StepContent {
   linkFirst?: boolean;
   midQa?: QA[];
   qa?: QA[];
-  customComponent?: 'AccumulationFlow' | 'ClosingFlow' | 'RuleExplanationFlow';
+  customComponent?: 'AccumulationFlow' | 'ClosingFlow' | 'ReceivingFlow' | 'PickupFlow' | 'RuleExplanationFlow' | 'SalesNotice' | 'SalesAccountRequest' | 'SalesOrderBridge';
 }
 
 interface Highlight {
@@ -80,7 +84,6 @@ const getImageWidth = (image?: string, stepId?: number): string => {
     "./step1_edit_expanded.png": "420px",
     "./結單作業.png": "750px",
     "./QrCode.jpg": "170px",
-    "./liffQRcode.png": "170px",
   };
 
   if (fixedWidths[image]) return fixedWidths[image];
@@ -100,19 +103,18 @@ const getActionLabel = (originalLabel: string): string => {
   if (originalLabel.includes("結單")) return "「結單作業」";
   if (originalLabel.includes("待收貨")) return "「收貨作業」";
   if (originalLabel.includes("待取貨")) return "「取貨作業」";
-  if (originalLabel.includes("推廣獎勵辦法")) return "「下載團購業務推廣獎勵辦法」";
   return originalLabel;
 };
 
 const HIGHLIGHT_STORAGE_KEY = 'cpc-guide-highlight-editor-v4';
 
-const cloneSteps = (): Step[] => JSON.parse(JSON.stringify(STEPS)) as Step[];
+const cloneSteps = (steps: Step[]): Step[] => JSON.parse(JSON.stringify(steps)) as Step[];
 
-const loadStoredSteps = (): Step[] => {
-  const codeSteps = cloneSteps();
+const loadStoredSteps = (sourceSteps: Step[], storageKey: string): Step[] => {
+  const codeSteps = cloneSteps(sourceSteps);
   if (typeof window === 'undefined') return codeSteps;
   try {
-    const raw = window.localStorage.getItem(HIGHLIGHT_STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKey);
     if (!raw) return codeSteps;
     const storedSteps = JSON.parse(raw) as Step[];
 
@@ -333,7 +335,7 @@ const STEPS: Step[] = [
         highlights: [
           { top: "20%", left: "-27%", width: "40%", height: "8%", label: "1. 選擇結單商品" },
           { top: "35%", left: "-27%", width: "40%", height: "8%", label: "2. 勾選欲結訂單" },
-          { top: "48%", left: "-27%", width: "40%", height: "8%", label: "3. 確認結單" },
+          { top: "48%", left: "-27%", width: "40%", height: "8%", label: "點擊【結單作業】" },
           { top: "61.5%", left: "-32%", width: "50%", height: "10%", label: "4. 結單完成廠商開始出貨" }
         ],
         qa: [
@@ -423,11 +425,11 @@ const STEPS: Step[] = [
   },
   {
     id: 6,
-    title: "社群與工具",
-    description: "掌握最新消息，使用工具快速分享。",
+    title: "官方社群",
+    description: "加入官方社群，掌握商品動態與問題反映窗口。",
     content: [
       {
-        subtitle: "1. 加入官方社群",
+        subtitle: "加入官方社群",
         description: "掌握商品動態，提供各類反饋與服務。",
         image: "./QrCode.jpg",
         highlights: [
@@ -436,62 +438,161 @@ const STEPS: Step[] = [
         qa: [
           {
             question: "為什麼要加入社群？",
-            answer: "官方社群將定期提供最新商品資訊、問題反映窗口及社群轉傳素材，協助您即時分享給消費者，提升推廣與銷售效率。"
-          }
-        ]
-      },
-      {
-        subtitle: "2. 社群分享工具",
-        description: "分享工具，快速產生推廣圖文與連結，讓社群經營更輕鬆。",
-        image: "./liffQRcode.png",
-        highlights: [
-          { top: "50%", left: "-84.5%", width: "20%", height: "20%", label: "掃碼開啟工具" }
-        ],
-        qa: [
-          {
-            question: "這個工具是做什麼的？",
-            answer: "這是專為團購設計的整合工具。您可以生成商品 DM 與下單連結，讓成員輕鬆下單；頁面中可以統計訂單數量，也可直接分享資訊至站外或社群。"
+            answer: "官方社群將定期提供最新商品資訊與問題反映窗口，協助您掌握團購作業相關通知。"
           }
         ]
       }
     ],
     qa: []
-  },
-  {
-    id: 7,
-    title: "獎勵辦法",
-    description: "詳情請見連結",
-    links: [
-      { label: "獎勵辦法", url: "./團購業務推廣獎勵辦法.pdf" }
-    ],
-    content: [
-      {
-        subtitle: "1. 加油站激勵獎金",
-        description: "依據各站每月「團購營業額」總額，按比例計算獎金：\n\n滿 20,000 元：發放 1.5%\n滿 40,000 元：發放 2.0%\n滿 80,000 元：發放 3.0%\n範例：若當月營業額為 48,800 元，獎金計算為 48,800 × 2.0% = 976 元。",
-        image: "",
-        highlights: []
-      },
-      {
-        subtitle: "2. 每季特別獎",
-        description: "針對全台加油站當季銷售營業額進行排序：\n\n第 1 名：獎金 3,000 元\n第 2 名：獎金 2,000 元\n第 3 至 5 名：獎金 1,000 元",
-        image: "",
-        highlights: []
-      },
-      {
-        subtitle: "3. 年度貢獻獎",
-        description: "統計全年度團購總營業額：\n\n全台前 10 名 加油站：每站發放 5,000 元 獎金。",
-        image: "",
-        highlights: [],
-        qa: [
-          {
-            question: "如何知道自己的銷售業績？",
-            answer: "原則上於次月 15 日前完成，營業額資料由多角化室提供各營業處。"
-          }
-        ]
-      }
-    ]
   }
 ];
+
+type GuideMode = 'station' | 'sales';
+
+const EMAIL_TEMPLATE = `主旨：申請建立秋節禮盒銷售達人團購主帳號
+
+您好，
+我想申請建立「中油 PAY 行動商城」團購主帳號，申請資料如下，請協助建帳，謝謝。
+
+【申請人資料】
+姓名：
+工號：
+服務單位／所屬營業處：
+聯絡電話：
+電子信箱：
+
+【帳號資料】
+欲設定帳號：
+初始密碼需求：請管理師協助設定，首次登入後我會自行修改。
+
+【團購主資料】
+團主名稱：
+暱稱：
+卡號：
+縣市：
+鄉鎮市區：
+指定地址：
+
+【備註】
+若資料不足或格式需調整，再請告知我補充。`;
+
+const buildGuideSteps = (mode: GuideMode): Step[] => {
+  if (mode === 'station') return cloneSteps(STEPS);
+
+  const reusableSteps = cloneSteps(STEPS)
+    .filter((step) => step.id !== 1 && step.id !== 3)
+    .map((step, index) => {
+      const next: Step = { ...step, id: index + 4 };
+      if (next.title === "登入團購主帳號") {
+        next.description = "使用管理師協助建立的「團購主帳號」登入。";
+        next.content = next.content.map((content) => ({
+          ...content,
+          highlights: content.highlights.map((highlight, highlightIndex) => ({
+            ...highlight,
+            label: highlightIndex === 0 ? "帳號：管理師提供的帳號" : "密碼：管理師提供的密碼",
+          })),
+        }));
+      }
+      if (next.title === "出貨門檻與規則") {
+        next.title = "出貨條件";
+        next.description = "不同禮盒商品會有不同的出貨條件，達到條件後才可以結單並讓供應商出貨。";
+      }
+      if (next.title === "結單、收貨與取貨") {
+        const mappedContent = next.content.map((content) => {
+          if (content.subtitle === "1. 滿足門檻後，進行「結單作業」") {
+            return {
+              ...content,
+              subtitle: "1. 滿足出貨條件後，進行「結單作業」",
+              qa: content.qa?.map((item) => {
+                if (item.question === "什麼時候要結單?") {
+                  return {
+                    ...item,
+                    answer: "訂單數量符合商品出貨條件後，即可進行結單。請先確認商品詳情中的「最小團購量」與「是否成箱出貨」。",
+                  };
+                }
+                if (item.question === "未達最小訂購量會怎樣?") {
+                  return {
+                    ...item,
+                    answer: "未符合出貨條件將無法結單。本檔期預計於 9/19 00:00 啟動退款作業，系統會將訂單款項退還至消費者帳戶。",
+                  };
+                }
+                if (item.question === "沒有結單會怎樣?") {
+                  return {
+                    ...item,
+                    answer: "沒有結單將無法出貨，商品將持續募集，直到符合出貨條件，或本檔期於 9/19 00:00 啟動退款作業。",
+                  };
+                }
+                return item;
+              }),
+            };
+          }
+          if (content.subtitle === "3. 清點貨品數量，進行「收貨作業」") {
+            return {
+              ...content,
+              qa: content.qa?.map((item) => item.question === "什麼是收貨作業?"
+                ? {
+                    ...item,
+                    answer: "收貨作業是指當供應商將商品送達您設定的指定地址時，您在系統中確認商品已到貨的流程，這會將訂單狀態更新為「待取貨」。",
+                  }
+                : item),
+            };
+          }
+          if (content.subtitle === "2. 物流送貨到站，簽收並取得「到站取貨單」") {
+            return {
+              ...content,
+              subtitle: "2. 商品送達指定地址，簽收並取得「到站取貨單」",
+            };
+          }
+          if (content.subtitle === "4. 消費者到站，進行「取貨作業」") {
+            return {
+              ...content,
+              subtitle: "4. 消費者取貨，進行「取貨作業」",
+            };
+          }
+          return content;
+        });
+        next.content = mappedContent.flatMap((content) => (
+          content.subtitle === "3. 清點貨品數量，進行「收貨作業」"
+            ? [{ customComponent: 'ReceivingFlow' as const, highlights: [] }, content]
+            : content.subtitle === "4. 消費者取貨，進行「取貨作業」"
+              ? [{ customComponent: 'PickupFlow' as const, highlights: [] }, content]
+            : [content]
+        ));
+      }
+      return next;
+    });
+
+  const salesOrderBridgeStep: Step = {
+    id: 3,
+    title: "禮盒銷售與訂單累積",
+    description: "秋節禮盒預計於 7/29-9/15 在中油PAY APP 曝光。\n活動期間消費者可選擇您下單，訂單達出貨條件後，再由您進行結單讓供應商出貨。",
+    content: [
+      { customComponent: 'SalesOrderBridge', highlights: [] }
+    ]
+  };
+
+  return [
+    {
+      id: 1,
+      title: "成為團購主前，請先了解",
+      description: "請先確認角色責任，再進行帳號申請與後續操作。",
+      customHeader: false,
+      content: [
+        { customComponent: 'SalesNotice', highlights: [] }
+      ]
+    },
+    {
+      id: 2,
+      title: "帳號取得說明",
+      description: "銷售達人帳號需由所屬營業處零售中心多角化管理師協助建立。",
+      content: [
+        { customComponent: 'SalesAccountRequest', highlights: [] }
+      ]
+    },
+    salesOrderBridgeStep,
+    ...reusableSteps
+  ];
+};
 
 // --- Components ---
 
@@ -609,6 +710,409 @@ const HighlightGroup = ({
   );
 };
 
+const copyTextToClipboard = async (text: string): Promise<boolean> => {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return copied;
+  } catch {
+    return false;
+  }
+};
+
+const SALES_EMAIL_TEMPLATE = `主旨：申請建立團購主帳號
+
+您好：
+
+我想申請【銷售達人專用】行動商城團購主帳號，基本資料如下：
+
+工號：
+所屬營業處：
+所屬零售中心：
+姓名：
+暱稱（APP 中揭露給消費者看的名稱）：
+中油 PAY 16 碼卡號：
+聯絡電話：
+電子信箱：
+商品送貨指定地址（縣市）：
+商品送貨指定地址（鄉鎮市區）：
+商品送貨指定地址（門牌）：
+
+謝謝。`;
+
+interface ManagerContact {
+  employeeId: string;
+  name: string;
+  office: string;
+  center: string;
+}
+
+const MANAGER_CONTACTS: ManagerContact[] = [
+  { employeeId: "500577", name: "李政倫", office: "基隆營業處", center: "基隆零售服務中心" },
+  { employeeId: "104205", name: "吳潔鴻", office: "台北營業處", center: "台北南區零售服務中心" },
+  { employeeId: "103497", name: "李承陽", office: "桃園營業處", center: "桃園零售服務中心" },
+  { employeeId: "543446", name: "邱仕強", office: "竹苗營業處", center: "新竹零售服務中心" },
+  { employeeId: "545392", name: "范晨佑", office: "竹苗營業處", center: "苗栗零售服務中心" },
+  { employeeId: "545422", name: "鍾名哲", office: "台中營業處", center: "台中零售服務中心" },
+  { employeeId: "104221", name: "吳佾儒", office: "嘉義營業處", center: "嘉義零售服務中心" },
+  { employeeId: "107981", name: "楊嘉宜", office: "嘉義營業處", center: "雲林零售服務中心" },
+  { employeeId: "107026", name: "陳振隆", office: "澎湖營業處", center: "馬公直銷服務中心" },
+  { employeeId: "100421", name: "李承翰", office: "台南營業處", center: "台南南區零售服務中心" },
+  { employeeId: "103438", name: "歐陽嘉謙", office: "高雄營業處", center: "高雄零售服務中心" },
+  { employeeId: "103519", name: "王韻茹", office: "高雄營業處", center: "屏東零售服務中心" },
+  { employeeId: "107743", name: "陳柏霖", office: "高雄營業處", center: "岡山零售服務中心" },
+  { employeeId: "104108", name: "柯心卉", office: "東區營業處", center: "宜蘭零售服務中心" },
+  { employeeId: "107948", name: "蕭文郡", office: "東區營業處", center: "台東零售服務中心" },
+  { employeeId: "107361", name: "江哲一", office: "東區營業處", center: "花蓮零售服務中心" },
+];
+
+const getManagerEmail = (employeeId: string): string => `${employeeId}@cpc.com.tw`;
+
+const SalesNotice = () => (
+  <div className="w-full max-w-6xl mx-auto">
+    <img
+      src="./sales-notice.png"
+      alt="成為團購主前，請先了解：團購主是消費者的商品交付窗口，需完成結單、收貨、分貨、商品交付及退貨工作。"
+      className="block w-full h-auto rounded-[2rem] border border-slate-100 shadow-xl"
+    />
+  </div>
+);
+
+const SalesAccountRequest = () => {
+  const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const handleCopy = async () => {
+    setCopyFailed(false);
+    const ok = await copyTextToClipboard(EMAIL_TEMPLATE);
+    if (ok) {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
+    } else {
+      setCopyFailed(true);
+      setOpen(true);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-4xl mx-auto rounded-[2rem] border-2 border-sky-100 bg-sky-50/70 p-8 text-left">
+      <div className="grid gap-8 lg:grid-cols-[1fr_1.2fr]">
+        <div>
+          <h5 className="text-2xl font-black text-slate-900 tracking-tight">由管理師協助建帳</h5>
+          <p className="mt-4 text-lg leading-8 text-slate-700">
+            銷售達人帳號需由所屬營業處零售中心多角化管理師協助建立。請複製 Email 範本，補上資料後寄給管理師。
+          </p>
+          <p className="mt-4 text-base leading-7 text-slate-500">
+            目前為草稿，正式窗口與申請細節待確認後再定稿。
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-white/70 bg-white p-6 shadow-sm">
+          <h5 className="text-xl font-black text-slate-900">Email 範本工具</h5>
+          <p className="mt-3 text-base leading-7 text-slate-600">
+            可直接複製到剪貼簿，也可以先用小彈窗預覽內容。
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-emerald-700 px-5 text-base font-black text-white shadow-sm transition hover:bg-emerald-800"
+            >
+              {copied ? <CheckCircle2 size={20} /> : <ClipboardCopy size={20} />}
+              {copied ? "已複製" : "複製 Email 範本"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 text-base font-black text-slate-700 transition hover:bg-slate-50"
+            >
+              <Eye size={20} />
+              預覽範本
+            </button>
+          </div>
+          <p className="mt-3 text-sm text-slate-500">
+            複製後請貼到 Email，補上個人資料再寄出。
+          </p>
+          {copyFailed && (
+            <p className="mt-3 text-sm font-bold text-rose-600">
+              瀏覽器未允許自動複製，請在彈窗中手動複製範本。
+            </p>
+          )}
+        </div>
+      </div>
+
+      {open && (
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/40 px-6" role="dialog" aria-modal="true">
+          <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <div>
+                <h5 className="text-xl font-black text-slate-900">Email 範本預覽</h5>
+                <p className="mt-1 text-sm text-slate-500">可直接複製後貼到信件內。</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+                aria-label="關閉"
+              >
+                <X size={22} />
+              </button>
+            </div>
+            <pre className="max-h-[58vh] overflow-auto whitespace-pre-wrap px-6 py-5 text-base leading-8 text-slate-800">
+              {EMAIL_TEMPLATE}
+            </pre>
+            <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="h-11 rounded-lg border border-slate-300 px-5 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+              >
+                關閉
+              </button>
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="inline-flex h-11 items-center gap-2 rounded-lg bg-emerald-700 px-5 text-sm font-black text-white transition hover:bg-emerald-800"
+              >
+                <ClipboardCopy size={18} />
+                複製範本
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SalesAccountRequestV2 = () => {
+  const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [contactsOpen, setContactsOpen] = useState(false);
+  const [contactQuery, setContactQuery] = useState("");
+
+  const normalizedQuery = contactQuery.trim().toLowerCase();
+  const filteredContacts = MANAGER_CONTACTS.filter((contact) => {
+    if (!normalizedQuery) return true;
+    return [
+      contact.employeeId,
+      contact.name,
+      contact.office,
+      contact.center,
+      getManagerEmail(contact.employeeId),
+    ].some((value) => value.toLowerCase().includes(normalizedQuery));
+  });
+
+  const handleCopy = async () => {
+    setCopyFailed(false);
+    const ok = await copyTextToClipboard(SALES_EMAIL_TEMPLATE);
+    if (ok) {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
+    } else {
+      setCopyFailed(true);
+      setPreviewOpen(true);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-4xl mx-auto rounded-[2rem] border-2 border-sky-100 bg-sky-50/70 p-8 text-left">
+      <div className="grid gap-8 lg:grid-cols-[1fr_1.15fr]">
+        <div>
+          <p className="text-lg leading-8 text-slate-700">
+            請使用 Email 範本，將基本資料寄給管理師。
+            帳號建立完成後，管理師會通知您帳號與初始密碼。
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-white/70 bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-emerald-700 px-5 text-base font-black text-white shadow-sm transition hover:bg-emerald-800"
+            >
+              {copied ? <CheckCircle2 size={20} /> : <ClipboardCopy size={20} />}
+              {copied ? "已複製" : "複製 Email 範本"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 text-base font-black text-slate-700 transition hover:bg-slate-50"
+            >
+              <Eye size={20} />
+              預覽範本
+            </button>
+            <button
+              type="button"
+              onClick={() => setContactsOpen(true)}
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-5 text-base font-black text-sky-800 transition hover:bg-sky-100"
+            >
+              <Users size={20} />
+              管理師聯繫方式
+            </button>
+          </div>
+          {copyFailed && (
+            <p className="mt-3 text-sm font-bold text-rose-600">
+              無法自動複製，請使用預覽範本手動複製內容。
+            </p>
+          )}
+        </div>
+      </div>
+
+      {previewOpen && (
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/40 px-6" role="dialog" aria-modal="true">
+          <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <div>
+                <h5 className="text-xl font-black text-slate-900">Email 範本預覽</h5>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+                aria-label="關閉"
+              >
+                <X size={22} />
+              </button>
+            </div>
+            <pre className="max-h-[58vh] overflow-auto whitespace-pre-wrap px-6 py-5 text-base leading-8 text-slate-800">
+              {SALES_EMAIL_TEMPLATE}
+            </pre>
+            <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(false)}
+                className="h-11 rounded-lg border border-slate-300 px-5 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+              >
+                關閉
+              </button>
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="inline-flex h-11 items-center gap-2 rounded-lg bg-emerald-700 px-5 text-sm font-black text-white transition hover:bg-emerald-800"
+              >
+                <ClipboardCopy size={18} />
+                複製範本
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {contactsOpen && (
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/40 px-6" role="dialog" aria-modal="true">
+          <div className="w-full max-w-5xl rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <div>
+                <h5 className="text-xl font-black text-slate-900">管理師聯繫方式</h5>
+                <p className="mt-1 text-sm text-slate-500">請依所屬營業處或零售中心查找管理師信箱。</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setContactsOpen(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+                aria-label="關閉"
+              >
+                <X size={22} />
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <input
+                type="search"
+                value={contactQuery}
+                onChange={(event) => setContactQuery(event.target.value)}
+                placeholder="搜尋營業處、零售中心或姓名"
+                className="h-12 w-full rounded-xl border border-slate-300 px-4 text-base outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
+              />
+              <div className="mt-5 max-h-[52vh] overflow-auto rounded-xl border border-slate-200">
+                <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+                  <thead className="sticky top-0 bg-slate-50 text-slate-500">
+                    <tr>
+                      <th className="border-b border-slate-200 px-4 py-3 font-black">姓名</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-black">信箱</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-black">營業處</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-black">零售中心</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-800">
+                    {filteredContacts.map((contact) => (
+                      <tr key={`${contact.employeeId}-${contact.center}`} className="hover:bg-sky-50/60">
+                        <td className="px-4 py-3 font-bold">{contact.name}</td>
+                        <td className="px-4 py-3 font-mono text-sky-800">{getManagerEmail(contact.employeeId)}</td>
+                        <td className="px-4 py-3">{contact.office}</td>
+                        <td className="px-4 py-3">{contact.center}</td>
+                      </tr>
+                    ))}
+                    {filteredContacts.length === 0 && (
+                      <tr>
+                        <td className="px-4 py-8 text-center text-slate-500" colSpan={4}>
+                          找不到符合的管理師資料
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="flex justify-end border-t border-slate-200 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setContactsOpen(false)}
+                className="h-11 rounded-lg border border-slate-300 px-5 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+              >
+                關閉
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SalesOrderBridge = () => (
+  <div className="w-full max-w-5xl mx-auto rounded-[2rem] border-2 border-emerald-100 bg-emerald-50/60 p-8 text-left">
+    <div className="grid gap-5 md:grid-cols-3">
+      <div className="rounded-2xl border border-white/80 bg-white p-6 shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-lg font-black text-white">1</div>
+        <h5 className="mt-4 text-xl font-black text-slate-900">商品開賣</h5>
+        <p className="mt-3 text-base leading-7 text-slate-600">
+          秋節禮盒會在中油 PAY 行動商城曝光，消費者可於活動期間瀏覽商品並進入下單流程。
+        </p>
+      </div>
+      <div className="rounded-2xl border border-white/80 bg-white p-6 shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-lg font-black text-white">2</div>
+        <h5 className="mt-4 text-xl font-black text-slate-900">消費者選擇您下單</h5>
+        <p className="mt-3 text-base leading-7 text-slate-600">
+          消費者下單時會選擇您的暱稱與指定地點，訂單會累積在您的團購主帳號底下。
+        </p>
+      </div>
+      <div className="rounded-2xl border border-white/80 bg-white p-6 shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-lg font-black text-white">3</div>
+        <h5 className="mt-4 text-xl font-black text-slate-900">達條件後結單出貨</h5>
+        <p className="mt-3 text-base leading-7 text-slate-600">
+          當訂單數量滿足商品出貨條件後，您就可以透過結單作業，讓供應商安排出貨。
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
 const AccumulationFlow = () => {
   return (
     <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0 my-8 relative max-w-4xl mx-auto px-6 py-12 bg-slate-50 rounded-[2.5rem] border-2 border-slate-100 shadow-sm overflow-hidden">
@@ -639,13 +1143,13 @@ const AccumulationFlow = () => {
 
       {/* Node 3: Accumulating (PULSING YELLOW) */}
       <div className="flex flex-col items-center gap-3 w-48 relative z-10">
-        <div className="w-20 h-20 rounded-full bg-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.6)] flex items-center justify-center border-4 border-white relative z-10">
-          <div className="absolute inset-0 rounded-full border-[6px] border-amber-300 animate-ping opacity-75" />
+        <div className="w-20 h-20 rounded-full bg-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.45)] flex items-center justify-center border-4 border-white relative z-10">
+          <div className="absolute inset-1 rounded-full border-[4px] border-amber-200/70 animate-pulse" />
           <Users className="text-white w-9 h-9 relative z-10" />
         </div>
-        <div className="text-center bg-amber-100 px-4 py-2.5 rounded-2xl border border-amber-200/50 shadow-sm relative z-20">
-          <p className="font-black text-amber-700 text-sm whitespace-nowrap">3. 累積訂單中</p>
-          <p className="text-xs text-amber-600/80 mt-1">等待消費者下單</p>
+        <div className="text-center relative z-20">
+          <p className="font-black text-amber-700 text-sm whitespace-nowrap tracking-tight">3. 累積訂單中</p>
+          <p className="text-xs text-amber-600 mt-1">等待消費者下單</p>
         </div>
       </div>
 
@@ -664,6 +1168,8 @@ const AccumulationFlow = () => {
 };
 
 const ClosingFlow = () => {
+  const isSalesMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'sales';
+
   return (
     <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0 my-8 relative max-w-4xl mx-auto px-6 py-12 bg-slate-50 rounded-[2.5rem] border-2 border-slate-100 shadow-sm overflow-hidden">
       {/* Background connector line */}
@@ -675,8 +1181,8 @@ const ClosingFlow = () => {
           <CheckCircle2 className="text-white w-8 h-8" />
         </div>
         <div className="text-center">
-          <p className="font-bold text-slate-800 text-sm tracking-tight">1. 達最小訂購量</p>
-          <p className="text-xs text-emerald-600 font-bold mt-1">已達標 ✓</p>
+          <p className="font-bold text-slate-800 text-sm tracking-tight">{isSalesMode ? "1. 滿足出貨條件" : "1. 達最小訂購量"}</p>
+          <p className="text-xs text-emerald-600 font-bold mt-1">{isSalesMode ? "可結單 ✓" : "已達標 ✓"}</p>
         </div>
       </div>
 
@@ -706,7 +1212,331 @@ const ClosingFlow = () => {
   );
 };
 
+const ReceivingFlow = () => {
+  return (
+    <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0 my-8 relative max-w-4xl mx-auto px-6 py-12 bg-slate-50 rounded-[2.5rem] border-2 border-slate-100 shadow-sm overflow-hidden">
+      <div className="hidden md:block absolute top-[5.2rem] left-[15%] right-[15%] h-1.5 bg-slate-200 -z-0 rounded-full" />
+
+      <div className="flex flex-col items-center gap-3 w-40 relative z-10">
+        <div className="w-16 h-16 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30 flex items-center justify-center border-4 border-white">
+          <CheckCircle2 className="text-white w-8 h-8" />
+        </div>
+        <div className="text-center">
+          <p className="font-bold text-slate-800 text-sm tracking-tight">1. 滿足出貨條件</p>
+          <p className="text-xs text-emerald-600 font-bold mt-1">可結單 ✓</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center gap-3 w-40 relative z-10">
+        <div className="w-16 h-16 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30 flex items-center justify-center border-4 border-white">
+          <CheckCircle2 className="text-white w-8 h-8" />
+        </div>
+        <div className="text-center">
+          <p className="font-bold text-slate-800 text-sm tracking-tight">2. 結單完成</p>
+          <p className="text-xs text-emerald-600 font-bold mt-1">供應商出貨</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center gap-3 w-48 relative z-10">
+        <div className="w-20 h-20 rounded-full bg-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.6)] flex items-center justify-center border-4 border-white relative z-10">
+          <div className="absolute inset-0 rounded-full border-[6px] border-amber-300 animate-ping opacity-75" />
+          <BookOpen className="text-white w-9 h-9 relative z-10" />
+        </div>
+        <div className="text-center bg-amber-100 px-4 py-2.5 rounded-2xl border border-amber-200/50 shadow-sm relative z-20">
+          <p className="font-black text-amber-700 text-sm whitespace-nowrap tracking-tight">3. 收貨與核對</p>
+          <p className="text-xs text-amber-600/80 mt-1 italic">確認商品到貨</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PickupFlow = () => {
+  return (
+    <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0 my-8 relative max-w-4xl mx-auto px-6 py-12 bg-slate-50 rounded-[2.5rem] border-2 border-slate-100 shadow-sm overflow-hidden">
+      <div className="hidden md:block absolute top-[5.2rem] left-[15%] right-[15%] h-1.5 bg-slate-200 -z-0 rounded-full" />
+
+      <div className="flex flex-col items-center gap-3 w-40 relative z-10">
+        <div className="w-16 h-16 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30 flex items-center justify-center border-4 border-white">
+          <CheckCircle2 className="text-white w-8 h-8" />
+        </div>
+        <div className="text-center">
+          <p className="font-bold text-slate-800 text-sm tracking-tight">1. 滿足出貨條件</p>
+          <p className="text-xs text-emerald-600 font-bold mt-1">可結單 ✓</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center gap-3 w-40 relative z-10">
+        <div className="w-16 h-16 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30 flex items-center justify-center border-4 border-white">
+          <CheckCircle2 className="text-white w-8 h-8" />
+        </div>
+        <div className="text-center">
+          <p className="font-bold text-slate-800 text-sm tracking-tight">2. 收貨完成</p>
+          <p className="text-xs text-emerald-600 font-bold mt-1">商品已到貨</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center gap-3 w-48 relative z-10">
+        <div className="w-20 h-20 rounded-full bg-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.6)] flex items-center justify-center border-4 border-white relative z-10">
+          <div className="absolute inset-0 rounded-full border-[6px] border-amber-300 animate-ping opacity-75" />
+          <Users className="text-white w-9 h-9 relative z-10" />
+        </div>
+        <div className="text-center bg-amber-100 px-4 py-2.5 rounded-2xl border border-amber-200/50 shadow-sm relative z-20">
+          <p className="font-black text-amber-700 text-sm whitespace-nowrap tracking-tight">3. 消費者取貨</p>
+          <p className="text-xs text-amber-600/80 mt-1 italic">交付商品並發貨</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const RuleExplanationFlow = () => {
+  const [conditionGuideOpen, setConditionGuideOpen] = useState(false);
+  const [conditionGuidePreview, setConditionGuidePreview] = useState(false);
+  const [productListType, setProductListType] = useState<string | null>(null);
+  const isSalesMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'sales';
+
+  if (isSalesMode) {
+    const productRules = [
+      { name: "韓味海苔禮盒", type: "是", condition: "6 盒的倍數" },
+      { name: "金牌ONE台灣啤酒巨大啤酒罐造型存錢筒蝦餅禮盒", type: "是", condition: "12 盒的倍數" },
+      { name: "赫思康咖啡禮盒", type: "是", condition: "12 盒的倍數" },
+      { name: "星球工坊x不二糕餅 蛋黃酥雙色爆米花3入組", type: "是", condition: "26 盒的倍數" },
+      { name: "愛之味健康油切分解茶", type: "否", condition: "6 盒以上" },
+      { name: "希望綠豆湯 雪藏綠豆糕", type: "否", condition: "20 盒以上" },
+      { name: "台中老太陽堂 太陽餅", type: "否", condition: "20 盒以上" },
+      { name: "台中老太陽堂 檸檬蛋糕", type: "否", condition: "10 盒以上" },
+      { name: "中秋烤肉組｜海陸小資超值10件組", type: "否", condition: "2 組以上" },
+      { name: "中秋烤肉組｜海陸超級澎湃15件組", type: "否", condition: "2 組以上" },
+      { name: "台糖酒韻豚香禮盒(冷凍)", type: "否", condition: "3 盒以上" },
+      { name: "中秋節限定-MELISSA蜂蜜氣泡飲6入禮盒", type: "否", condition: "4 盒以上" },
+      { name: "奧利塔雙入禮盒", type: "否", condition: "6 盒以上" },
+      { name: "屏大薄鹽醬油雙入禮盒", type: "否", condition: "6 盒以上" },
+      { name: "台酒清酒粕玄米菓(辣味)禮盒", type: "否", condition: "6 盒以上" },
+      { name: "台酒紅麴海苔米香禮盒(全素)", type: "否", condition: "6 盒以上" },
+      { name: "頂級乾燥 花好月圓禮盒(3入)", type: "否", condition: "12 盒以上" },
+      { name: "嚴選甘栗禮盒", type: "否", condition: "6 盒以上" },
+    ];
+
+    const productGroups = {
+      "是": productRules.filter((product) => product.type === "是"),
+      "否": productRules.filter((product) => product.type === "否"),
+    } as const;
+
+    const ProductListPreview = ({ type }: { type: keyof typeof productGroups }) => (
+      <div className="w-[360px] rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+        <div className="text-sm font-black text-slate-900">是否成箱出貨：{type}</div>
+        <div className="mt-3 space-y-2">
+          {productGroups[type].slice(0, 4).map((product) => (
+            <div key={product.name} className="rounded-xl bg-slate-50 px-3 py-2">
+              <div className="text-xs font-bold leading-5 text-slate-700">{product.name}</div>
+              <div className="mt-1 text-xs font-black text-slate-500">{product.condition}</div>
+            </div>
+          ))}
+        </div>
+        {productGroups[type].length > 4 && (
+          <div className="mt-3 text-xs font-bold text-slate-400">另有 {productGroups[type].length - 4} 項，點擊查看全部。</div>
+        )}
+      </div>
+    );
+
+    const ProductListButton = ({ type }: { type: keyof typeof productGroups }) => (
+      <div className="relative mt-4 inline-block group/product-list">
+        <button
+          type="button"
+          onClick={() => setProductListType(type)}
+          className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+        >
+          <HelpCircle size={16} />
+          哪些商品？
+        </button>
+        <div className="pointer-events-none absolute bottom-full left-0 z-[200] mb-3 hidden group-hover/product-list:block">
+          <ProductListPreview type={type} />
+        </div>
+      </div>
+    );
+
+    const ConditionFieldGuide = ({ compact = false }: { compact?: boolean }) => (
+      <div className={`rounded-2xl border border-slate-200 bg-white shadow-xl ${compact ? "w-full p-4" : "w-full p-6"}`}>
+        <div className="mx-auto max-w-[720px]">
+          <div className={`mb-4 rounded-xl bg-sky-50 px-4 py-3 font-bold leading-6 text-sky-900 ${compact ? "text-xs" : "text-sm"}`}>
+            位置：進入「團購訂單管理作業」，點開商品訂單後查看詳情。
+          </div>
+          <div className="mx-auto flex flex-col items-center">
+            <div className={`shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 ${compact ? "h-52 w-52" : "h-72 w-72"}`}>
+              <img
+                src="./seaweed-gift-box.png"
+                alt="韓味海苔禮盒"
+                className="block h-full w-full object-contain"
+              />
+            </div>
+            <div className="mt-3 flex justify-center gap-2">
+              {[0, 1, 2, 3].map((item) => (
+                <div key={item} className="h-12 w-12 overflow-hidden rounded border border-slate-200 bg-slate-50">
+                  <img src="./seaweed-gift-box.png" alt="" className="h-full w-full object-cover" />
+                </div>
+              ))}
+            </div>
+            <div className={`mt-5 grid w-full gap-2 ${compact ? "max-w-[440px] text-xs" : "max-w-[560px] text-sm"}`}>
+              {[
+                ["狀態", "募集成功", false],
+                ["供應商", "秋節禮盒供應商", false],
+                ["商品編號", "0058151", false],
+                ["商品名稱", "韓味海苔禮盒", false],
+                ["配送方式", "團購主指定地點", false],
+                ["最小團購量", "6", true],
+                ["是否成箱出貨", "是", true],
+                ["活動期間", "2026/07/29 - 2026/09/15", false],
+              ].map(([label, value, highlighted]) => (
+                <div
+                  key={label as string}
+                  className={`grid ${compact ? "grid-cols-[5.7rem_1fr]" : "grid-cols-[7.5rem_1fr]"} items-center rounded-lg px-3 py-2 ${
+                    highlighted ? "border-2 border-amber-400 bg-amber-50 shadow-sm" : "border border-transparent bg-white"
+                  }`}
+                >
+                  <span className="font-black text-slate-900">{label}</span>
+                  <span className="font-bold text-slate-700">{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className={`mt-4 grid gap-3 ${compact ? "text-xs" : "grid-cols-2 text-sm"}`}>
+            <div className="rounded-xl bg-amber-50 px-4 py-3 font-bold leading-6 text-amber-900">
+              最小團購量：最低累積到幾盒/組才可結單。
+            </div>
+            <div className="rounded-xl bg-sky-50 px-4 py-3 font-bold leading-6 text-sky-900">
+              是否成箱出貨：判斷是否需要整箱倍數。
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    return (
+      <div className="w-full max-w-6xl mx-auto px-4 my-8 text-left space-y-6">
+        <div className="rounded-[2rem] border-2 border-sky-100 bg-sky-50/70 p-7 shadow-sm" onMouseLeave={() => setConditionGuidePreview(false)}>
+          <div className="flex flex-wrap items-center gap-3">
+            <h4 className="text-2xl font-black text-slate-900">先看商品頁上的兩個欄位</h4>
+            <div>
+              <button
+                type="button"
+                onMouseEnter={() => setConditionGuidePreview(true)}
+                onFocus={() => setConditionGuidePreview(true)}
+                onClick={() => setConditionGuideOpen(true)}
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-sky-200 bg-white px-4 text-sm font-black text-sky-800 shadow-sm transition hover:bg-sky-50"
+              >
+                <HelpCircle size={17} />
+                在哪裡看？
+              </button>
+            </div>
+          </div>
+          <p className="mt-3 text-base leading-7 text-slate-600">
+            請到「團購訂單管理作業」點開商品訂單詳情，確認「最小團購量」與「是否成箱出貨」。訂單累積到商品指定條件後，才能由您進行結單並讓供應商出貨。
+          </p>
+          {conditionGuidePreview && (
+            <div className="mt-5 max-w-3xl">
+              <ConditionFieldGuide compact />
+            </div>
+          )}
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            <div className="rounded-2xl border border-white bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-indigo-50 px-5 py-4 text-2xl font-black text-slate-900">
+                <span>是否成箱出貨</span>
+                <span className="rounded-xl bg-indigo-600 px-5 py-2 text-3xl text-white shadow-sm">是</span>
+              </div>
+              <p className="mt-4 text-base font-black leading-7 text-slate-800">必須符合最小團購量的倍數。</p>
+              <p className="mt-3 rounded-xl bg-indigo-50 px-4 py-3 text-sm font-bold leading-6 text-indigo-900">
+                最小團購量 6 時，6、12、18 盒可以結單；7 盒不行。
+              </p>
+              <ProductListButton type="是" />
+            </div>
+            <div className="rounded-2xl border border-white bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-emerald-50 px-5 py-4 text-2xl font-black text-slate-900">
+                <span>是否成箱出貨</span>
+                <span className="rounded-xl bg-emerald-600 px-5 py-2 text-3xl text-white shadow-sm">否</span>
+              </div>
+              <p className="mt-4 text-base font-black leading-7 text-slate-800">只要達到最小團購量即可。</p>
+              <p className="mt-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold leading-6 text-emerald-900">
+                最小團購量 6 時，6、7、8 盒都可以結單。
+              </p>
+              <ProductListButton type="否" />
+            </div>
+          </div>
+        </div>
+
+        {conditionGuideOpen && (
+          <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/40 px-6" role="dialog" aria-modal="true">
+            <div className="max-h-[88vh] w-full max-w-4xl overflow-auto rounded-2xl bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                <div>
+                  <h5 className="text-xl font-black text-slate-900">商品頁欄位位置</h5>
+                  <p className="mt-1 text-sm text-slate-500">位置：團購訂單管理作業，點開商品訂單後查看詳情。</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setConditionGuideOpen(false)}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+                  aria-label="關閉"
+                >
+                  <X size={22} />
+                </button>
+              </div>
+              <div className="p-6">
+                <ConditionFieldGuide />
+              </div>
+              <div className="flex justify-end border-t border-slate-200 px-6 py-4">
+                <button
+                  type="button"
+                  onClick={() => setConditionGuideOpen(false)}
+                  className="h-11 rounded-lg border border-slate-300 px-5 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+                >
+                  關閉
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {productListType && (
+          <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/40 px-6" role="dialog" aria-modal="true">
+            <div className="max-h-[88vh] w-full max-w-3xl overflow-auto rounded-2xl bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                <div>
+                  <h5 className="text-xl font-black text-slate-900">是否成箱出貨：{productListType}</h5>
+                  <p className="mt-1 text-sm text-slate-500">依商品出貨條件分類，請以商品詳情頁實際欄位為準。</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setProductListType(null)}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+                  aria-label="關閉"
+                >
+                  <X size={22} />
+                </button>
+              </div>
+              <div className="grid gap-3 p-6">
+                {productGroups[productListType as keyof typeof productGroups].map((product) => (
+                  <div key={product.name} className="flex items-start justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div className="font-bold leading-6 text-slate-800">{product.name}</div>
+                    <div className="shrink-0 rounded-full bg-white px-3 py-1 text-sm font-black text-slate-600 shadow-sm">{product.condition}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end border-t border-slate-200 px-6 py-4">
+                <button
+                  type="button"
+                  onClick={() => setProductListType(null)}
+                  className="h-11 rounded-lg border border-slate-300 px-5 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+                >
+                  關閉
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const Node = ({ value, isOk }: { value: number | string, isOk: boolean }) => (
     <div className="flex flex-col items-center gap-4 w-32 relative group">
       <div className={`w-20 h-20 rounded-[1.5rem] flex items-center justify-center shadow-md relative transition-all group-hover:scale-110 group-hover:-translate-y-1 ${isOk ? 'bg-indigo-50 border-4 border-indigo-200' : 'bg-white border-2 border-slate-100'}`}>
@@ -768,8 +1598,13 @@ const RuleExplanationFlow = () => {
 };
 
 export default function App() {
+  const guideMode: GuideMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'sales'
+    ? 'sales'
+    : 'station';
+  const baseSteps = buildGuideSteps(guideMode);
+  const storageKey = `${HIGHLIGHT_STORAGE_KEY}-${guideMode}`;
   const [activeStepId, setActiveStepId] = useState(1);
-  const [stepsData, setStepsData] = useState<Step[]>(loadStoredSteps);
+  const [stepsData, setStepsData] = useState<Step[]>(() => loadStoredSteps(baseSteps, storageKey));
   const [isEditMode] = useState(() => {
     if (typeof window === 'undefined') return false;
     return new URLSearchParams(window.location.search).get('edit') === '1';
@@ -828,9 +1663,9 @@ export default function App() {
   // Save to LS
   useEffect(() => {
     if (isEditMode) {
-      window.localStorage.setItem(HIGHLIGHT_STORAGE_KEY, JSON.stringify(stepsData));
+      window.localStorage.setItem(storageKey, JSON.stringify(stepsData));
     }
-  }, [stepsData, isEditMode]);
+  }, [stepsData, isEditMode, storageKey]);
 
   const handleCanvasPlacement = (e: React.MouseEvent, stepId: number, cIdx: number) => {
     if (!isEditMode || !selectedTarget) return;
@@ -858,16 +1693,17 @@ export default function App() {
       `}</style>
 
       <main className="flex-1">
-        {/* Hero */}
-        <section className="py-12">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <span className="inline-block px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase mb-4">多角化室</span>
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">團購主系統操作導引</h2>
-          </div>
-        </section>
+        {guideMode === 'station' && (
+          <section className="py-12">
+            <div className="max-w-4xl mx-auto px-4 text-center">
+              <span className="inline-block px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase mb-4">多角化室</span>
+              <h2 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">團購主系統操作導引</h2>
+            </div>
+          </section>
+        )}
 
         {/* Guide */}
-        <section className="py-12 bg-slate-50">
+        <section className={`${guideMode === 'sales' ? 'py-8' : 'py-12'} bg-slate-50`}>
           <div className="px-4 lg:px-10">
             <div className="flex flex-col lg:flex-row gap-8">
               {/* Sidebar */}
@@ -886,7 +1722,7 @@ export default function App() {
               <div className="flex-1 space-y-16">
                 {stepsData.map((step) => (
                   <motion.div key={step.id} id={`step-${step.id}`} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-white rounded-[32px] shadow-xl border border-slate-100 scroll-mt-24 overflow-hidden">
-                    <div className="p-10 border-b border-slate-50 flex flex-col items-center justify-center gap-6 text-center">
+                    <div className={`${guideMode === 'sales' && step.customHeader === false ? 'hidden' : 'p-10 border-b border-slate-50 flex flex-col items-center justify-center gap-6 text-center'}`}>
                       {step.links?.[0] ? (
                         <div className="flex flex-col items-center gap-6">
                           <div className="relative group/link-primary" style={{ width: getImageWidth(step.content[0].image, step.id) }}>
@@ -914,7 +1750,16 @@ export default function App() {
                       ) : (
                         <div className="space-y-4">
                           {step.id !== 5 && <h4 className="text-3xl font-black text-slate-900 tracking-tight">{step.title}</h4>}
-                          {step.description && (
+                          {guideMode === 'sales' && step.title === '帳號取得說明' && step.description ? (
+                            <div className="mx-auto inline-flex max-w-3xl items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50 px-6 py-4 text-left shadow-sm">
+                              <ShieldCheck className="h-6 w-6 shrink-0 text-sky-700" />
+                              <p className="text-lg font-black leading-8 text-slate-800">
+                                銷售達人帳號需由
+                                <span className="mx-1 rounded-lg bg-sky-100 px-2 py-1 text-sky-800">所屬營業處零售中心多角化管理師</span>
+                                協助建立。
+                              </p>
+                            </div>
+                          ) : step.description && (
                             <p className="text-slate-600 text-lg leading-relaxed max-w-2xl mx-auto">{step.description}</p>
                           )}
                         </div>
@@ -994,7 +1839,12 @@ export default function App() {
                             <div className="relative w-full flex flex-col items-center">
                               {c.customComponent === 'AccumulationFlow' && <AccumulationFlow />}
                               {c.customComponent === 'ClosingFlow' && <ClosingFlow />}
+                              {c.customComponent === 'ReceivingFlow' && <ReceivingFlow />}
+                              {c.customComponent === 'PickupFlow' && <PickupFlow />}
                               {c.customComponent === 'RuleExplanationFlow' && <RuleExplanationFlow />}
+                              {c.customComponent === 'SalesNotice' && <SalesNotice />}
+                              {c.customComponent === 'SalesAccountRequest' && <SalesAccountRequestV2 />}
+                              {c.customComponent === 'SalesOrderBridge' && <SalesOrderBridge />}
                               {c.image && (
                                 <div className="relative mx-auto w-fit">
                                   <div className="absolute inset-0 z-40">
@@ -1169,7 +2019,7 @@ export default function App() {
           <button
             onClick={() => {
               if (confirm('確定要捨棄所有編輯，重設為程式碼預設值嗎？')) {
-                window.localStorage.removeItem(HIGHLIGHT_STORAGE_KEY);
+                window.localStorage.removeItem(storageKey);
                 window.location.reload();
               }
             }}
