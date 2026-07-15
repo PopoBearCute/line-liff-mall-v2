@@ -21,6 +21,7 @@ import {
   XCircle,
   ClipboardCopy,
   Eye,
+  Truck,
   X
 } from 'lucide-react';
 
@@ -51,7 +52,7 @@ interface StepContent {
   linkFirst?: boolean;
   midQa?: QA[];
   qa?: QA[];
-  customComponent?: 'AccumulationFlow' | 'ClosingFlow' | 'ReceivingFlow' | 'PickupFlow' | 'RuleExplanationFlow' | 'SalesNotice' | 'SalesAccountRequest' | 'SalesOrderBridge';
+  customComponent?: 'AccumulationFlow' | 'ClosingFlow' | 'PostClosingFlow' | 'ReceivingFlow' | 'PickupFlow' | 'RuleExplanationFlow' | 'SalesNotice' | 'SalesAccountRequest' | 'SalesOrderBridge';
 }
 
 interface Highlight {
@@ -100,9 +101,9 @@ const getActionLabel = (originalLabel: string): string => {
   if (originalLabel.includes("新增使用者")) return "「新增團購主帳號」";
   if (originalLabel.includes("登入團購主帳號")) return "「團購主登入」";
   if (originalLabel.includes("團購選品頁")) return "「選品推薦作業」";
-  if (originalLabel.includes("結單")) return "「結單作業」";
-  if (originalLabel.includes("待收貨")) return "「收貨作業」";
-  if (originalLabel.includes("待取貨")) return "「取貨作業」";
+  if (originalLabel.includes("結單")) return "前往【團購訂單管理作業】進行結單";
+  if (originalLabel.includes("待收貨")) return "前往【團購待收貨】進行收貨";
+  if (originalLabel.includes("待取貨")) return "前往【團購待取貨】進行取貨";
   return originalLabel;
 };
 
@@ -429,8 +430,8 @@ const STEPS: Step[] = [
     description: "加入官方社群，掌握商品動態與問題反映窗口。",
     content: [
       {
-        subtitle: "加入官方社群",
-        description: "掌握商品動態，提供各類反饋與服務。",
+        subtitle: "",
+        description: "",
         image: "./QrCode.jpg",
         highlights: [
           { top: "50.0%", left: "-90.7%", width: "20%", height: "20%", label: "手機掃碼加入官方社群" }
@@ -502,28 +503,29 @@ const buildGuideSteps = (mode: GuideMode): Step[] => {
           if (content.subtitle === "1. 滿足門檻後，進行「結單作業」") {
             return {
               ...content,
-              subtitle: "1. 滿足出貨條件後，進行「結單作業」",
-              qa: content.qa?.map((item) => {
-                if (item.question === "什麼時候要結單?") {
-                  return {
-                    ...item,
-                    answer: "訂單數量符合商品出貨條件後，即可進行結單。請先確認商品詳情中的「最小團購量」與「是否成箱出貨」。",
-                  };
-                }
-                if (item.question === "未達最小訂購量會怎樣?") {
-                  return {
-                    ...item,
-                    answer: "未符合出貨條件將無法結單。本檔期預計於 9/19 00:00 啟動退款作業，系統會將訂單款項退還至消費者帳戶。",
-                  };
-                }
-                if (item.question === "沒有結單會怎樣?") {
-                  return {
-                    ...item,
-                    answer: "沒有結單將無法出貨，商品將持續募集，直到符合出貨條件，或本檔期於 9/19 00:00 啟動退款作業。",
-                  };
-                }
-                return item;
-              }),
+              subtitle: "",
+              qa: [
+                {
+                  question: "什麼是結單?",
+                  answer: "結單就是將訂單狀態轉為已結單，廠商就會開始出貨。",
+                },
+                {
+                  question: "什麼時候要結單?",
+                  answer: "訂單數量符合商品出貨條件後，即可進行結單。請先確認商品詳情中的「最小團購量」與「是否成箱出貨」。",
+                },
+                {
+                  question: "同一個商品可以分批結單嗎?",
+                  answer: "可以。同一個商品只要購買件數總量已符合出貨條件，就可以進行結單。您可以依實際需求選擇一次結單出貨，或分批結單讓供應商分批出貨。每次結單後，該批訂單會進入後續出貨流程；尚未結單的訂單則會繼續累積。",
+                },
+                {
+                  question: "沒有結單會怎樣?",
+                  answer: "沒有結單就不會通知供應商出貨，訂單會持續累積。若至 9/15 檔期結束仍未符合出貨條件，或已符合出貨條件但未完成結單，系統將於 9/19 00:00 啟動退款作業，將訂單款項退還至消費者帳戶。",
+                },
+                {
+                  question: "無法達成出貨條件會怎樣?",
+                  answer: "未符合出貨條件將無法結單。本檔期預計於 9/19 00:00 啟動退款作業，系統會將訂單款項退還至消費者帳戶。",
+                },
+              ],
             };
           }
           if (content.subtitle === "3. 清點貨品數量，進行「收貨作業」") {
@@ -552,7 +554,9 @@ const buildGuideSteps = (mode: GuideMode): Step[] => {
           return content;
         });
         next.content = mappedContent.flatMap((content) => (
-          content.subtitle === "3. 清點貨品數量，進行「收貨作業」"
+          content.image === "./結單作業.png"
+            ? [content, { customComponent: 'PostClosingFlow' as const, highlights: [] }]
+          : content.subtitle === "3. 清點貨品數量，進行「收貨作業」"
             ? [{ customComponent: 'ReceivingFlow' as const, highlights: [] }, content]
             : content.subtitle === "4. 消費者取貨，進行「取貨作業」"
               ? [{ customComponent: 'PickupFlow' as const, highlights: [] }, content]
@@ -930,33 +934,62 @@ const SalesAccountRequestV2 = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto rounded-[2rem] border-2 border-sky-100 bg-sky-50/70 p-8 text-left">
-      <div className="grid gap-8 lg:grid-cols-[1fr_1.15fr]">
-        <div>
-          <p className="text-lg leading-8 text-slate-700">
-            請使用 Email 範本，將基本資料寄給管理師。
-            帳號建立完成後，管理師會通知您帳號與初始密碼。
-          </p>
+    <div className="w-full max-w-5xl mx-auto rounded-[2rem] border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-8 text-left shadow-sm">
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="flex min-h-[250px] flex-col rounded-2xl border border-white bg-white/85 p-6 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-lg font-black text-white">
+              1
+            </div>
+            <div>
+              <h5 className="text-xl font-black text-slate-900">複製 Email 範本</h5>
+              <p className="mt-2 text-base leading-7 text-slate-600">
+                請使用 Email 範本，將基本資料寄給管理師。
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-auto pt-6">
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-emerald-700 px-5 text-base font-black text-white shadow-sm transition hover:bg-emerald-800"
+              >
+                {copied ? <CheckCircle2 size={20} /> : <ClipboardCopy size={20} />}
+                {copied ? "已複製" : "複製 Email 範本"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(true)}
+                className="inline-flex h-12 items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 text-base font-black text-slate-700 transition hover:bg-slate-50"
+              >
+                <Eye size={20} />
+                預覽範本
+              </button>
+            </div>
+            {copyFailed && (
+              <p className="mt-3 text-sm font-bold text-rose-600">
+                無法自動複製，請使用預覽範本手動複製內容。
+              </p>
+            )}
+          </div>
         </div>
 
-        <div className="rounded-2xl border border-white/70 bg-white p-6 shadow-sm">
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="inline-flex h-12 items-center gap-2 rounded-xl bg-emerald-700 px-5 text-base font-black text-white shadow-sm transition hover:bg-emerald-800"
-            >
-              {copied ? <CheckCircle2 size={20} /> : <ClipboardCopy size={20} />}
-              {copied ? "已複製" : "複製 Email 範本"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setPreviewOpen(true)}
-              className="inline-flex h-12 items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 text-base font-black text-slate-700 transition hover:bg-slate-50"
-            >
-              <Eye size={20} />
-              預覽範本
-            </button>
+        <div className="flex min-h-[250px] flex-col rounded-2xl border border-white bg-white/85 p-6 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sky-600 text-lg font-black text-white">
+              2
+            </div>
+            <div>
+              <h5 className="text-xl font-black text-slate-900">寄給所屬管理師</h5>
+              <p className="mt-2 text-base leading-7 text-slate-600">
+                銷售達人帳號需由所屬營業處零售中心多角化管理師協助建立。
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-auto pt-6">
             <button
               type="button"
               onClick={() => setContactsOpen(true)}
@@ -966,11 +999,27 @@ const SalesAccountRequestV2 = () => {
               管理師聯繫方式
             </button>
           </div>
-          {copyFailed && (
-            <p className="mt-3 text-sm font-bold text-rose-600">
-              無法自動複製，請使用預覽範本手動複製內容。
-            </p>
-          )}
+        </div>
+
+        <div className="flex min-h-[250px] flex-col rounded-2xl border border-white bg-white/85 p-6 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-800 text-lg font-black text-white">
+              3
+            </div>
+            <div>
+              <h5 className="text-xl font-black text-slate-900">等待帳號通知</h5>
+              <p className="mt-2 text-base leading-7 text-slate-600">
+                帳號建立完成後，管理師會通知您帳號與初始密碼。
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-auto pt-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-black text-slate-600">
+              <ShieldCheck size={17} />
+              完成後再登入系統
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1193,8 +1242,8 @@ const ClosingFlow = () => {
           <MousePointer2 className="text-white w-9 h-9 relative z-10" />
         </div>
         <div className="text-center bg-amber-100 px-4 py-2.5 rounded-2xl border border-amber-200/50 shadow-sm relative z-20">
-          <p className="font-black text-amber-700 text-sm whitespace-nowrap tracking-tight">2. 結單作業中</p>
-          <p className="text-xs text-amber-600/80 mt-1 italic">進行結算與出單</p>
+          <p className="font-black text-amber-700 text-sm whitespace-nowrap tracking-tight">{isSalesMode ? "2. 團購主進行結單" : "2. 結單作業中"}</p>
+          <p className="text-xs text-amber-600/80 mt-1 italic">{isSalesMode ? "點擊【團購訂單管理作業】" : "進行結算與出單"}</p>
         </div>
       </div>
 
@@ -1206,6 +1255,50 @@ const ClosingFlow = () => {
         <div className="text-center text-slate-400">
           <p className="font-bold text-sm tracking-tight">3. 收貨與核對</p>
           <p className="text-xs mt-1">下一步：收貨</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PostClosingFlow = () => {
+  return (
+    <div className="w-full max-w-4xl mx-auto my-8 rounded-[2.5rem] border-2 border-emerald-100 bg-emerald-50/50 px-6 py-10 shadow-sm">
+      <p className="mb-8 text-center text-lg font-black text-slate-800">
+        結單完成後，等待供應商配送至指定地址。
+      </p>
+      <div className="relative flex flex-col items-center justify-between gap-8 md:flex-row md:gap-0">
+        <div className="hidden md:block absolute top-[2.2rem] left-[15%] right-[15%] h-1.5 rounded-full bg-emerald-100" />
+
+        <div className="relative z-10 flex w-48 flex-col items-center gap-3">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-emerald-500 shadow-lg shadow-emerald-500/30">
+            <CheckCircle2 className="h-8 w-8 text-white" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-black tracking-tight text-slate-800">1. 滿足出貨條件</p>
+            <p className="mt-1 text-xs font-bold text-emerald-600">可結單 ✓</p>
+          </div>
+        </div>
+
+        <div className="relative z-10 flex w-48 flex-col items-center gap-3">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-emerald-500 shadow-lg shadow-emerald-500/30">
+            <CheckCircle2 className="h-8 w-8 text-white" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-black tracking-tight text-slate-800">2. 結單完成</p>
+            <p className="mt-1 text-xs font-bold text-emerald-600">供應商準備出貨</p>
+          </div>
+        </div>
+
+        <div className="relative z-10 flex w-48 flex-col items-center gap-3">
+          <div className="relative flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.5)]">
+            <div className="absolute inset-0 rounded-full border-[6px] border-amber-300 opacity-75 animate-ping" />
+            <Truck className="relative z-10 h-9 w-9 text-white" />
+          </div>
+          <div className="rounded-2xl border border-amber-200/50 bg-amber-100 px-4 py-2.5 text-center shadow-sm">
+            <p className="text-sm font-black tracking-tight text-amber-700">3. 等待物流到貨</p>
+            <p className="mt-1 text-xs italic text-amber-600/80">下一步：收貨</p>
+          </div>
         </div>
       </div>
     </div>
@@ -1431,7 +1524,16 @@ const RuleExplanationFlow = () => {
             </div>
           </div>
           <p className="mt-3 text-base leading-7 text-slate-600">
-            請到「團購訂單管理作業」點開商品訂單詳情，確認「最小團購量」與「是否成箱出貨」。訂單累積到商品指定條件後，才能由您進行結單並讓供應商出貨。
+            請到「
+            <a
+              href="https://ecm.cpc.com.tw/omotest/groupbuyselection/settlementlist"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-black text-sky-700 underline decoration-sky-300 underline-offset-4 transition hover:text-sky-900 hover:decoration-sky-600"
+            >
+              團購訂單管理作業
+            </a>
+            」點開商品訂單詳情，確認「最小團購量」與「是否成箱出貨」。訂單累積到商品指定條件後，才能由您進行結單並讓供應商出貨。
           </p>
           {conditionGuidePreview && (
             <div className="mt-5 max-w-3xl">
@@ -1760,7 +1862,7 @@ export default function App() {
                               </p>
                             </div>
                           ) : step.description && (
-                            <p className="text-slate-600 text-lg leading-relaxed max-w-2xl mx-auto">{step.description}</p>
+                            <p className="text-slate-600 text-lg leading-relaxed max-w-2xl mx-auto whitespace-pre-line">{step.description}</p>
                           )}
                         </div>
                       )}
@@ -1771,7 +1873,7 @@ export default function App() {
                         const width = getImageWidth(c.image, step.id);
                         return (
                           <div key={idx} className="space-y-8 flex flex-col items-center">
-                            {(c.subtitle || c.description) && (
+                            {(c.subtitle || c.description || c.link) && (
                               <div className="flex flex-col items-center justify-center gap-6 text-center w-full">
                                 {c.link ? (
                                   <div className="flex flex-col items-center gap-4">
@@ -1839,6 +1941,7 @@ export default function App() {
                             <div className="relative w-full flex flex-col items-center">
                               {c.customComponent === 'AccumulationFlow' && <AccumulationFlow />}
                               {c.customComponent === 'ClosingFlow' && <ClosingFlow />}
+                              {c.customComponent === 'PostClosingFlow' && <PostClosingFlow />}
                               {c.customComponent === 'ReceivingFlow' && <ReceivingFlow />}
                               {c.customComponent === 'PickupFlow' && <PickupFlow />}
                               {c.customComponent === 'RuleExplanationFlow' && <RuleExplanationFlow />}

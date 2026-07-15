@@ -23,7 +23,7 @@ const roleCards = [
     description: "了解如何取得帳號，並完成商品推薦、結單與交付流程。",
     href: "/intro/sales",
     icon: Sparkles,
-    actionLabel: "查看帳號取得草稿",
+    actionLabel: "進入銷售達人指引",
     cardClass: "border-sky-100 bg-sky-50/70 hover:border-sky-300 hover:bg-sky-50",
     iconClass: "bg-sky-700 text-white",
     active: true,
