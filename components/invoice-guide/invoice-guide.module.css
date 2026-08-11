@@ -1,0 +1,516 @@
+.page {
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(213, 231, 247, 0.8), transparent 34%),
+    radial-gradient(circle at 88% 90%, rgba(222, 240, 224, 0.72), transparent 32%),
+    #eee8df;
+  color: #2e302f;
+  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+}
+
+.shell {
+  width: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: #fbf7f1;
+}
+
+.header {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 18px;
+  color: #174a82;
+  background: rgba(255, 254, 252, 0.96);
+  border-bottom: 1px solid rgba(74, 86, 91, 0.1);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.brandDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #31865a;
+  box-shadow: 0 0 0 4px #e2f2e8;
+}
+
+.sceneImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  background: #f8f2ea;
+}
+
+.storyPanel {
+  position: relative;
+  z-index: 1;
+  margin-top: -20px;
+  padding: 26px 16px calc(30px + env(safe-area-inset-bottom));
+  background: #fbf7f1;
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -10px 28px rgba(82, 60, 42, 0.08);
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #31865a;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.storyPanel h1,
+.instruction h1,
+.completePanel h1 {
+  margin: 0;
+  color: #2f302e;
+  font-size: clamp(23px, 6.1vw, 29px);
+  font-weight: 900;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+}
+
+.lead {
+  margin: 10px 0 0;
+  color: #67615a;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+.choiceList {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.choiceCard {
+  width: 100%;
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 17px 16px 19px;
+  color: #26313b;
+  text-align: left;
+  cursor: pointer;
+  background: linear-gradient(180deg, #fffefd 0%, #fffaf5 100%);
+  border: 2px solid #2d6fb5;
+  border-radius: 22px;
+  box-shadow: 0 8px 20px rgba(107, 75, 48, 0.11), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.choiceCard:active {
+  transform: scale(0.985);
+  box-shadow: 0 3px 10px rgba(107, 75, 48, 0.09);
+}
+
+.choiceCard:focus-visible,
+.controls button:focus-visible,
+.textButton:focus-visible,
+.backLink:focus-visible,
+.completeActions button:focus-visible {
+  outline: 3px solid rgba(45, 111, 181, 0.28);
+  outline-offset: 3px;
+}
+
+.choiceCardGreen {
+  border-color: #4b9a6c;
+}
+
+.choiceCopy {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 6px;
+}
+
+.choiceCopy strong {
+  color: #174a82;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+.choiceCardGreen .choiceCopy strong {
+  color: #2f7f53;
+}
+
+.choiceCopy span {
+  color: #625c55;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.choiceArrow {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  color: #174a82;
+  background: #eef5fc;
+  border: 1px solid #c9def2;
+  border-radius: 999px;
+}
+
+.choiceCardGreen .choiceArrow {
+  color: #2f7f53;
+  background: #edf8f1;
+  border-color: #c9e5d3;
+}
+
+.textButton,
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  margin: 16px auto 0;
+  padding: 6px 10px;
+  color: #6a625b;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tutorial {
+  min-height: calc(100dvh - 52px);
+  display: flex;
+  flex-direction: column;
+  background: #fbf7f1;
+}
+
+.tutorialHeading {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: #fffefd;
+  border-bottom: 1px solid #e9e0d7;
+}
+
+.tutorialHeading .backLink {
+  margin: 0;
+  padding-left: 0;
+  color: #174a82;
+}
+
+.tutorialHeading > span {
+  color: #393a38;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.progressBlock {
+  padding: 11px 16px 13px;
+  background: #fffefd;
+}
+
+.progressMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #6b655f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.progressMeta strong {
+  color: #174a82;
+}
+
+.progressTrack {
+  height: 6px;
+  overflow: hidden;
+  background: #e7e1da;
+  border-radius: 999px;
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #31865a, #4e9d72);
+  border-radius: inherit;
+  transition: width 220ms ease;
+}
+
+.screenshotStage {
+  height: min(52dvh, 500px);
+  min-height: 330px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #f0ebe4;
+  animation: imageIn 220ms ease both;
+}
+
+.screenshotFrame {
+  position: relative;
+  height: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 6px 24px rgba(63, 50, 39, 0.12);
+}
+
+.screenshot {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #fff;
+}
+
+.annotationLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.focusMarker,
+.sequenceMarker {
+  position: absolute;
+  display: block;
+  border-radius: 11px;
+}
+
+.focusMarker {
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 3px solid #2e82ca;
+  box-shadow:
+    0 0 0 999px rgba(28, 34, 39, 0.28),
+    0 0 0 5px rgba(255, 255, 255, 0.88),
+    0 0 22px rgba(46, 130, 202, 0.68);
+  animation: focusBreathe 1.25s ease-in-out 2;
+}
+
+.focusMarker::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(46, 130, 202, 0.95);
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  animation: tapRipple 1.25s ease-out 2;
+}
+
+.sequenceMarker {
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.08);
+  border: 3px solid #3a9562;
+  box-shadow:
+    0 0 0 4px rgba(255, 255, 255, 0.82),
+    0 5px 18px rgba(49, 134, 90, 0.32);
+  animation: sequenceGlow 1.7s ease-in-out 2 both;
+}
+
+.sequenceMarker > span {
+  position: absolute;
+  top: -14px;
+  left: -12px;
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: #27794e;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 3px 10px rgba(38, 91, 61, 0.28);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.instruction {
+  padding: 18px 18px 19px;
+  background: #fbf7f1;
+}
+
+.stepBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  margin-bottom: 8px;
+  padding: 2px 9px;
+  color: #2f7f53;
+  background: #e7f3eb;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.instruction h1 {
+  font-size: 22px;
+}
+
+.instruction p {
+  margin: 8px 0 0;
+  color: #655f58;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.65;
+}
+
+.controls {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr);
+  gap: 10px;
+  margin-top: auto;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+  background: rgba(255, 254, 252, 0.94);
+  border-top: 1px solid rgba(130, 110, 93, 0.16);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.previousButton,
+.nextButton {
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-radius: 17px;
+  font-size: 15px;
+  font-weight: 900;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.previousButton {
+  color: #174a82;
+  background: #fffefd;
+  border: 1.5px solid #aac9e6;
+}
+
+.nextButton {
+  color: #fff;
+  background: #174a82;
+  border: 1.5px solid #174a82;
+  box-shadow: 0 7px 16px rgba(23, 74, 130, 0.22);
+}
+
+.previousButton:active,
+.nextButton:active {
+  transform: scale(0.98);
+  box-shadow: none;
+}
+
+.completeStoryPanel {
+  padding-inline: 22px;
+  text-align: center;
+}
+
+.completeStoryPanel .lead {
+  max-width: 390px;
+  margin-inline: auto;
+}
+
+.reminder {
+  width: 100%;
+  margin-top: 24px;
+  padding: 16px 14px;
+  color: #72531e;
+  background: #fff6df;
+  border: 1px solid #efd9a4;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.completeActions {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.completeActions .previousButton,
+.completeActions .nextButton {
+  width: 100%;
+}
+
+@keyframes imageIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes focusBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+
+@keyframes tapRipple {
+  0% { opacity: 0.95; transform: translate(-50%, -50%) scale(0.35); }
+  72%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(2.5); }
+}
+
+@keyframes sequenceGlow {
+  0%, 100% { opacity: 0.72; transform: scale(1); }
+  45% { opacity: 1; transform: scale(1.025); box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.88), 0 6px 25px rgba(49, 134, 90, 0.52); }
+}
+
+@media (min-width: 640px) {
+  .page {
+    padding: 24px;
+  }
+
+  .shell {
+    width: min(100%, 480px);
+    min-height: calc(100dvh - 48px);
+    margin: 0 auto;
+    border: 1px solid rgba(102, 83, 65, 0.12);
+    border-radius: 28px;
+    box-shadow: 0 24px 70px rgba(70, 56, 43, 0.2);
+  }
+
+  .header {
+    border-radius: 28px 28px 0 0;
+  }
+
+  .tutorial {
+    min-height: calc(100dvh - 100px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choiceCard,
+  .progressTrack span,
+  .previousButton,
+  .nextButton,
+  .screenshotStage,
+  .focusMarker,
+  .focusMarker::after,
+  .sequenceMarker {
+    animation: none;
+    transition: none;
+  }
+}
