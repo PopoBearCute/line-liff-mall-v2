@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react"
+import { ArrowLeft, ArrowRight, CheckCircle2, CloudUpload, Mail, RotateCcw } from "lucide-react"
 import { useEffect, useRef, useState, type CSSProperties } from "react"
 import styles from "./invoice-guide.module.css"
 
@@ -13,11 +13,13 @@ type AnnotationTarget = {
   top: number
   width: number
   height: number
+  text?: string
 }
 
 type StepAnnotation = {
-  mode: "focus" | "sequence"
+  mode: "focus" | "burst" | "form"
   targets: AnnotationTarget[]
+  sampleLabel?: string
 }
 
 type TutorialStep = {
@@ -53,6 +55,14 @@ const guides: Record<GuideKey, { label: string; steps: TutorialStep[] }> = {
         title: "填寫公司發票資訊",
         description: "依序輸入顧客的統一編號、發票抬頭與 Email，完成前再核對一次。",
         alt: "三聯式公司戶的統一編號、發票抬頭與公司 Email 欄位",
+        annotation: {
+          mode: "form",
+          targets: [
+            { left: 11, top: 28, width: 79, height: 10, text: "12345678" },
+            { left: 11, top: 42, width: 79, height: 10, text: "示範股份有限公司" },
+            { left: 11, top: 57.5, width: 79, height: 9, text: "customer@example.com" },
+          ],
+        },
       },
       {
         image: "/invoice-guide/checkout-confirm.webp",
@@ -75,7 +85,7 @@ const guides: Record<GuideKey, { label: string; steps: TutorialStep[] }> = {
         description: "先不要開始購物。進入中油PAY首頁，點選畫面左上角的選單圖示，準備設定顧客載具。",
         alt: "中油PAY首頁左上角的側邊選單按鈕",
         annotation: {
-          mode: "focus",
+          mode: "burst",
           targets: [{ left: 1.5, top: 0.8, width: 10.5, height: 7.5 }],
         },
       },
@@ -104,13 +114,13 @@ const guides: Record<GuideKey, { label: string; steps: TutorialStep[] }> = {
         imageWidth: 616,
         imageHeight: 821,
         title: "設定顧客的共通性載具",
-        description: "在購物前，輸入顧客提供的共通性載具資料，並一併填寫顧客的 Email；確認內容無誤後點選「確定」。",
+        description: "在購物前，依顧客實際提供的資料輸入共通性載具；畫面中的 /ABC+123 僅為格式範例，確認內容無誤後點選「確定」。",
         alt: "會員資料修改畫面中的共通性載具欄位與確定按鈕",
         annotation: {
-          mode: "sequence",
+          mode: "form",
+          sampleLabel: "載具編號範例",
           targets: [
-            { left: 7, top: 38, width: 84, height: 10 },
-            { left: 7, top: 60.5, width: 84, height: 10 },
+            { left: 7, top: 38, width: 84, height: 10, text: "/ABC+123" },
             { left: 51, top: 83, width: 45, height: 13 },
           ],
         },
@@ -172,6 +182,9 @@ function AnnotationOverlay({ annotation }: { annotation?: StepAnnotation }) {
 
   return (
     <div className={styles.annotationLayer} aria-hidden="true">
+      {annotation.mode === "form" && annotation.targets.some((target) => target.text) && (
+        <span className={styles.sampleBadge}>{annotation.sampleLabel ?? "示意輸入"}</span>
+      )}
       {annotation.targets.map((target, index) => {
         const position = {
           left: `${target.left}%`,
@@ -185,9 +198,21 @@ function AnnotationOverlay({ annotation }: { annotation?: StepAnnotation }) {
           return <span key={`${target.left}-${target.top}`} className={styles.focusMarker} style={position} />
         }
 
+        if (annotation.mode === "burst") {
+          return <span key={`${target.left}-${target.top}`} className={styles.burstMarker} style={position} />
+        }
+
         return (
-          <span key={`${target.left}-${target.top}`} className={styles.sequenceMarker} style={position}>
-            <span>{index + 1}</span>
+          <span key={`${target.left}-${target.top}`} className={styles.formMarker} style={position}>
+            <span className={styles.sequenceNumber}>{index + 1}</span>
+            {target.text && (
+              <span
+                className={styles.typedValue}
+                style={{ animationDelay: `${index * 1200 + 260}ms` }}
+              >
+                {target.text}
+              </span>
+            )}
           </span>
         )
       })}
@@ -405,15 +430,42 @@ export function InvoiceGuide() {
               alt="顧客開心地感謝同仁協助完成代購"
             />
             <section className={`${styles.storyPanel} ${styles.completeStoryPanel}`}>
-              <p className={styles.eyebrow}>操作完成</p>
-              <h1>最後別忘了恢復本人設定</h1>
-              <p className={styles.lead}>
-                代購完成後，請立即將中油PAY的發票與載具資料恢復為本人原本的設定。
-              </p>
-              <div className={styles.reminder}>付款完成 → 核對發票 → 恢復本人設定</div>
+              <p className={styles.eyebrow}>代購完成</p>
+              <h1>最後確認兩件事</h1>
+
+              <div className={styles.completionChecklist}>
+                <div
+                  className={`${styles.completionItem} ${styles.importantItem} ${guideKey === "carrier" ? styles.importantItemCarrier : ""}`}
+                >
+                  <span className={styles.completionItemIcon} aria-hidden="true">
+                    {guideKey === "company" ? <Mail size={23} /> : <CloudUpload size={23} />}
+                  </span>
+                  <span className={styles.completionItemCopy}>
+                    <strong>
+                      {guideKey === "company" ? "告知顧客發票寄送方式" : "告知顧客發票去向"}
+                    </strong>
+                    <span>
+                      {guideKey === "company"
+                        ? "三聯式發票會寄送至上述 Email，請提醒顧客留意收件信箱。"
+                        : "發票將上傳至財政部電子發票整合服務平台。"}
+                    </span>
+                  </span>
+                </div>
+
+                <div className={styles.completionItem}>
+                  <span className={`${styles.completionItemIcon} ${styles.restoreIcon}`} aria-hidden="true">
+                    <RotateCcw size={22} />
+                  </span>
+                  <span className={styles.completionItemCopy}>
+                    <strong>恢復本人設定</strong>
+                    <span>立即將中油PAY的發票與載具資料恢復為本人原設定。</span>
+                  </span>
+                </div>
+              </div>
+
               <div className={styles.completeActions}>
                 <button type="button" className={styles.nextButton} onClick={reset}>
-                  <RotateCcw size={18} /> 下一位客人
+                  <CheckCircle2 size={19} /> 已恢復設定，下一位客人
                 </button>
                 <button
                   type="button"
