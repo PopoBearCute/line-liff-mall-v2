@@ -529,14 +529,21 @@ const buildGuideSteps = (mode: GuideMode): Step[] => {
             };
           }
           if (content.subtitle === "3. 清點貨品數量，進行「收貨作業」") {
+            const baseQa = content.qa?.map((item) => item.question === "什麼是收貨作業?"
+              ? {
+                  ...item,
+                  answer: "收貨作業是指當供應商將商品送達您設定的指定地址時，您在系統中確認商品已到貨的流程，這會將訂單狀態更新為「待取貨」。",
+                }
+              : item) || [];
             return {
               ...content,
-              qa: content.qa?.map((item) => item.question === "什麼是收貨作業?"
-                ? {
-                    ...item,
-                    answer: "收貨作業是指當供應商將商品送達您設定的指定地址時，您在系統中確認商品已到貨的流程，這會將訂單狀態更新為「待取貨」。",
-                  }
-                : item),
+              qa: [
+                ...baseQa,
+                {
+                  question: "沒有條碼槍怎麼辦？",
+                  answer: "若無條碼槍，點擊收貨彈出視窗時，直接照著視窗提示文字中的【結單編號（G 開頭代碼，如 G2020...）】手打輸入框內，再點「確認」即可完成收貨。",
+                },
+              ],
             };
           }
           if (content.subtitle === "2. 物流送貨到站，簽收並取得「到站取貨單」") {
@@ -546,9 +553,17 @@ const buildGuideSteps = (mode: GuideMode): Step[] => {
             };
           }
           if (content.subtitle === "4. 消費者到站，進行「取貨作業」") {
+            const baseQa = content.qa || [];
             return {
               ...content,
               subtitle: "4. 消費者取貨，進行「取貨作業」",
+              qa: [
+                ...baseQa,
+                {
+                  question: "沒有條碼槍怎麼辦？",
+                  answer: "若無條碼槍，點擊取貨彈出視窗時，直接照著視窗提示文字中的【出貨單號（20 開頭數字，如 2020...）】手打輸入框內，再點「確認」即可完成發貨。",
+                },
+              ],
             };
           }
           return content;
